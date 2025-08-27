@@ -11,7 +11,7 @@ export function CTASection() {
             Ready to Join the Action Sports Community?
           </h2>
           <p className="text-xl text-orange-100 text-pretty">
-            Whether you're a beginner looking to start your journey or an
+            Whether you&apos;re a beginner looking to start your journey or an
             experienced athlete seeking new challenges, Flipside has everything
             you need to connect, train, and grow.
           </p>
