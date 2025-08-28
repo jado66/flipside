@@ -1,8 +1,10 @@
 import type React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 import { TrickipediaHeader } from "@/components/trickipedia-header";
+import { DonorBanner } from "@/components/donor-banner";
+import { ThemeProvider } from "@/components/theme-provider";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -29,10 +31,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <main>
-      {" "}
-      <TrickipediaHeader />
-      {children}
-    </main>
+    <html lang="en">
+      <body
+        className={`font-sans trickipedia-theme ${geistSans.variable} ${geistMono.variable}`}
+      >
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="trickipedia"
+          themes={["trickipedia"]}
+        >
+          <TrickipediaHeader />
+          <DonorBanner />
+          {children}
+        </ThemeProvider>
+      </body>
+    </html>
   );
 }

@@ -19,8 +19,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        <ThemeProvider>{children}</ThemeProvider>
+      <body
+        className={`font-sans  ${GeistSans.variable} ${GeistMono.variable}`}
+      >
+        {children}
       </body>
     </html>
   );
