@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, MapPin, Calendar, Users } from "lucide-react";
 import Link from "next/link";
@@ -69,11 +70,11 @@ export function HeroSection() {
 
           <div className="relative">
             <div className="aspect-square relative overflow-hidden rounded-2xl">
-              <Image
-                src="/placeholder.svg?height=200&width=300"
+              <img
+                src="https://images.unsplash.com/photo-1572417051886-c16f1253a604?q=80&w=687&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
                 alt="Action sports athlete performing parkour"
-                fill
-                className="object-cover"
+                className="object-cover w-full h-full absolute inset-0"
+                style={{ objectFit: "cover", objectPosition: "center 0%" }}
               />
             </div>
             <div className="absolute -bottom-6 -left-6 bg-white p-6 rounded-xl shadow-lg">

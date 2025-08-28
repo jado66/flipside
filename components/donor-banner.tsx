@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
-
+import Link from "next/link";
 export function DonorBanner() {
   const [isVisible, setIsVisible] = useState(true);
 
@@ -33,36 +33,46 @@ export function DonorBanner() {
             </p>
 
             <div className="flex flex-wrap gap-2">
-              <Button
-                size="sm"
-                className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
-              >
-                $2.75
-              </Button>
-              <Button
-                size="sm"
-                className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
-              >
-                $5
-              </Button>
-              <Button
-                size="sm"
-                className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
-              >
-                $10
-              </Button>
-              <Button
-                size="sm"
-                className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
-              >
-                $20
-              </Button>
-              <Button
-                size="sm"
-                className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
-              >
-                Other
-              </Button>
+              <Link href="/trickipedia/store">
+                <Button
+                  size="sm"
+                  className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
+                >
+                  $2.75
+                </Button>
+              </Link>
+              <Link href="/trickipedia/store">
+                <Button
+                  size="sm"
+                  className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
+                >
+                  $5
+                </Button>
+              </Link>
+              <Link href="/trickipedia/store">
+                <Button
+                  size="sm"
+                  className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
+                >
+                  $10
+                </Button>
+              </Link>
+              <Link href="/trickipedia/store">
+                <Button
+                  size="sm"
+                  className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
+                >
+                  $20
+                </Button>
+              </Link>
+              <Link href="/trickipedia/store">
+                <Button
+                  size="sm"
+                  className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
+                >
+                  Other
+                </Button>
+              </Link>
             </div>
           </div>
 

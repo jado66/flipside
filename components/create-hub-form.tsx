@@ -18,12 +18,14 @@ import {
 } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { X, Plus, Image as ImageIcon } from "lucide-react";
 
 const SPORTS_OPTIONS = [
   "parkour",
   "trampoline",
   "tricking",
   "freerunning",
+  "trampwall",
   "gymnastics",
   "martial arts",
   "breakdancing",
@@ -41,20 +43,37 @@ const AMENITIES_OPTIONS = [
   "equipment_rental",
 ];
 
-export function CreateHubForm() {
+export function CreateHubForm({
+  initialData,
+  isEdit = false,
+}: {
+  initialData?: any;
+  isEdit?: boolean;
+}) {
+  // Initialize images from either new images array or legacy image_url
+  const initialImages =
+    initialData?.images?.length > 0
+      ? initialData.images
+      : initialData?.image_url
+      ? [initialData.image_url]
+      : [];
+
   const [formData, setFormData] = useState({
-    name: "",
-    description: "",
-    address: "",
-    city: "",
-    state: "",
-    zip_code: "",
-    phone: "",
-    email: "",
-    website_url: "",
-    sports: [] as string[],
-    amenities: [] as string[],
+    name: initialData?.name || "",
+    description: initialData?.description || "",
+    address: initialData?.address || "",
+    city: initialData?.city || "",
+    state: initialData?.state || "",
+    zip_code: initialData?.zip_code || "",
+    phone: initialData?.phone || "",
+    email: initialData?.email || "",
+    website_url: initialData?.website_url || "",
+    images: initialImages,
+    sports: initialData?.sports || [],
+    amenities: initialData?.amenities || [],
   });
+
+  const [newImageUrl, setNewImageUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
@@ -69,18 +88,37 @@ export function CreateHubForm() {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      if (!user) throw new Error("You must be logged in to create a hub");
+      if (!user)
+        throw new Error("You must be logged in to create or edit a hub");
 
-      const { data, error } = await supabase
-        .from("hubs")
-        .insert([
-          {
-            ...formData,
-            owner_id: user.id,
-          },
-        ])
-        .select()
-        .single();
+      // Prepare the data, ensuring images is always an array
+      const submitData = {
+        ...formData,
+        images: formData.images.filter((url) => url.trim() !== ""), // Remove empty URLs
+      };
+
+      let data, error;
+      if (isEdit && initialData?.id) {
+        // Update existing hub
+        ({ data, error } = await supabase
+          .from("hubs")
+          .update(submitData)
+          .eq("id", initialData.id)
+          .select()
+          .single());
+      } else {
+        // Create new hub
+        ({ data, error } = await supabase
+          .from("hubs")
+          .insert([
+            {
+              ...submitData,
+              owner_id: user.id,
+            },
+          ])
+          .select()
+          .single());
+      }
 
       if (error) throw error;
 
@@ -114,13 +152,39 @@ export function CreateHubForm() {
     }
   };
 
+  const addImageUrl = () => {
+    if (newImageUrl.trim() && !formData.images.includes(newImageUrl.trim())) {
+      setFormData({
+        ...formData,
+        images: [...formData.images, newImageUrl.trim()],
+      });
+      setNewImageUrl("");
+    }
+  };
+
+  const removeImage = (indexToRemove: number) => {
+    setFormData({
+      ...formData,
+      images: formData.images.filter((_, index) => index !== indexToRemove),
+    });
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      addImageUrl();
+    }
+  };
+
   return (
     <div className="max-w-2xl mx-auto p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Create New Hub</CardTitle>
+          <CardTitle>{isEdit ? "Edit Hub" : "Create New Hub"}</CardTitle>
           <CardDescription>
-            Add your action sports facility to the Flipside community
+            {isEdit
+              ? "Update your action sports facility information"
+              : "Add your action sports facility to the Flipside community"}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -150,6 +214,67 @@ export function CreateHubForm() {
               </div>
             </div>
 
+            {/* Images Section */}
+            <div className="space-y-4">
+              <Label>Images</Label>
+
+              {/* Add new image input */}
+              <div className="flex gap-2">
+                <Input
+                  type="url"
+                  value={newImageUrl}
+                  onChange={(e) => setNewImageUrl(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder="https://example.com/image.jpg"
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  onClick={addImageUrl}
+                  disabled={!newImageUrl.trim()}
+                  size="sm"
+                >
+                  <Plus className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Display current images */}
+              {formData.images.length > 0 && (
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium">Current Images:</Label>
+                  <div className="space-y-2">
+                    {formData.images.map((imageUrl, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 p-3 border rounded-lg bg-gray-50"
+                      >
+                        <ImageIcon className="h-4 w-4 text-gray-400 flex-shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm truncate">{imageUrl}</p>
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => removeImage(index)}
+                          className="text-red-500 hover:text-red-700 flex-shrink-0"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    {formData.images.length === 1
+                      ? "1 image added"
+                      : `${formData.images.length} images added`}
+                    {formData.images.length > 0 &&
+                      " - The first image will be used as the main display image."}
+                  </p>
+                </div>
+              )}
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="description">Description</Label>
               <Textarea
@@ -163,14 +288,13 @@ export function CreateHubForm() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="address">Address *</Label>
+              <Label htmlFor="address">Address</Label>
               <Input
                 id="address"
                 value={formData.address}
                 onChange={(e) =>
                   setFormData({ ...formData, address: e.target.value })
                 }
-                required
               />
             </div>
 
@@ -288,7 +412,13 @@ export function CreateHubForm() {
               className="w-full bg-orange-600 hover:bg-orange-700"
               disabled={loading}
             >
-              {loading ? "Creating Hub..." : "Create Hub"}
+              {loading
+                ? isEdit
+                  ? "Saving..."
+                  : "Creating Hub..."
+                : isEdit
+                ? "Save Changes"
+                : "Create Hub"}
             </Button>
           </form>
         </CardContent>

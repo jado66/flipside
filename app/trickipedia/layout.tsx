@@ -41,7 +41,6 @@ export default function RootLayout({
           themes={["trickipedia"]}
         >
           <TrickipediaHeader />
-          <DonorBanner />
           {children}
         </ThemeProvider>
       </body>

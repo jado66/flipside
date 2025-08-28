@@ -1,7 +1,7 @@
-"use client"
+"use client";
 
-import { createClient } from "@/lib/client"
-import { Button } from "@/components/ui/button"
+import { createClient } from "@/lib/client";
+import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -9,37 +9,37 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { useRouter } from "next/navigation"
-import type { User } from "@supabase/supabase-js"
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from "next/navigation";
+import type { User } from "@supabase/supabase-js";
 
 interface UserNavProps {
-  user: User
+  user: User;
 }
 
 export function UserNav({ user }: UserNavProps) {
-  const router = useRouter()
-  const supabase = createClient()
+  const router = useRouter();
+  const supabase = createClient();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut()
-    router.push("/")
-    router.refresh()
-  }
+    await supabase.auth.signOut();
+    router.push("/");
+    router.refresh();
+  };
 
-  const initials =
-    user.user_metadata?.first_name && user.user_metadata?.last_name
-      ? `${user.user_metadata.first_name[0]}${user.user_metadata.last_name[0]}`
-      : user.email?.[0]?.toUpperCase() || "U"
+  const firstLetter =
+    user.user_metadata?.first_name?.[0]?.toUpperCase() ||
+    user.email?.[0]?.toUpperCase() ||
+    "U";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user.user_metadata?.avatar_url || "/placeholder.svg"} alt="Avatar" />
-            <AvatarFallback>{initials}</AvatarFallback>
+            <AvatarImage src={user.user_metadata?.avatar_url} alt="Avatar" />
+            <AvatarFallback>{firstLetter}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -49,15 +49,21 @@ export function UserNav({ user }: UserNavProps) {
             <p className="text-sm font-medium leading-none">
               {user.user_metadata?.first_name} {user.user_metadata?.last_name}
             </p>
-            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {user.email}
+            </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push("/profile")}>Profile</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => router.push("/dashboard")}>Dashboard</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/profile")}>
+          Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => router.push("/dashboard")}>
+          Dashboard
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
-  )
+  );
 }
