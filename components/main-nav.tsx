@@ -6,7 +6,15 @@ import { usePathname } from "next/navigation";
 import { createClient } from "@/lib/client";
 import { Button } from "@/components/ui/button";
 import { UserNav } from "@/components/user-nav";
-import { Menu, X, Calendar, MapPin, Clock, Home } from "lucide-react";
+import {
+  Menu,
+  X,
+  Calendar,
+  MapPin,
+  Clock,
+  Home,
+  BookOpenText,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
 
@@ -15,6 +23,7 @@ const navigation = [
   { name: "Hubs", href: "/hubs", icon: MapPin },
   { name: "Events", href: "/events", icon: Calendar },
   { name: "Schedule", href: "/schedule", icon: Clock },
+  { name: "Trickipedia", href: "/trickipedia", icon: BookOpenText },
 ];
 
 export function MainNav() {

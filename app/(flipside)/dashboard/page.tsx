@@ -82,7 +82,7 @@ export default function DashboardPage() {
         .limit(3);
 
       // Load user's hubs if they're a business user
-      let hubs = [];
+      let hubs: any[] = [];
       if (profile?.role === "business") {
         const { data: userHubs } = await supabase
           .from("hubs")
