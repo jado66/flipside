@@ -1,123 +1,183 @@
-// Mock data and functions for categories - replace with real Supabase queries later
+import { createClient } from "./client";
 
 export interface MasterCategory {
-  id: string
-  name: string
-  description: string
-  slug: string
-  icon_name: string
-  color: string
-  sort_order: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
-  trick_count?: number
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  icon_name: string | null;
+  color: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  trick_count?: number;
 }
 
-// Mock master categories data
-const mockMasterCategories: MasterCategory[] = [
-  {
-    id: "1",
-    name: "Parkour",
-    description: "Movement discipline focused on efficient navigation through environments",
-    slug: "parkour",
-    icon_name: "zap",
-    color: "#164e63",
-    sort_order: 1,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 156,
-  },
-  {
-    id: "2",
-    name: "Tricking",
-    description: "Martial arts and gymnastics-inspired acrobatic movements",
-    slug: "tricking",
-    icon_name: "rotate-ccw",
-    color: "#ec4899",
-    sort_order: 2,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 203,
-  },
-  {
-    id: "3",
-    name: "Gymnastics",
-    description: "Traditional gymnastics movements and skills",
-    slug: "gymnastics",
-    icon_name: "activity",
-    color: "#0891b2",
-    sort_order: 3,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 89,
-  },
-  {
-    id: "4",
-    name: "Trampwall",
-    description: "Acrobatic movements performed on trampolines and walls",
-    slug: "trampwall",
-    icon_name: "bounce",
-    color: "#7c3aed",
-    sort_order: 4,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 67,
-  },
-]
-
-// Mock API functions - replace with real Supabase queries later
+// Get active master categories with trick counts
 export async function getMasterCategories(): Promise<MasterCategory[]> {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return mockMasterCategories.filter((cat) => cat.is_active).sort((a, b) => a.sort_order - b.sort_order)
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("master_categories")
+    .select(
+      `
+      *,
+      trick_count:subcategories(
+        tricks(count)
+      )
+    `
+    )
+    .eq("is_active", true)
+    .order("sort_order");
+
+  if (error) {
+    console.error("Error fetching master categories:", error);
+    throw new Error("Failed to fetch master categories");
+  }
+
+  // Process the trick count aggregation
+  return data.map((category) => ({
+    ...category,
+    trick_count:
+      category.trick_count?.reduce(
+        (total: number, subcategory: any) =>
+          total + (subcategory.tricks?.[0]?.count || 0),
+        0
+      ) || 0,
+  }));
 }
 
+// Get all master categories (including inactive)
 export async function getAllMasterCategories(): Promise<MasterCategory[]> {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return mockMasterCategories.sort((a, b) => a.sort_order - b.sort_order)
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("master_categories")
+    .select(
+      `
+      *,
+      trick_count:subcategories(
+        tricks(count)
+      )
+    `
+    )
+    .order("sort_order");
+
+  if (error) {
+    console.error("Error fetching all master categories:", error);
+    throw new Error("Failed to fetch all master categories");
+  }
+
+  // Process the trick count aggregation
+  return data.map((category) => ({
+    ...category,
+    trick_count:
+      category.trick_count?.reduce(
+        (total: number, subcategory: any) =>
+          total + (subcategory.tricks?.[0]?.count || 0),
+        0
+      ) || 0,
+  }));
 }
 
-export async function getMasterCategoryBySlug(slug: string): Promise<MasterCategory | null> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return mockMasterCategories.find((cat) => cat.slug === slug) || null
+// Get master category by slug
+export async function getMasterCategoryBySlug(
+  slug: string
+): Promise<MasterCategory | null> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("master_categories")
+    .select(
+      `
+      *,
+      trick_count:subcategories(
+        tricks(count)
+      )
+    `
+    )
+    .eq("slug", slug)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null; // No rows returned
+    }
+    console.error("Error fetching master category by slug:", error);
+    throw new Error("Failed to fetch master category");
+  }
+
+  // Process the trick count aggregation
+  return {
+    ...data,
+    trick_count:
+      data.trick_count?.reduce(
+        (total: number, subcategory: any) =>
+          total + (subcategory.tricks?.[0]?.count || 0),
+        0
+      ) || 0,
+  };
 }
 
+// Create new master category
 export async function createMasterCategory(
-  data: Omit<MasterCategory, "id" | "created_at" | "updated_at">,
+  data: Omit<MasterCategory, "id" | "created_at" | "updated_at">
 ): Promise<MasterCategory> {
-  await new Promise((resolve) => setTimeout(resolve, 200))
-  const newCategory: MasterCategory = {
-    ...data,
-    id: Date.now().toString(),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+  const supabase = await createClient();
+
+  const { data: newCategory, error } = await supabase
+    .from("master_categories")
+    .insert([data])
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error creating master category:", error);
+    throw new Error("Failed to create master category");
   }
-  mockMasterCategories.push(newCategory)
-  return newCategory
+
+  return newCategory;
 }
 
-export async function updateMasterCategory(id: string, data: Partial<MasterCategory>): Promise<MasterCategory> {
-  await new Promise((resolve) => setTimeout(resolve, 200))
-  const index = mockMasterCategories.findIndex((cat) => cat.id === id)
-  if (index === -1) throw new Error("Category not found")
+// Update master category
+export async function updateMasterCategory(
+  id: string,
+  data: Partial<MasterCategory>
+): Promise<MasterCategory> {
+  const supabase = await createClient();
 
-  mockMasterCategories[index] = {
-    ...mockMasterCategories[index],
+  const updateData = {
     ...data,
     updated_at: new Date().toISOString(),
+  };
+
+  const { data: updatedCategory, error } = await supabase
+    .from("master_categories")
+    .update(updateData)
+    .eq("id", id)
+    .select()
+    .single();
+
+  if (error) {
+    console.error("Error updating master category:", error);
+    throw new Error("Failed to update master category");
   }
-  return mockMasterCategories[index]
+
+  return updatedCategory;
 }
 
+// Delete master category
 export async function deleteMasterCategory(id: string): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 200))
-  const index = mockMasterCategories.findIndex((cat) => cat.id === id)
-  if (index === -1) throw new Error("Category not found")
-  mockMasterCategories.splice(index, 1)
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("master_categories")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    console.error("Error deleting master category:", error);
+    throw new Error("Failed to delete master category");
+  }
 }

@@ -49,16 +49,47 @@ export function TrickipediaHeader() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <div className="h-8 w-8 rounded-lg bg-primary flex items-center justify-center">
-              <span className="text-primary-foreground font-bold text-lg">
-                T
-              </span>
+          <div className="flex flex-col items-center">
+            <div className="flex flex-row items-center">
+              <div className="flex-shrink-0 flex items-center justify-center mr-3">
+                <div className="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+                  <span className="text-black font-serif text-2xl">T</span>
+                </div>
+              </div>
+              <div className="flex flex-col items-center">
+                <span className="text-xl text-black uppercase font-serif">
+                  <span>
+                    <span
+                      style={{ fontSize: "1.3em", verticalAlign: "middle" }}
+                    >
+                      T
+                    </span>
+                    <span
+                      style={{
+                        verticalAlign: "middle",
+                        position: "relative",
+                        top: "2px",
+                      }}
+                    >
+                      rickipedi
+                    </span>
+
+                    <span
+                      style={{ fontSize: "1.3em", verticalAlign: "middle" }}
+                    >
+                      A
+                    </span>
+                  </span>
+                </span>
+                <span
+                  className="text-base text-muted-foreground font-serif italic"
+                  style={{ marginTop: "-4px" }}
+                >
+                  The trick encyclopedia
+                </span>
+              </div>
             </div>
-            <span className="font-bold text-xl text-foreground">
-              Trickipedia
-            </span>
-          </Link>
+          </div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
@@ -156,19 +187,19 @@ export function TrickipediaHeader() {
               {/* Mobile Navigation */}
               <nav className="flex flex-col space-y-2">
                 <Link
-                  href="/tricks"
+                  href="/trickipedia/tricks"
                   className="text-foreground hover:text-primary transition-colors py-2"
                 >
                   Tricks
                 </Link>
                 <Link
-                  href="/categories"
+                  href="/trickipedia/categories"
                   className="text-foreground hover:text-primary transition-colors py-2"
                 >
                   Categories
                 </Link>
                 <Link
-                  href="/community"
+                  href="/"
                   className="text-foreground hover:text-primary transition-colors py-2"
                 >
                   Community

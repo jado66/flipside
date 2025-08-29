@@ -1,214 +1,193 @@
-// Mock data and functions for subcategories - replace with real Supabase queries later
+import { createClient } from "./client";
 
 export interface Subcategory {
-  id: string
-  master_category_id: string
-  name: string
-  description: string
-  slug: string
-  sort_order: number
-  is_active: boolean
-  created_at: string
-  updated_at: string
-  trick_count?: number
+  id: string;
+  master_category_id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  trick_count?: number;
   master_category?: {
-    name: string
-    slug: string
-    color: string
+    name: string;
+    slug: string;
+    color: string | null;
+  };
+}
+
+// Get subcategories by master category ID
+export async function getSubcategoriesByMasterCategory(
+  masterCategoryId: string
+): Promise<Subcategory[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("subcategories")
+    .select(
+      `
+      *,
+      trick_count:tricks(count),
+      master_category:master_categories(name, slug, color)
+    `
+    )
+    .eq("master_category_id", masterCategoryId)
+    .eq("is_active", true)
+    .order("sort_order");
+
+  if (error) {
+    console.error("Error fetching subcategories by master category:", error);
+    throw new Error("Failed to fetch subcategories");
   }
+
+  return data.map((subcategory) => ({
+    ...subcategory,
+    trick_count: subcategory.trick_count?.[0]?.count || 0,
+    master_category: subcategory.master_category,
+  }));
 }
 
-// Mock subcategories data
-const mockSubcategories: Subcategory[] = [
-  // Parkour subcategories
-  {
-    id: "1",
-    master_category_id: "1",
-    name: "Vaults",
-    description: "Techniques for overcoming obstacles efficiently",
-    slug: "vaults",
-    sort_order: 1,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 45,
-    master_category: { name: "Parkour", slug: "parkour", color: "#164e63" },
-  },
-  {
-    id: "2",
-    master_category_id: "1",
-    name: "Precision Jumps",
-    description: "Accurate jumping techniques",
-    slug: "precision-jumps",
-    sort_order: 2,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 32,
-    master_category: { name: "Parkour", slug: "parkour", color: "#164e63" },
-  },
-  {
-    id: "3",
-    master_category_id: "1",
-    name: "Wall Runs",
-    description: "Techniques for running up and along walls",
-    slug: "wall-runs",
-    sort_order: 3,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 28,
-    master_category: { name: "Parkour", slug: "parkour", color: "#164e63" },
-  },
-  {
-    id: "4",
-    master_category_id: "1",
-    name: "Rolls",
-    description: "Safe landing and momentum techniques",
-    slug: "rolls",
-    sort_order: 4,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 51,
-    master_category: { name: "Parkour", slug: "parkour", color: "#164e63" },
-  },
-  // Tricking subcategories
-  {
-    id: "5",
-    master_category_id: "2",
-    name: "Kicks",
-    description: "Martial arts inspired kicking techniques",
-    slug: "kicks",
-    sort_order: 1,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 67,
-    master_category: { name: "Tricking", slug: "tricking", color: "#ec4899" },
-  },
-  {
-    id: "6",
-    master_category_id: "2",
-    name: "Flips",
-    description: "Forward and backward flipping movements",
-    slug: "flips",
-    sort_order: 2,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 89,
-    master_category: { name: "Tricking", slug: "tricking", color: "#ec4899" },
-  },
-  {
-    id: "7",
-    master_category_id: "2",
-    name: "Twists",
-    description: "Rotational movements around vertical axis",
-    slug: "twists",
-    sort_order: 3,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 47,
-    master_category: { name: "Tricking", slug: "tricking", color: "#ec4899" },
-  },
-  // Gymnastics subcategories
-  {
-    id: "8",
-    master_category_id: "3",
-    name: "Floor Skills",
-    description: "Ground-based gymnastics movements",
-    slug: "floor-skills",
-    sort_order: 1,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 34,
-    master_category: { name: "Gymnastics", slug: "gymnastics", color: "#0891b2" },
-  },
-  {
-    id: "9",
-    master_category_id: "3",
-    name: "Handstands",
-    description: "Balance and strength-based inverted positions",
-    slug: "handstands",
-    sort_order: 2,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 23,
-    master_category: { name: "Gymnastics", slug: "gymnastics", color: "#0891b2" },
-  },
-  {
-    id: "10",
-    master_category_id: "3",
-    name: "Tumbling",
-    description: "Dynamic acrobatic sequences",
-    slug: "tumbling",
-    sort_order: 3,
-    is_active: true,
-    created_at: "2024-01-01T00:00:00Z",
-    updated_at: "2024-01-01T00:00:00Z",
-    trick_count: 32,
-    master_category: { name: "Gymnastics", slug: "gymnastics", color: "#0891b2" },
-  },
-]
-
-// Mock API functions - replace with real Supabase queries later
-export async function getSubcategoriesByMasterCategory(masterCategoryId: string): Promise<Subcategory[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return mockSubcategories
-    .filter((sub) => sub.master_category_id === masterCategoryId && sub.is_active)
-    .sort((a, b) => a.sort_order - b.sort_order)
-}
-
+// Get all subcategories
 export async function getAllSubcategories(): Promise<Subcategory[]> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return mockSubcategories.sort((a, b) => a.sort_order - b.sort_order)
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("subcategories")
+    .select(
+      `
+      *,
+      trick_count:tricks(count),
+      master_category:master_categories(name, slug, color)
+    `
+    )
+    .order("sort_order");
+
+  if (error) {
+    console.error("Error fetching all subcategories:", error);
+    throw new Error("Failed to fetch all subcategories");
+  }
+
+  return data.map((subcategory) => ({
+    ...subcategory,
+    trick_count: subcategory.trick_count?.[0]?.count || 0,
+    master_category: subcategory.master_category,
+  }));
 }
 
+// Get subcategory by master category slug and subcategory slug
 export async function getSubcategoryBySlug(
   masterCategorySlug: string,
-  subcategorySlug: string,
+  subcategorySlug: string
 ): Promise<Subcategory | null> {
-  await new Promise((resolve) => setTimeout(resolve, 100))
-  return (
-    mockSubcategories.find((sub) => sub.slug === subcategorySlug && sub.master_category?.slug === masterCategorySlug) ||
-    null
-  )
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("subcategories")
+    .select(
+      `
+      *,
+      trick_count:tricks(count),
+      master_category:master_categories!inner(name, slug, color)
+    `
+    )
+    .eq("slug", subcategorySlug)
+    .eq("master_categories.slug", masterCategorySlug)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null; // No rows returned
+    }
+    console.error("Error fetching subcategory by slug:", error);
+    throw new Error("Failed to fetch subcategory");
+  }
+
+  return {
+    ...data,
+    trick_count: data.trick_count?.[0]?.count || 0,
+    master_category: data.master_category,
+  };
 }
 
+// Create new subcategory
 export async function createSubcategory(
-  data: Omit<Subcategory, "id" | "created_at" | "updated_at" | "master_category">,
+  data: Omit<
+    Subcategory,
+    "id" | "created_at" | "updated_at" | "master_category"
+  >
 ): Promise<Subcategory> {
-  await new Promise((resolve) => setTimeout(resolve, 200))
-  const newSubcategory: Subcategory = {
-    ...data,
-    id: Date.now().toString(),
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+  const supabase = await createClient();
+
+  const { data: newSubcategory, error } = await supabase
+    .from("subcategories")
+    .insert([data])
+    .select(
+      `
+      *,
+      master_category:master_categories(name, slug, color)
+    `
+    )
+    .single();
+
+  if (error) {
+    console.error("Error creating subcategory:", error);
+    throw new Error("Failed to create subcategory");
   }
-  mockSubcategories.push(newSubcategory)
-  return newSubcategory
+
+  return {
+    ...newSubcategory,
+    trick_count: 0,
+    master_category: newSubcategory.master_category,
+  };
 }
 
-export async function updateSubcategory(id: string, data: Partial<Subcategory>): Promise<Subcategory> {
-  await new Promise((resolve) => setTimeout(resolve, 200))
-  const index = mockSubcategories.findIndex((sub) => sub.id === id)
-  if (index === -1) throw new Error("Subcategory not found")
+// Update subcategory
+export async function updateSubcategory(
+  id: string,
+  data: Partial<Subcategory>
+): Promise<Subcategory> {
+  const supabase = await createClient();
 
-  mockSubcategories[index] = {
-    ...mockSubcategories[index],
+  const updateData = {
     ...data,
     updated_at: new Date().toISOString(),
+  };
+
+  const { data: updatedSubcategory, error } = await supabase
+    .from("subcategories")
+    .update(updateData)
+    .eq("id", id)
+    .select(
+      `
+      *,
+      trick_count:tricks(count),
+      master_category:master_categories(name, slug, color)
+    `
+    )
+    .single();
+
+  if (error) {
+    console.error("Error updating subcategory:", error);
+    throw new Error("Failed to update subcategory");
   }
-  return mockSubcategories[index]
+
+  return {
+    ...updatedSubcategory,
+    trick_count: updatedSubcategory.trick_count?.[0]?.count || 0,
+    master_category: updatedSubcategory.master_category,
+  };
 }
 
+// Delete subcategory
 export async function deleteSubcategory(id: string): Promise<void> {
-  await new Promise((resolve) => setTimeout(resolve, 200))
-  const index = mockSubcategories.findIndex((sub) => sub.id === id)
-  if (index === -1) throw new Error("Subcategory not found")
-  mockSubcategories.splice(index, 1)
+  const supabase = await createClient();
+
+  const { error } = await supabase.from("subcategories").delete().eq("id", id);
+
+  if (error) {
+    console.error("Error deleting subcategory:", error);
+    throw new Error("Failed to delete subcategory");
+  }
 }

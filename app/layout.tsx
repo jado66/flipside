@@ -4,6 +4,7 @@ import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import { ThemeProvider } from "@/components/theme-provider";
+import { AuthProvider } from "@/contexts/auth-provider";
 
 export const metadata: Metadata = {
   title: "Flipside - Action Sports Community",
@@ -22,7 +23,7 @@ export default function RootLayout({
       <body
         className={`font-sans  ${GeistSans.variable} ${GeistMono.variable}`}
       >
-        {children}
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
   );

@@ -61,6 +61,7 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuItem onClick={() => router.push("/dashboard")}>
           Dashboard
         </DropdownMenuItem>
+
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleSignOut}>Sign out</DropdownMenuItem>
       </DropdownMenuContent>
