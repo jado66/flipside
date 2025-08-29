@@ -358,7 +358,7 @@ export default function TrickDetailPage() {
                       const description = step.description || "";
                       let tips = step.tips;
                       if (!Array.isArray(tips)) {
-                        // @ts-ignore
+                        // @ts-expect-error #TODO fix me
                         if (typeof tips === "string" && tips.trim()) {
                           tips = [tips];
                         } else {
