@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -14,33 +14,15 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  getMasterCategories,
-  type MasterCategory,
-} from "@/lib/categories-data";
+import { useMasterCategories } from "@/hooks/use-categories";
 import { Search, ArrowRight, Settings } from "lucide-react";
 import * as Icons from "lucide-react";
 import { PermissionGate } from "@/components/permission-gate";
+import type { MasterCategory } from "@/lib/types/database";
 
 export default function CategoriesPage() {
-  const [categories, setCategories] = useState<MasterCategory[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { categories, loading, error } = useMasterCategories();
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    const loadCategories = async () => {
-      try {
-        const data = await getMasterCategories();
-        setCategories(data);
-      } catch (error) {
-        console.error("Failed to load categories:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadCategories();
-  }, []);
 
   const filteredCategories = categories.filter(
     (category) =>
@@ -64,6 +46,21 @@ export default function CategoriesPage() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <p className="text-destructive text-lg mb-4">Failed to load categories</p>
+              <p className="text-muted-foreground">{error}</p>
+            </div>
           </div>
         </div>
       </div>
@@ -142,14 +139,14 @@ export default function CategoriesPage() {
 
           {/* Management Card - Only visible to moderators/admins */}
           <PermissionGate requireModerator>
-            <Link href="/trickipedia/manage-categories">
+            <Link href="/trickipedia/admin/manage-sports">
               <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group flex flex-col">
                 <CardHeader className="text-center pb-4 flex-grow">
                   <div className="w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 group-hover:scale-110 transition-transform duration-300 bg-blue-500">
                     <Settings className="h-10 w-10 text-white" />
                   </div>
                   <CardTitle className="text-2xl mb-3">
-                    Manage Categories
+                    Manage Sports &amp; Disciplines
                   </CardTitle>
                   <CardDescription className="text-base text-pretty leading-relaxed">
                     Add, edit, and organize movement disciplines
@@ -166,7 +163,7 @@ export default function CategoriesPage() {
                     variant="outline"
                     className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors bg-transparent"
                   >
-                    Manage Categories
+                    Manage Sports &amp; Disciplines
                   </Button>
                 </CardContent>
               </Card>

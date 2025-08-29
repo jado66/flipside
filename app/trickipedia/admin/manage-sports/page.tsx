@@ -32,6 +32,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { CategoryFormDialog } from "@/components/category-form-dialog";
+import Link from "next/link";
 
 export default function AdminCategoriesPage() {
   const [categories, setCategories] = useState<MasterCategory[]>([]);
@@ -109,14 +110,16 @@ export default function AdminCategoriesPage() {
         {/* Page Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold mb-2">Manage Categories</h1>
+            <h1 className="text-3xl font-bold mb-2">
+              Manage Sports &amp; Disciplines
+            </h1>
             <p className="text-muted-foreground">
               Create and manage movement discipline categories
             </p>
           </div>
           <Button onClick={handleCreate}>
             <Plus className="h-4 w-4 mr-2" />
-            Add Category
+            Add New Sport
           </Button>
         </div>
 
@@ -204,6 +207,13 @@ export default function AdminCategoriesPage() {
                         <Edit className="h-4 w-4 mr-2" />
                         Edit
                       </Button>
+                      <Link href={`/trickipedia/admin/${category.slug}`}>
+                        <Button variant="outline" size="sm" className="flex-1">
+                          <Edit className="h-4 w-4 mr-2" />
+                          Trick Categories
+                        </Button>
+                      </Link>
+
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
                           <Button

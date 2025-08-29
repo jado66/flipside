@@ -1,4 +1,4 @@
-// app/trickipedia/tricks/[slug]/page.tsx - Updated version with permissions
+// app/trickipedia/tricks/[trickslug]/page.tsx - Updated version with permissions
 "use client";
 
 import { useEffect, useState } from "react";
@@ -78,7 +78,7 @@ const DIFFICULTY_COLORS = {
 export default function TrickDetailPage() {
   const params = useParams();
   const router = useRouter();
-  const slug = params.slug as string;
+  const trickslug = params.trick_slug as string;
   const { user, hasModeratorAccess } = useAuth();
   const [trick, setTrick] = useState<Trick | null>(null);
   const [loading, setLoading] = useState(true);
@@ -89,7 +89,7 @@ export default function TrickDetailPage() {
   useEffect(() => {
     const loadTrick = async () => {
       try {
-        const data = await getTrickBySlug(slug);
+        const data = await getTrickBySlug(trickslug);
         setTrick(data);
         if (data) {
           setLikeCount(data.like_count);
@@ -116,7 +116,7 @@ export default function TrickDetailPage() {
     };
 
     loadTrick();
-  }, [slug, user]);
+  }, [trickslug, user]);
 
   const handleLike = async () => {
     if (!trick || !user) {
@@ -303,7 +303,9 @@ export default function TrickDetailPage() {
                   {canEdit && (
                     <>
                       <Button variant="outline" size="sm" asChild>
-                        <Link href={`/trickipedia/tricks/${trick.slug}/edit`}>
+                        <Link
+                          href={`/trickipedia/tricks/${trick.trickslug}/edit`}
+                        >
                           <Edit className="h-4 w-4 mr-2" />
                           Edit
                         </Link>

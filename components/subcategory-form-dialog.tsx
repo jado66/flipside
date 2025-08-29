@@ -16,65 +16,39 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   createSubcategory,
   updateSubcategory,
   type Subcategory,
 } from "@/lib/subcategories-data";
-import {
-  getMasterCategories,
-  type MasterCategory,
-} from "@/lib/categories-data";
 
 interface SubcategoryFormDialogProps {
   subcategory: Subcategory | null;
   open: boolean;
   onClose: () => void;
+  masterCategoryId: string | null;
 }
 
 export function SubcategoryFormDialog({
   subcategory,
   open,
   onClose,
+  masterCategoryId,
 }: SubcategoryFormDialogProps) {
   const [formData, setFormData] = useState({
-    master_category_id: "",
     name: "",
     description: "",
     slug: "",
     sort_order: 1,
     is_active: true,
   });
-  const [masterCategories, setMasterCategories] = useState<MasterCategory[]>(
-    []
-  );
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const loadMasterCategories = async () => {
-      try {
-        const categories = await getMasterCategories();
-        setMasterCategories(categories);
-      } catch (error) {
-        console.error("Failed to load master categories:", error);
-      }
-    };
-    loadMasterCategories();
-  }, []);
-
-  useEffect(() => {
     if (subcategory) {
       setFormData({
-        master_category_id: subcategory.master_category_id,
         name: subcategory.name,
         description: subcategory.description ?? "",
         slug: subcategory.slug,
@@ -83,7 +57,6 @@ export function SubcategoryFormDialog({
       });
     } else {
       setFormData({
-        master_category_id: "",
         name: "",
         description: "",
         slug: "",
@@ -122,7 +95,11 @@ export function SubcategoryFormDialog({
       if (subcategory) {
         await updateSubcategory(subcategory.id, formData);
       } else {
-        await createSubcategory(formData);
+        // Include the master_category_id from the prop when creating
+        await createSubcategory({
+          ...formData,
+          master_category_id: masterCategoryId || "",
+        });
       }
       onClose();
     } catch (err) {
@@ -137,12 +114,12 @@ export function SubcategoryFormDialog({
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>
-            {subcategory ? "Edit Subcategory" : "Create Subcategory"}
+            {subcategory ? "Edit Trick Category" : "Create Trick Category"}
           </DialogTitle>
           <DialogDescription>
             {subcategory
-              ? "Update the subcategory details below."
-              : "Add a new subcategory to a discipline."}
+              ? "Update the trick category details below."
+              : "Add a new trick category to a discipline."}
           </DialogDescription>
         </DialogHeader>
 
@@ -152,33 +129,6 @@ export function SubcategoryFormDialog({
               <AlertDescription>{error}</AlertDescription>
             </Alert>
           )}
-
-          <div className="space-y-2">
-            <Label htmlFor="master_category_id">Master Category</Label>
-            <Select
-              value={formData.master_category_id}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, master_category_id: value }))
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a category" />
-              </SelectTrigger>
-              <SelectContent>
-                {masterCategories.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    <div className="flex items-center gap-2">
-                      <div
-                        className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: category.color || "" }}
-                      />
-                      {category.name}
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">

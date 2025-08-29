@@ -70,3 +70,17 @@ export interface UserHubSchedule {
   created_at: string;
   updated_at: string;
 }
+
+export interface MasterCategory {
+  id: string;
+  name: string;
+  description: string | null;
+  slug: string;
+  icon_name: string | null;
+  color: string | null;
+  sort_order: number;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  trick_count?: number;
+}

@@ -18,13 +18,13 @@ export interface Subcategory {
   };
 }
 
-// Get subcategories by master category ID
 export async function getSubcategoriesByMasterCategory(
-  masterCategoryId: string
+  masterCategoryId: string,
+  includeInactive = true
 ): Promise<Subcategory[]> {
   const supabase = await createClient();
 
-  const { data, error } = await supabase
+  let query = supabase
     .from("subcategories")
     .select(
       `
@@ -34,8 +34,13 @@ export async function getSubcategoriesByMasterCategory(
     `
     )
     .eq("master_category_id", masterCategoryId)
-    .eq("is_active", true)
     .order("sort_order");
+
+  if (!includeInactive) {
+    query = query.eq("is_active", true);
+  }
+
+  const { data, error } = await query;
 
   if (error) {
     console.error("Error fetching subcategories by master category:", error);
@@ -115,7 +120,7 @@ export async function getSubcategoryBySlug(
 export async function createSubcategory(
   data: Omit<
     Subcategory,
-    "id" | "created_at" | "updated_at" | "master_category"
+    "id" | "created_at" | "updated_at" | "master_category" | "trick_count"
   >
 ): Promise<Subcategory> {
   const supabase = await createClient();
@@ -146,7 +151,12 @@ export async function createSubcategory(
 // Update subcategory
 export async function updateSubcategory(
   id: string,
-  data: Partial<Subcategory>
+  data: Partial<
+    Omit<
+      Subcategory,
+      "id" | "created_at" | "updated_at" | "master_category" | "trick_count"
+    >
+  >
 ): Promise<Subcategory> {
   const supabase = await createClient();
 

@@ -39,9 +39,9 @@ export interface Trick {
     };
   };
   author?: {
-    username: string;
-    full_name?: string | null;
-    avatar_url?: string | null;
+    first_name: string;
+    last_name: string;
+    profile_image_url?: string | null;
   };
 }
 
@@ -61,23 +61,51 @@ export async function getTricks(filters?: {
     .select(
       `
       *,
-      subcategory:subcategories(
+      subcategory:subcategories!inner(
         name,
         slug,
-        master_category:master_categories(name, slug, color)
+        master_category:master_categories!inner(name, slug, color)
       ),
-      author:users(username, full_name, avatar_url)
-    `
+      author:users(first_name, last_name, profile_image_url)
+    `,
+      { count: "exact" }
     )
     .eq("is_published", true);
 
-  // Apply filters
+  // Apply filters - first get subcategory_id if filtering by subcategory slug
   if (filters?.subcategory) {
-    query = query.eq("subcategories.slug", filters.subcategory);
+    // First, get the subcategory by slug to get its ID
+    const { data: subcategoryData } = await supabase
+      .from("subcategories")
+      .select("id")
+      .eq("slug", filters.subcategory)
+      .single();
+
+    if (subcategoryData) {
+      query = query.eq("subcategory_id", subcategoryData.id);
+    }
   }
 
-  if (filters?.category) {
-    query = query.eq("subcategories.master_categories.slug", filters.category);
+  // For category filter, we need to join through subcategories
+  if (filters?.category && !filters?.subcategory) {
+    // Get all subcategories for this category
+    const { data: categoryData } = await supabase
+      .from("master_categories")
+      .select("id")
+      .eq("slug", filters.category)
+      .single();
+
+    if (categoryData) {
+      const { data: subcategoriesData } = await supabase
+        .from("subcategories")
+        .select("id")
+        .eq("master_category_id", categoryData.id);
+
+      if (subcategoriesData && subcategoriesData.length > 0) {
+        const subcategoryIds = subcategoriesData.map((s) => s.id);
+        query = query.in("subcategory_id", subcategoryIds);
+      }
+    }
   }
 
   if (filters?.difficulty) {
@@ -87,34 +115,6 @@ export async function getTricks(filters?: {
   if (filters?.search) {
     query = query.textSearch("search_text", filters.search);
   }
-
-  // Get total count first (separate query for count)
-  let countQuery = supabase
-    .from("tricks")
-    .select("*", { count: "exact", head: true })
-    .eq("is_published", true);
-
-  // Apply the same filters to count query
-  if (filters?.subcategory) {
-    countQuery = countQuery.eq("subcategories.slug", filters.subcategory);
-  }
-
-  if (filters?.category) {
-    countQuery = countQuery.eq(
-      "subcategories.master_categories.slug",
-      filters.category
-    );
-  }
-
-  if (filters?.difficulty) {
-    countQuery = countQuery.eq("difficulty_level", filters.difficulty);
-  }
-
-  if (filters?.search) {
-    countQuery = countQuery.textSearch("search_text", filters.search);
-  }
-
-  const { count } = await countQuery;
 
   // Apply pagination
   if (filters?.offset) {
@@ -126,7 +126,9 @@ export async function getTricks(filters?: {
     query = query.limit(filters.limit);
   }
 
-  const { data, error } = await query.order("updated_at", { ascending: false });
+  const { data, error, count } = await query.order("updated_at", {
+    ascending: false,
+  });
 
   if (error) {
     console.error("Error fetching tricks:", error);
@@ -153,7 +155,7 @@ export async function getTrickBySlug(slug: string): Promise<Trick | null> {
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users(username, full_name, avatar_url)
+      author:users(first_name, last_name, profile_image_url)
     `
     )
     .eq("slug", slug)
@@ -203,7 +205,7 @@ export async function createTrick(
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users(username, full_name, avatar_url)
+      author:users(first_name, last_name, profile_image_url)
     `
     )
     .single();
@@ -240,7 +242,7 @@ export async function updateTrick(
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users(username, full_name, avatar_url)
+      author:users(first_name, last_name, profile_image_url)
     `
     )
     .single();
@@ -325,4 +327,47 @@ export async function toggleTrickLike(
     .eq("id", trickId);
 
   return { liked, likeCount: count || 0 };
+}
+
+// Get navigation data with hierarchical structure for side nav
+export async function getNavigationData() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("master_categories")
+    .select(
+      `
+      id,
+      name,
+      slug,
+      icon_name,
+      color,
+      sort_order,
+      subcategories!inner(
+        id,
+        name,
+        slug,
+        sort_order,
+        tricks!inner(
+          id,
+          name,
+          slug,
+          is_published
+        )
+      )
+    `
+    )
+    .eq("is_active", true)
+    .eq("subcategories.is_active", true)
+    .eq("subcategories.tricks.is_published", true)
+    .order("sort_order")
+    .order("sort_order", { foreignTable: "subcategories" })
+    .order("name", { foreignTable: "subcategories.tricks" });
+
+  if (error) {
+    console.error("Error fetching navigation data:", error);
+    throw new Error("Failed to fetch navigation data");
+  }
+
+  return data;
 }

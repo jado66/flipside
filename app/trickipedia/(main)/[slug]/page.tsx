@@ -87,9 +87,9 @@ export default function CategoryPage() {
               The category you&apos;re looking for doesn&apos;t exist.
             </p>
             <Button asChild>
-              <Link href="/trickipedia/categories">
+              <Link href="/trickipedia/sports-and-disciplines">
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Categories
+                Back to Sports &amp; Disciplines
               </Link>
             </Button>
           </div>
@@ -106,11 +106,11 @@ export default function CategoryPage() {
         {/* Breadcrumb */}
         <div className="mb-8">
           <Link
-            href="/trickipedia/categories"
+            href="/trickipedia/sports-and-disciplines"
             className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Categories
+            Back to Sports &amp; Disciplines
           </Link>
         </div>
 
@@ -135,13 +135,13 @@ export default function CategoryPage() {
 
         {/* Subcategories */}
         <div className="mb-12">
-          <h2 className="text-2xl font-bold mb-6">Subcategories</h2>
+          <h2 className="text-2xl font-bold mb-6">Trick Categories</h2>
           {subcategories.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {subcategories.map((subcategory) => (
                 <Link
                   key={subcategory.id}
-                  href={`/trickipedia/categories/${category.slug}/${subcategory.slug}`}
+                  href={`/trickipedia/${category.slug}/${subcategory.slug}`}
                 >
                   <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group flex flex-col">
                     <CardHeader className="pb-4 flex-grow">
@@ -166,19 +166,17 @@ export default function CategoryPage() {
 
               {/* Management Card - Only visible to moderators/admins */}
               <PermissionGate requireModerator>
-                <Link
-                  href={`/trickipedia/${category.slug}/manage-subcategories`}
-                >
+                <Link href={`/trickipedia/admin/${category.slug}`}>
                   <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group flex flex-col">
                     <CardHeader className="pb-4 flex-grow">
                       <div className="flex items-center justify-between mb-2">
                         <CardTitle className="text-xl">
-                          Manage Subcategories
+                          Manage Trick Categories
                         </CardTitle>
                         <ArrowRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
                       </div>
                       <CardDescription className="text-sm text-pretty">
-                        Add, edit, and organize {category.name} subcategories
+                        Add, edit, and organize {category.name} trick categories
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="pt-0 mt-auto">
@@ -203,19 +201,17 @@ export default function CategoryPage() {
 
               {/* Management Card for empty state - Only visible to moderators/admins */}
               <PermissionGate requireModerator>
-                <Link
-                  href={`/trickipedia/categories/${category.slug}/manage-subcategories`}
-                >
+                <Link href={`/trickipedia/${category.slug}/manage-categories`}>
                   <Card className="w-full max-w-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
                     <CardHeader className="text-center pb-4">
                       <div className="w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform duration-300 bg-blue-500">
                         <Settings className="h-8 w-8 text-white" />
                       </div>
                       <CardTitle className="text-xl mb-2">
-                        Manage Subcategories
+                        Manage Trick Categories
                       </CardTitle>
                       <CardDescription className="text-sm text-pretty">
-                        Add subcategories to organize {category.name} tricks
+                        Add trick categories to organize {category.name} tricks
                       </CardDescription>
                     </CardHeader>
                     <CardContent className="text-center pt-0">
