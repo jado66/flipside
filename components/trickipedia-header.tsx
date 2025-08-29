@@ -49,7 +49,7 @@ export function TrickipediaHeader() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}{" "}
-          <Link href="/trickipedia/">
+          <Link href="/">
             <div className="flex flex-col items-center">
               <div className="flex flex-row items-center">
                 <div className="flex-shrink-0 flex items-center justify-center mr-3">
@@ -95,20 +95,26 @@ export function TrickipediaHeader() {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
-              href="/trickipedia/sports-and-disciplines"
+              href="/sports-and-disciplines"
               className="text-foreground hover:text-primary transition-colors"
             >
               Sports &amp; Disciplines
             </Link>
             <Link
+              href="/store"
+              className="text-foreground hover:text-primary transition-colors"
+            >
+              Donate
+            </Link>
+            {/* <Link
               href="/"
               className="text-foreground hover:text-primary transition-colors"
             >
               Community
-            </Link>
+            </Link> */}
           </nav>
           {/* Search Bar */}
-          <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
+          {/* <div className="hidden md:flex items-center space-x-4 flex-1 max-w-md mx-8">
             <div className="relative w-full">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -117,29 +123,23 @@ export function TrickipediaHeader() {
                 className="pl-10 bg-muted/50 border-border"
               />
             </div>
-          </div>
+          </div> */}
           {/* Action Buttons */}
           <div className="hidden md:flex items-center space-x-3">
             {user ? (
               <>
-                <Button size="sm" asChild>
-                  <Link href="/trickipedia/tricks/new">
-                    <Plus className="h-4 w-4 mr-2" />
-                    Add Trick
-                  </Link>
-                </Button>
                 <UserNav user={user} />
               </>
             ) : (
               <>
                 <Button variant="outline" size="sm" asChild>
-                  <Link href="/auth/signin">
+                  <Link href="/login">
                     <UserIcon className="h-4 w-4 mr-2" />
                     Sign In
                   </Link>
                 </Button>
                 <Button size="sm" asChild>
-                  <Link href="/auth/signup">
+                  <Link href="/login">
                     <Plus className="h-4 w-4 mr-2" />
                     Join Now
                   </Link>
@@ -179,18 +179,18 @@ export function TrickipediaHeader() {
               {/* Mobile Navigation */}
               <nav className="flex flex-col space-y-2">
                 <Link
-                  href="/trickipedia/tricks"
+                  href="/tricks"
                   className="text-foreground hover:text-primary transition-colors py-2"
                 >
                   Tricks
                 </Link>
                 <Link
-                  href="/trickipedia/sports-and-disciplines"
+                  href="/sports-and-disciplines"
                   className="text-foreground hover:text-primary transition-colors py-2"
                 >
                   Sports &amp; Disciplines
                 </Link>
-                <Link
+                {/* <Link
                   href="/"
                   className="text-foreground hover:text-primary transition-colors py-2"
                 >
@@ -201,7 +201,7 @@ export function TrickipediaHeader() {
                   className="text-foreground hover:text-primary transition-colors py-2"
                 >
                   About
-                </Link>
+                </Link> */}
               </nav>
 
               {/* Mobile Action Buttons */}
@@ -216,12 +216,7 @@ export function TrickipediaHeader() {
                         </p>
                       </div>
                     </div>
-                    <Button size="sm" asChild>
-                      <Link href="/trickipedia/tricks/new">
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Trick
-                      </Link>
-                    </Button>
+
                     <Button variant="outline" size="sm" asChild>
                       <Link href="/profile">
                         <UserIcon className="h-4 w-4 mr-2" />
@@ -244,13 +239,13 @@ export function TrickipediaHeader() {
                 ) : (
                   <>
                     <Button variant="outline" size="sm" asChild>
-                      <Link href="/auth/signin">
+                      <Link href="/login">
                         <UserIcon className="h-4 w-4 mr-2" />
                         Sign In
                       </Link>
                     </Button>
                     <Button size="sm" asChild>
-                      <Link href="/auth/signup">
+                      <Link href="/login">
                         <Plus className="h-4 w-4 mr-2" />
                         Join Now
                       </Link>

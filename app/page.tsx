@@ -1,74 +1,64 @@
-import { HeroSection } from "@/components/hero-section";
-import { FeaturesSection } from "@/components/features-section";
-import { CTASection } from "@/components/cta-section";
-import { MainNav } from "@/components/main-nav";
+import { FeaturedCategories } from "@/components/featured-categories";
+import { RecentTricks } from "@/components/recent-tricks";
+import { CommunityStats } from "@/components/community-stats";
+import { TrickipediaHeroSection } from "@/components/trickipedia-hero-section";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TrickipediaHeader } from "@/components/trickipedia-header";
+import { InstallPWAButton } from "@/components/install-pwa-button";
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarInset,
+} from "@/components/ui/sidebar";
+import { MasterSideNav } from "@/components/side-nav";
 
 export default function HomePage() {
   return (
     <ThemeProvider
       attribute="class"
-      defaultTheme="flipside"
-      themes={["flipside", "trickipedia"]}
+      defaultTheme="trickipedia"
+      themes={["trickipedia"]}
     >
-      <div className="min-h-screen">
-        <MainNav />
-        <main>
-          <HeroSection />
-          <FeaturesSection />
-          <CTASection />
-        </main>
-        <footer className="bg-muted py-12">
-          <div className="container mx-auto px-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-              <div className="space-y-4">
-                <div className="flex items-center space-x-2">
-                  <div className="w-8 h-8 bg-orange-600 rounded-lg flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">FS</span>
-                  </div>
-                  <span className="text-xl font-bold text-orange-600">
-                    Flipside
+      <TrickipediaHeader />
+
+      <SidebarProvider defaultOpen={true}>
+        <div className="flex min-h-screen w-full bg-background">
+          <Sidebar className="hidden md:flex md:w-65 border-r bg-muted/10">
+            <MasterSideNav />
+          </Sidebar>
+          <SidebarInset className="flex-1">
+            <main>
+              <TrickipediaHeroSection />
+              {/* Get the App Section */}
+              <section className="w-full flex flex-col items-center py-8 px-4">
+                <div className="max-w-xl w-full text-center bg-card rounded-xl shadow-lg p-6 mb-8">
+                  <h2 className="text-2xl font-bold mb-2">Get the App</h2>
+                  <p className="mb-4 text-muted-foreground">
+                    Install Flipside on your device for the best experience. Tap
+                    the <span className="font-semibold">Share</span> icon and
+                    choose{" "}
+                    <span className="font-semibold">Add to Home Screen</span> on
+                    mobile, or use your browser&apos;s install option on
+                    desktop.
+                  </p>
+                  <img
+                    src="/favicon/android-chrome-192x192.png"
+                    alt="Flipside App Icon"
+                    className="mx-auto mb-2 w-16 h-16 rounded"
+                  />
+                  <InstallPWAButton />
+                  <span className="text-xs text-muted-foreground block mt-2">
+                    PWA enabled for offline access
                   </span>
                 </div>
-                <p className="text-muted-foreground">
-                  Connecting the action sports community through hubs, events,
-                  and shared passion for movement.
-                </p>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-4">Platform</h3>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li>Find Hubs</li>
-                  <li>Browse Events</li>
-                  <li>Schedule Training</li>
-                  <li>Connect Athletes</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-4">Sports</h3>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li>Parkour</li>
-                  <li>Trampoline</li>
-                  <li>Tricking</li>
-                  <li>Freerunning</li>
-                </ul>
-              </div>
-              <div>
-                <h3 className="font-semibold mb-4">Support</h3>
-                <ul className="space-y-2 text-muted-foreground">
-                  <li>Help Center</li>
-                  <li>Community Guidelines</li>
-                  <li>Contact Us</li>
-                  <li>Privacy Policy</li>
-                </ul>
-              </div>
-            </div>
-            <div className="border-t mt-8 pt-8 text-center text-muted-foreground">
-              <p>&copy; 2024 Flipside. All rights reserved.</p>
-            </div>
-          </div>
-        </footer>
-      </div>
+              </section>
+              <FeaturedCategories />
+              <RecentTricks />
+              <CommunityStats />
+            </main>
+          </SidebarInset>
+        </div>
+      </SidebarProvider>
     </ThemeProvider>
   );
 }

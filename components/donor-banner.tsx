@@ -33,7 +33,7 @@ export function DonorBanner() {
             </p>
 
             <div className="flex flex-wrap gap-2">
-              <Link href="/trickipedia/store">
+              <Link href="/store">
                 <Button
                   size="sm"
                   className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
@@ -41,7 +41,7 @@ export function DonorBanner() {
                   $2.75
                 </Button>
               </Link>
-              <Link href="/trickipedia/store">
+              <Link href="/store">
                 <Button
                   size="sm"
                   className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
@@ -49,7 +49,7 @@ export function DonorBanner() {
                   $5
                 </Button>
               </Link>
-              <Link href="/trickipedia/store">
+              <Link href="/store">
                 <Button
                   size="sm"
                   className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
@@ -57,7 +57,7 @@ export function DonorBanner() {
                   $10
                 </Button>
               </Link>
-              <Link href="/trickipedia/store">
+              <Link href="/store">
                 <Button
                   size="sm"
                   className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"
@@ -65,7 +65,7 @@ export function DonorBanner() {
                   $20
                 </Button>
               </Link>
-              <Link href="/trickipedia/store">
+              <Link href="/store">
                 <Button
                   size="sm"
                   className="bg-[#0645ad] hover:bg-[#0b0080] text-white text-xs px-3 py-1 h-auto font-normal"

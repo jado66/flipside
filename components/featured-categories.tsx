@@ -67,7 +67,7 @@ export function FeaturedCategories() {
           {categories.map((category) => {
             const IconComponent = category.icon;
             return (
-              <Link key={category.id} href={`/trickipedia/${category.slug}`}>
+              <Link key={category.id} href={`/${category.slug}`}>
                 <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">
                   <CardHeader className="text-center pb-4">
                     <div

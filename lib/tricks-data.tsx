@@ -28,6 +28,9 @@ export interface Trick {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  // New inventor fields
+  inventor_user_id: string | null;
+  inventor_name: string | null;
   // Joined data
   subcategory?: {
     name: string;
@@ -43,6 +46,12 @@ export interface Trick {
     last_name: string;
     profile_image_url?: string | null;
   };
+  inventor?: {
+    first_name: string;
+    last_name: string;
+    username?: string | null;
+    profile_image_url?: string | null;
+  };
 }
 
 // Get tricks with filters
@@ -51,6 +60,8 @@ export async function getTricks(filters?: {
   subcategory?: string;
   difficulty?: number;
   search?: string;
+  inventor_user_id?: string;
+  inventor_name?: string;
   limit?: number;
   offset?: number;
 }): Promise<{ tricks: Trick[]; total: number }> {
@@ -66,7 +77,8 @@ export async function getTricks(filters?: {
         slug,
         master_category:master_categories!inner(name, slug, color)
       ),
-      author:users(first_name, last_name, profile_image_url)
+      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
+      inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `,
       { count: "exact" }
     )
@@ -116,6 +128,15 @@ export async function getTricks(filters?: {
     query = query.textSearch("search_text", filters.search);
   }
 
+  // Filter by inventor
+  if (filters?.inventor_user_id) {
+    query = query.eq("inventor_user_id", filters.inventor_user_id);
+  }
+
+  if (filters?.inventor_name) {
+    query = query.eq("inventor_name", filters.inventor_name);
+  }
+
   // Apply pagination
   if (filters?.offset) {
     query = query.range(
@@ -155,7 +176,8 @@ export async function getTrickBySlug(slug: string): Promise<Trick | null> {
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users(first_name, last_name, profile_image_url)
+      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
+      inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `
     )
     .eq("slug", slug)
@@ -184,6 +206,7 @@ export async function createTrick(
     | "like_count"
     | "subcategory"
     | "author"
+    | "inventor"
   >
 ): Promise<Trick> {
   const supabase = await createClient();
@@ -205,7 +228,8 @@ export async function createTrick(
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users(first_name, last_name, profile_image_url)
+      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
+      inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `
     )
     .single();
@@ -242,7 +266,8 @@ export async function updateTrick(
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users(first_name, last_name, profile_image_url)
+      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
+      inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `
     )
     .single();
@@ -370,4 +395,157 @@ export async function getNavigationData() {
   }
 
   return data;
+}
+
+// Get all users for inventor selection in forms
+export async function getUsers(): Promise<
+  {
+    id: string;
+    first_name: string;
+    last_name: string;
+    username?: string | null;
+  }[]
+> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("users")
+    .select("id, first_name, last_name, username")
+    .order("first_name");
+
+  if (error) {
+    console.error("Error fetching users:", error);
+    throw new Error("Failed to fetch users");
+  }
+
+  return data || [];
+}
+
+// Get tricks by inventor (both user and name inventors)
+export async function getTricksByInventor(
+  inventorType: "user" | "name",
+  inventorId: string,
+  filters?: {
+    limit?: number;
+    offset?: number;
+  }
+): Promise<{ tricks: Trick[]; total: number }> {
+  const supabase = await createClient();
+
+  let query = supabase
+    .from("tricks")
+    .select(
+      `
+      *,
+      subcategory:subcategories(
+        name,
+        slug,
+        master_category:master_categories(name, slug, color)
+      ),
+      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
+      inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
+    `,
+      { count: "exact" }
+    )
+    .eq("is_published", true);
+
+  if (inventorType === "user") {
+    query = query.eq("inventor_user_id", inventorId);
+  } else {
+    query = query.eq("inventor_name", inventorId);
+  }
+
+  // Apply pagination
+  if (filters?.offset) {
+    query = query.range(
+      filters.offset,
+      filters.offset + (filters?.limit || 20) - 1
+    );
+  } else if (filters?.limit) {
+    query = query.limit(filters.limit);
+  }
+
+  const { data, error, count } = await query.order("updated_at", {
+    ascending: false,
+  });
+
+  if (error) {
+    console.error("Error fetching tricks by inventor:", error);
+    throw new Error("Failed to fetch tricks by inventor");
+  }
+
+  return {
+    tricks: data || [],
+    total: count || 0,
+  };
+}
+
+// Get unique inventors from all tricks (for filtering/search)
+export async function getInventors(): Promise<{
+  users: {
+    id: string;
+    name: string;
+    first_name: string;
+    last_name: string;
+    username?: string | null;
+  }[];
+  names: string[];
+}> {
+  const supabase = await createClient();
+
+  // Get user inventors
+  const { data: userInventors, error: userError } = await supabase
+    .from("tricks")
+    .select(
+      `
+      inventor_user_id,
+      inventor:users!tricks_inventor_user_id_fkey(id, first_name, last_name, username)
+    `
+    )
+    .not("inventor_user_id", "is", null)
+    .eq("is_published", true);
+
+  if (userError) {
+    console.error("Error fetching user inventors:", userError);
+  }
+
+  // Get name inventors
+  const { data: nameInventors, error: nameError } = await supabase
+    .from("tricks")
+    .select("inventor_name")
+    .not("inventor_name", "is", null)
+    .eq("is_published", true);
+
+  if (nameError) {
+    console.error("Error fetching name inventors:", nameError);
+  }
+
+  // Process user inventors
+  const uniqueUserInventors = new Map();
+  (userInventors || []).forEach((trick: any) => {
+    if (trick.inventor) {
+      const inventor = trick.inventor;
+      uniqueUserInventors.set(inventor.id, {
+        id: inventor.id,
+        name:
+          inventor.username || `${inventor.first_name} ${inventor.last_name}`,
+        first_name: inventor.first_name,
+        last_name: inventor.last_name,
+        username: inventor.username,
+      });
+    }
+  });
+
+  // Process name inventors
+  const uniqueNameInventors = new Set();
+  (nameInventors || []).forEach((trick: any) => {
+    if (trick.inventor_name) {
+      uniqueNameInventors.add(trick.inventor_name);
+    }
+  });
+
+  return {
+    users: Array.from(uniqueUserInventors.values()),
+    names: Array.from(uniqueNameInventors) as string[],
+  };
 }

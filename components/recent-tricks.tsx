@@ -102,7 +102,7 @@ export function RecentTricks() {
             asChild
             className="hidden sm:flex bg-transparent"
           >
-            <Link href="/trickipedia/tricks">
+            <Link href="/tricks">
               View All Tricks
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -111,7 +111,7 @@ export function RecentTricks() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {tricks.map((trick) => (
-            <Link key={trick.id} href={`/trickipedia/tricks/${trick.slug}`}>
+            <Link key={trick.id} href={`/tricks/${trick.slug}`}>
               <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden">
                 <div className="aspect-video relative overflow-hidden">
                   <img
@@ -195,7 +195,7 @@ export function RecentTricks() {
 
         <div className="text-center mt-8 sm:hidden">
           <Button variant="outline" asChild>
-            <Link href="/trickipedia/tricks">
+            <Link href="/tricks">
               View All Tricks
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

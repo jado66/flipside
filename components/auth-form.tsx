@@ -25,8 +25,9 @@ import {
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { cn } from "@/lib/utils";
 
-export function AuthForm() {
+export function AuthForm({ trickipedia = false }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [firstName, setFirstName] = useState("");
@@ -51,7 +52,7 @@ export function AuthForm() {
 
       if (error) throw error;
 
-      router.push("/dashboard");
+      router.push(trickipedia ? "/dashboard" : "/sports-and-disciplines");
       router.refresh();
     } catch (error: any) {
       setError(error.message);
@@ -102,8 +103,13 @@ export function AuthForm() {
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-orange-600">
-            Flipside
+          <CardTitle
+            className={cn(
+              "text-2xl font-bold ",
+              trickipedia ? "text-grey-600" : "text-orange-600"
+            )}
+          >
+            {trickipedia ? "Trickipedia" : "Flipside"}
           </CardTitle>
           <CardDescription>Join the action sports community</CardDescription>
         </CardHeader>
@@ -153,7 +159,7 @@ export function AuthForm() {
                 )}
                 <Button
                   type="submit"
-                  className="w-full bg-orange-600 hover:bg-orange-700"
+                  className={cn("w-full")}
                   disabled={loading}
                 >
                   {loading ? "Signing In..." : "Sign In"}

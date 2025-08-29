@@ -1,4 +1,3 @@
-
 @import "tailwindcss";
 @import "tw-animate-css";
 
@@ -6,6 +5,7 @@
 
 .flipside {
   /* Flipside theme variables */
+  --sidebar-width: 10rem;
   --radius: 0.625rem;
   --background: oklch(0.147 0.004 49.25);
   --foreground: oklch(0.985 0.001 106.423);
@@ -99,7 +99,9 @@
   --accent: oklch(0.7 0.18 330); /* Lighter accent for dark mode */
   --accent-foreground: oklch(0.15 0.02 258); /* Dark text on accent */
   --destructive: oklch(0.6 0.2 25); /* Lighter destructive for dark mode */
-  --destructive-foreground: oklch(0.95 0.005 258); /* Light text on destructive */
+  --destructive-foreground: oklch(
+    0.95 0.005 258
+  ); /* Light text on destructive */
   --border: oklch(0.25 0.02 258); /* Dark border */
   --input: oklch(0.22 0.02 258); /* Dark input background */
   --ring: oklch(0.4 0.1 195 / 0.5); /* Focus ring for dark mode */

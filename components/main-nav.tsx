@@ -23,7 +23,7 @@ const navigation = [
   { name: "Hubs", href: "/hubs", icon: MapPin },
   { name: "Events", href: "/events", icon: Calendar },
   { name: "Schedule", href: "/schedule", icon: Clock },
-  { name: "Trickipedia", href: "/trickipedia", icon: BookOpenText },
+  { name: "Trickipedia", href: "", icon: BookOpenText },
 ];
 
 export function MainNav() {
