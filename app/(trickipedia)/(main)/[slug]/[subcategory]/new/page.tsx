@@ -266,6 +266,9 @@ export default function AddTrickPage() {
           tips: step.tips.filter((t) => t.trim()),
         })),
         created_by: user.id,
+        image_urls: [], // Add appropriate image URLs or leave empty
+        inventor_user_id: null, // Replace with actual user ID if available
+        inventor_name: "", // Replace with actual name if available
       };
 
       const newTrick = await createTrick(submitData);

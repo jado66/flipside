@@ -9,29 +9,7 @@ import { getTrickBySlug, updateTrick, type Trick } from "@/lib/tricks-data";
 import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
 import { TrickForm } from "@/components/trick-form";
-
-// Define the TrickData interface to match your form structure
-interface TrickData {
-  subcategory_id: string;
-  name: string;
-  slug: string;
-  description: string;
-  difficulty_level: number;
-  prerequisites: string[];
-  step_by_step_guide: Array<{
-    step: number;
-    title: string;
-    description: string;
-    tips: string[];
-  }>;
-  tips_and_tricks: string;
-  common_mistakes: string;
-  safety_notes: string;
-  video_urls: string[];
-  image_urls: string[];
-  tags: string[];
-  is_published: boolean;
-}
+import { TrickData } from "@/types/trick";
 
 export default function TrickEditPage() {
   const router = useRouter();

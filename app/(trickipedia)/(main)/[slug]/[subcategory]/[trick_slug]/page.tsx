@@ -217,42 +217,6 @@ export default function TrickDetailPage() {
           {/* Main Content */}
           <div className="lg:col-span-3 space-y-8">
             <div className="space-y-6">
-              <div className="flex flex-wrap items-center gap-3">
-                <div
-                  className="w-3 h-3 rounded-full"
-                  style={{
-                    backgroundColor:
-                      trick.subcategory?.master_category.color || "#6b7280",
-                  }}
-                />
-                <Badge variant="secondary" className="font-medium">
-                  {trick.subcategory?.master_category.name}
-                </Badge>
-                <Badge variant="outline" className="font-medium">
-                  {trick.subcategory?.name}
-                </Badge>
-                <div className="flex items-center gap-2">
-                  <div
-                    className={`w-7 h-7 ${
-                      DIFFICULTY_COLORS[
-                        trick.difficulty_level as keyof typeof DIFFICULTY_COLORS
-                      ]
-                    } rounded-full flex items-center justify-center shadow-sm`}
-                  >
-                    <span className="text-white text-sm font-bold">
-                      {trick.difficulty_level}
-                    </span>
-                  </div>
-                  <Badge variant="secondary" className="font-medium">
-                    {
-                      DIFFICULTY_LABELS[
-                        trick.difficulty_level as keyof typeof DIFFICULTY_LABELS
-                      ]
-                    }
-                  </Badge>
-                </div>
-              </div>
-
               <div>
                 <h1 className="text-4xl lg:text-5xl font-bold text-balance mb-4 leading-tight">
                   {trick.name}
@@ -264,7 +228,6 @@ export default function TrickDetailPage() {
 
               {trick.image_urls && trick.image_urls.length > 0 && (
                 <div className="space-y-4">
-                  <h2 className="text-2xl font-semibold">Visual Guide</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {trick.image_urls.map((url, index) => (
                       <div
@@ -384,50 +347,67 @@ export default function TrickDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                {trick.step_by_step_guide &&
+                {Array.isArray(trick.step_by_step_guide) &&
                 trick.step_by_step_guide.length > 0 ? (
                   <div className="space-y-6">
-                    {trick.step_by_step_guide.map((step, index) => (
-                      <div key={step.step} className="relative">
-                        {index < trick.step_by_step_guide.length - 1 && (
-                          <div className="absolute left-6 top-12 w-0.5 h-full bg-border" />
-                        )}
-                        <div className="flex gap-4">
-                          <div className="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg">
-                            {step.step}
-                          </div>
-                          <div className="flex-1 space-y-3">
-                            <h3 className="text-xl font-semibold leading-tight">
-                              {step.title}
-                            </h3>
-                            <p className="text-muted-foreground leading-relaxed">
-                              {step.description}
-                            </p>
-                            {step.tips && step.tips.length > 0 && (
-                              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                <h4 className="text-sm font-semibold mb-2 flex items-center gap-2 text-blue-900">
-                                  <Lightbulb className="h-4 w-4" />
-                                  Pro Tips
-                                </h4>
-                                <ul className="space-y-1">
-                                  {step.tips.map((tip, tipIndex) => (
-                                    <li
-                                      key={tipIndex}
-                                      className="text-sm text-blue-800 flex items-start gap-2"
-                                    >
-                                      <span className="text-blue-400 mt-1">
-                                        •
-                                      </span>
-                                      <span>{tip}</span>
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
+                    {trick.step_by_step_guide.map((step, index) => {
+                      // Defensive: ensure step number, title, description, tips[]
+                      const stepNum =
+                        typeof step.step === "number" ? step.step : index + 1;
+                      const title = step.title || `Step ${stepNum}`;
+                      const description = step.description || "";
+                      let tips = step.tips;
+                      if (!Array.isArray(tips)) {
+                        // @ts-ignore
+                        if (typeof tips === "string" && tips.trim()) {
+                          tips = [tips];
+                        } else {
+                          tips = [];
+                        }
+                      }
+                      return (
+                        <div key={stepNum} className="relative">
+                          {trick.step_by_step_guide &&
+                            index < trick.step_by_step_guide.length - 1 && (
+                              <div className="absolute left-6 top-12 w-0.5 h-full bg-border" />
                             )}
+                          <div className="flex gap-4">
+                            <div className="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg">
+                              {stepNum}
+                            </div>
+                            <div className="flex-1 space-y-3">
+                              <h3 className="text-xl font-semibold leading-tight">
+                                {title}
+                              </h3>
+                              <p className="text-muted-foreground leading-relaxed">
+                                {description}
+                              </p>
+                              {tips.length > 0 && (
+                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2 text-blue-900">
+                                    <Lightbulb className="h-4 w-4" />
+                                    Pro Tips
+                                  </h4>
+                                  <ul className="space-y-1">
+                                    {tips.map((tip, tipIndex) => (
+                                      <li
+                                        key={tipIndex}
+                                        className="text-sm text-blue-800 flex items-start gap-2"
+                                      >
+                                        <span className="text-blue-400 mt-1">
+                                          •
+                                        </span>
+                                        <span>{tip}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <p className="text-muted-foreground text-center py-8">
@@ -556,6 +536,28 @@ export default function TrickDetailPage() {
                 </CardContent>
               </Card>
             )}
+
+            <p className="font-medium">
+              Post by{" "}
+              {trick.author
+                ? `${trick.author.first_name} ${trick.author.last_name}`
+                : "Unknown Author"}{" "}
+              on{" "}
+              {new Date(trick.created_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
+            {/* last edited */}
+            <p className="text-sm text-muted-foreground">
+              Last edited on{" "}
+              {new Date(trick.updated_at).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </p>
           </div>
 
           <div className="space-y-6">
@@ -569,28 +571,7 @@ export default function TrickDetailPage() {
               <CardContent className="space-y-4">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Created
-                  </p>
-                  {trick.author && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <img
-                        src={
-                          trick.author?.profile_image_url || "/placeholder.svg"
-                        }
-                        alt={`${trick.author.first_name} ${trick.author.last_name}`}
-                        className="w-5 h-5 rounded-full"
-                      />
-                      <span className="text-xs text-muted-foreground">
-                        by {trick.author.first_name} {trick.author.last_name}
-                      </span>
-                    </div>
-                  )}
-                  <p className="font-medium">
-                    {new Date(trick.created_at).toLocaleDateString("en-US", {
-                      year: "numeric",
-                      month: "long",
-                      day: "numeric",
-                    })}
+                    Invented by {trick.inventor_name}
                   </p>
                 </div>
                 <Separator />
@@ -622,7 +603,7 @@ export default function TrickDetailPage() {
               </CardContent>
             </Card>
 
-            <Card>
+            {/* <Card>
               <CardHeader>
                 <CardTitle>Related Tricks</CardTitle>
                 <CardDescription>More tricks you might like</CardDescription>
@@ -632,22 +613,17 @@ export default function TrickDetailPage() {
                   Related tricks coming soon...
                 </p>
               </CardContent>
-            </Card>
+            </Card> */}
 
             <Card>
-              <CardContent className="pt-6">
-                <Button
-                  asChild
-                  variant="outline"
-                  className="w-full bg-transparent"
+              <CardContent className="flex flex-row align-center">
+                <Link
+                  href={`/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}`}
+                  className="flex items-center justify-center gap-2 px-4 py-2 bg-muted/30 rounded-lg hover:bg-muted transition-colors"
                 >
-                  <Link
-                    href={`/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}`}
-                  >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to {trick.subcategory?.name}
-                  </Link>
-                </Button>
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to {trick.subcategory?.name}</span>
+                </Link>
               </CardContent>
             </Card>
           </div>

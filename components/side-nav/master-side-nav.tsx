@@ -229,7 +229,8 @@ export function MasterSideNav() {
                 ) : (
                   categories.map((category) => {
                     const Icon =
-                      iconMap[category.icon_name] || iconMap["circle"];
+                      iconMap[category.icon_name ?? "circle"] ||
+                      iconMap["circle"];
                     const isCategoryExpanded = expandedItems.has(category.slug);
                     return (
                       <SidebarMenuItem key={category.slug}>

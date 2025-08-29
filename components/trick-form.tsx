@@ -33,7 +33,10 @@ import {
   ImageIcon,
   Tag,
   User,
+  PlusIcon,
 } from "lucide-react";
+import { Separator } from "./ui/separator";
+import { TrickData } from "@/types/trick";
 
 interface StepGuide {
   step: number;
@@ -47,24 +50,6 @@ interface User {
   first_name: string;
   last_name: string;
   username?: string;
-}
-
-interface TrickData {
-  id?: string;
-  name: string;
-  description: string;
-  difficulty_level: number;
-  prerequisites: string[];
-  step_by_step_guide: StepGuide[];
-  tips_and_tricks: string;
-  common_mistakes: string;
-  safety_notes: string;
-  video_urls: string[];
-  image_urls: string[];
-  tags: string[];
-  is_published: boolean;
-  inventor_user_id?: string | null;
-  inventor_name?: string | null;
 }
 
 export interface TrickFormProps {
@@ -83,6 +68,14 @@ export function TrickForm({
   users = [],
 }: TrickFormProps) {
   const [formData, setFormData] = useState<TrickData>(trick);
+  // Always set published to true for now
+  useEffect(() => {
+    setFormData((prev) => ({ ...prev, is_published: true }));
+  }, []);
+
+  const [showPrerequisites, setShowPrerequisites] = useState(false);
+  const [showStepGuide, setShowStepGuide] = useState(false);
+  const [showTipsAndTricks, setShowTipsAndTricks] = useState(false);
   const [openSections, setOpenSections] = useState<string[]>(["basic"]);
   const [inventorType, setInventorType] = useState<"none" | "user" | "name">(
     trick.inventor_user_id ? "user" : trick.inventor_name ? "name" : "none"
@@ -332,57 +325,13 @@ export function TrickForm({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-8">
-        {mode === "view" ? (
-          <div className="space-y-4">
-            <h1 className="text-3xl font-bold text-balance">{formData.name}</h1>
-            <div className="flex items-center gap-4 flex-wrap">
-              <Badge className={getDifficultyColor(formData.difficulty_level)}>
-                <Star className="h-3 w-3 mr-1" />
-                {getDifficultyLabel(formData.difficulty_level)} (
-                {formData.difficulty_level}/10)
-              </Badge>
-              {formData.is_published && (
-                <Badge variant="default">Published</Badge>
-              )}
-              {getInventorDisplayName() && (
-                <Badge variant="outline">
-                  <User className="h-3 w-3 mr-1" />
-                  Invented by {getInventorDisplayName()}
-                </Badge>
-              )}
-              {formData.tags
-                .filter(Boolean)
-                .slice(0, 3)
-                .map((tag, idx) => (
-                  <Badge key={idx} variant="outline">
-                    {tag}
-                  </Badge>
-                ))}
-            </div>
-            {formData.description && (
-              <p className="text-lg text-muted-foreground text-pretty">
-                {formData.description}
-              </p>
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <h1 className="text-2xl font-bold">Edit Trick</h1>
-            <p className="text-muted-foreground">
-              Update the details for this trick
-            </p>
-          </div>
-        )}
-      </div>
-
+    <div className="max-w-4xl mx-auto p-6 ">
       <form onSubmit={handleSubmit} className="space-y-6">
         <Accordion
           type="multiple"
           value={openSections}
           onValueChange={setOpenSections}
-          className="space-y-4"
+          className="space-y-4 "
         >
           {/* Basic Information */}
           <AccordionItem value="basic" className="border rounded-lg">
@@ -514,7 +463,7 @@ export function TrickForm({
                   )}
                 </div>
 
-                {/* Difficulty & Published Status */}
+                {/* Difficulty & Published Status (hidden for now) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <Label htmlFor="difficulty">
@@ -546,7 +495,8 @@ export function TrickForm({
                     )}
                   </div>
 
-                  {mode === "edit" && (
+                  {/* {mode === "edit" && (
+                    
                     <div className="space-y-2">
                       <Label>Publication Status</Label>
                       <div className="flex items-center space-x-3">
@@ -561,204 +511,9 @@ export function TrickForm({
                         </Label>
                       </div>
                     </div>
-                  )}
+                    
+                  )} */}
                 </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Prerequisites */}
-          <AccordionItem value="prerequisites" className="border rounded-lg">
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                  <GripVertical className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold">Prerequisites</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Skills needed before attempting this trick
-                  </p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-6">
-              {renderArrayField(
-                "Prerequisites",
-                "prerequisites",
-                "e.g., Basic vault, Wall run",
-                <GripVertical className="h-4 w-4" />
-              )}
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Step-by-Step Guide */}
-          <AccordionItem value="steps" className="border rounded-lg">
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                  <Lightbulb className="h-5 w-5 text-green-600 dark:text-green-400" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold">Step-by-Step Guide</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Detailed instructions for performing the trick
-                  </p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-6">
-              <div className="space-y-4">
-                {mode === "edit" ? (
-                  <>
-                    {formData.step_by_step_guide.map((step, index) => (
-                      <Card key={index} className="border-l-4 border-l-primary">
-                        <CardHeader className="pb-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
-                                {step.step}
-                              </div>
-                              <CardTitle className="text-lg">
-                                Step {step.step}
-                              </CardTitle>
-                            </div>
-                            {formData.step_by_step_guide.length > 1 && (
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => removeStep(index)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </CardHeader>
-                        <CardContent className="space-y-3">
-                          <Input
-                            placeholder="Step title (e.g., 'Approach the obstacle')"
-                            value={step.title}
-                            onChange={(e) =>
-                              handleStepChange(index, "title", e.target.value)
-                            }
-                          />
-                          <Textarea
-                            placeholder="Detailed description of what to do in this step..."
-                            value={step.description}
-                            onChange={(e) =>
-                              handleStepChange(
-                                index,
-                                "description",
-                                e.target.value
-                              )
-                            }
-                            rows={3}
-                          />
-                        </CardContent>
-                      </Card>
-                    ))}
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={addStep}
-                      className="w-full bg-transparent"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Add Step
-                    </Button>
-                  </>
-                ) : (
-                  <div className="space-y-4">
-                    {formData.step_by_step_guide.map((step, idx) => (
-                      <div
-                        key={idx}
-                        className="flex gap-4 p-4 border rounded-lg"
-                      >
-                        <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                          {step.step}
-                        </div>
-                        <div className="flex-1">
-                          <h4 className="font-semibold mb-2">{step.title}</h4>
-                          <p className="text-muted-foreground text-pretty">
-                            {step.description}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Tips & Safety */}
-          <AccordionItem value="tips-safety" className="border rounded-lg">
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-                  <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold">Tips & Safety</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Important advice and safety considerations
-                  </p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-6">
-              <div className="space-y-6">
-                {["tips_and_tricks", "common_mistakes", "safety_notes"].map(
-                  (field) => {
-                    const fieldValue = formData[
-                      field as keyof TrickData
-                    ] as string;
-                    const icons = {
-                      tips_and_tricks: <Lightbulb className="h-4 w-4" />,
-                      common_mistakes: <AlertTriangle className="h-4 w-4" />,
-                      safety_notes: <AlertTriangle className="h-4 w-4" />,
-                    };
-
-                    if (mode === "view" && !fieldValue?.trim()) return null;
-
-                    return (
-                      <div key={field} className="space-y-2">
-                        <div className="flex items-center gap-2">
-                          {icons[field as keyof typeof icons]}
-                          <Label className="text-sm font-medium">
-                            {field
-                              .split("_")
-                              .map(
-                                (word) =>
-                                  word.charAt(0).toUpperCase() + word.slice(1)
-                              )
-                              .join(" ")}
-                          </Label>
-                        </div>
-                        {mode === "edit" ? (
-                          <Textarea
-                            value={fieldValue}
-                            onChange={(e) =>
-                              handleChange(
-                                field as keyof TrickData,
-                                e.target.value
-                              )
-                            }
-                            placeholder={`Enter ${field.replace(/_/g, " ")}...`}
-                            rows={3}
-                          />
-                        ) : (
-                          fieldValue && (
-                            <div className="p-4 bg-muted/50 rounded-lg whitespace-pre-wrap text-pretty">
-                              {fieldValue}
-                            </div>
-                          )
-                        )}
-                      </div>
-                    );
-                  }
-                )}
               </div>
             </AccordionContent>
           </AccordionItem>
@@ -803,6 +558,237 @@ export function TrickForm({
               </div>
             </AccordionContent>
           </AccordionItem>
+
+          {/* Prerequisites */}
+          {showPrerequisites && (
+            <AccordionItem value="prerequisites" className="border rounded-lg">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                    <GripVertical className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold">Prerequisites</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Skills needed before attempting this trick
+                    </p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                {renderArrayField(
+                  "Prerequisites",
+                  "prerequisites",
+                  "e.g., Basic vault, Wall run",
+                  <GripVertical className="h-4 w-4" />
+                )}
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          {/* Step-by-Step Guide */}
+          {showStepGuide && (
+            <AccordionItem value="steps" className="border rounded-lg">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                    <Lightbulb className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold">Step-by-Step Guide</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Detailed instructions for performing the trick
+                    </p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                <div className="space-y-4">
+                  {mode === "edit" ? (
+                    <>
+                      {formData.step_by_step_guide.map((step, index) => (
+                        <Card
+                          key={index}
+                          className="border-l-4 border-l-primary"
+                        >
+                          <CardHeader className="pb-3">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
+                                  {step.step}
+                                </div>
+                                <CardTitle className="text-lg">
+                                  Step {step.step}
+                                </CardTitle>
+                              </div>
+                              {formData.step_by_step_guide.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeStep(index)}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </CardHeader>
+                          <CardContent className="space-y-3">
+                            <Input
+                              placeholder="Step title (e.g., 'Approach the obstacle')"
+                              value={step.title}
+                              onChange={(e) =>
+                                handleStepChange(index, "title", e.target.value)
+                              }
+                            />
+                            <Textarea
+                              placeholder="Detailed description of what to do in this step..."
+                              value={step.description}
+                              onChange={(e) =>
+                                handleStepChange(
+                                  index,
+                                  "description",
+                                  e.target.value
+                                )
+                              }
+                              rows={3}
+                            />
+                          </CardContent>
+                        </Card>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={addStep}
+                        className="w-full bg-transparent"
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Add Step
+                      </Button>
+                    </>
+                  ) : (
+                    <div className="space-y-4">
+                      {formData.step_by_step_guide.map((step, idx) => (
+                        <div
+                          key={idx}
+                          className="flex gap-4 p-4 border rounded-lg"
+                        >
+                          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                            {step.step}
+                          </div>
+                          <div className="flex-1">
+                            <h4 className="font-semibold mb-2">{step.title}</h4>
+                            <p className="text-muted-foreground text-pretty">
+                              {step.description}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          {/* Tips & Safety */}
+          {showTipsAndTricks && (
+            <AccordionItem value="tips-safety" className="border rounded-lg">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+                    <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold">Tips & Safety</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Important advice and safety considerations
+                    </p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                <div className="space-y-6">
+                  {["tips_and_tricks", "common_mistakes", "safety_notes"].map(
+                    (field) => {
+                      const fieldValue = formData[
+                        field as keyof TrickData
+                      ] as string;
+                      const icons = {
+                        tips_and_tricks: <Lightbulb className="h-4 w-4" />,
+                        common_mistakes: <AlertTriangle className="h-4 w-4" />,
+                        safety_notes: <AlertTriangle className="h-4 w-4" />,
+                      };
+
+                      if (mode === "view" && !fieldValue?.trim()) return null;
+
+                      return (
+                        <div key={field} className="space-y-2">
+                          <div className="flex items-center gap-2">
+                            {icons[field as keyof typeof icons]}
+                            <Label className="text-sm font-medium">
+                              {field
+                                .split("_")
+                                .map(
+                                  (word) =>
+                                    word.charAt(0).toUpperCase() + word.slice(1)
+                                )
+                                .join(" ")}
+                            </Label>
+                          </div>
+                          {mode === "edit" ? (
+                            <Textarea
+                              value={fieldValue}
+                              onChange={(e) =>
+                                handleChange(
+                                  field as keyof TrickData,
+                                  e.target.value
+                                )
+                              }
+                              placeholder={`Enter ${field.replace(
+                                /_/g,
+                                " "
+                              )}...`}
+                              rows={3}
+                            />
+                          ) : (
+                            fieldValue && (
+                              <div className="p-4 bg-muted/50 rounded-lg whitespace-pre-wrap text-pretty">
+                                {fieldValue}
+                              </div>
+                            )
+                          )}
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          )}
+
+          <Separator className="my-4" />
+
+          {!showPrerequisites && (
+            <Button variant="ghost" onClick={() => setShowPrerequisites(true)}>
+              <PlusIcon />
+              Add Prerequisites
+            </Button>
+          )}
+
+          {!showStepGuide && (
+            <Button variant="ghost" onClick={() => setShowStepGuide(true)}>
+              <PlusIcon />
+              Add Step-by-Step Guide
+            </Button>
+          )}
+
+          {!showTipsAndTricks && (
+            <Button variant="ghost" onClick={() => setShowTipsAndTricks(true)}>
+              <PlusIcon />
+              Add Tips and Tricks
+            </Button>
+          )}
         </Accordion>
 
         {mode === "edit" && (
