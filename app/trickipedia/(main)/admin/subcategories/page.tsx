@@ -90,9 +90,9 @@ export default function AdminSubcategoriesPage() {
   const filteredSubcategories = subcategories.filter((subcategory) => {
     const matchesSearch =
       subcategory.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      subcategory.description
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
+      (subcategory.description?.toLowerCase() || "").includes(
+        searchQuery.toLowerCase()
+      ) ||
       subcategory.master_category?.name
         .toLowerCase()
         .includes(searchQuery.toLowerCase());

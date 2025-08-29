@@ -172,7 +172,7 @@ export default function TricksPage() {
                     <div className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: category.color }}
+                        style={{ backgroundColor: category.color || "" }}
                       />
                       {category.name}
                     </div>
@@ -237,7 +237,7 @@ export default function TricksPage() {
                   <div className="aspect-video relative overflow-hidden">
                     <img
                       src={
-                        trick.image_urls[0] ||
+                        (trick.image_urls?.[0] ?? "") ||
                         "/placeholder.svg?height=200&width=300&query=trick demonstration"
                       }
                       alt={trick.name}

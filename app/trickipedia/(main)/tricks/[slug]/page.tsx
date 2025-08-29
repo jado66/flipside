@@ -1,3 +1,4 @@
+// app/trickipedia/tricks/[slug]/page.tsx - Updated version with permissions
 "use client";
 
 import { useEffect, useState } from "react";
@@ -29,9 +30,24 @@ import {
   CheckCircle,
   Play,
   ExternalLink,
+  Trash2,
 } from "lucide-react";
-import { User } from "@supabase/supabase-js";
+import { useAuth } from "@/contexts/auth-provider";
+import { PermissionGate } from "@/components/permission-gate";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { createClient } from "@/lib/client";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 const DIFFICULTY_LABELS = {
   1: "Beginner",
@@ -61,24 +77,14 @@ const DIFFICULTY_COLORS = {
 
 export default function TrickDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const slug = params.slug as string;
-  const [user, setUser] = useState<User | null>(null);
+  const { user, hasModeratorAccess } = useAuth();
   const [trick, setTrick] = useState<Trick | null>(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const supabase = createClient();
-
-  useEffect(() => {
-    loadUser();
-  }, []);
-
-  const loadUser = async () => {
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    setUser(user);
-  };
 
   useEffect(() => {
     const loadTrick = async () => {
@@ -89,6 +95,18 @@ export default function TrickDetailPage() {
           setLikeCount(data.like_count);
           // Increment view count
           await incrementTrickViews(data.id);
+
+          // Check if user has liked this trick
+          if (user) {
+            const { data: likeData } = await supabase
+              .from("trick_likes")
+              .select("id")
+              .eq("trick_id", data.id)
+              .eq("user_id", user.id)
+              .single();
+
+            setLiked(!!likeData);
+          }
         }
       } catch (error) {
         console.error("Failed to load trick:", error);
@@ -98,10 +116,13 @@ export default function TrickDetailPage() {
     };
 
     loadTrick();
-  }, [slug]);
+  }, [slug, user]);
 
   const handleLike = async () => {
-    if (!trick || !user) return;
+    if (!trick || !user) {
+      toast.error("Please login to like tricks");
+      return;
+    }
 
     try {
       const result = await toggleTrickLike(trick.id, user.id);
@@ -109,8 +130,31 @@ export default function TrickDetailPage() {
       setLikeCount(result.likeCount);
     } catch (error) {
       console.error("Failed to toggle like:", error);
+      toast.error("Failed to update like");
     }
   };
+
+  const handleDelete = async () => {
+    if (!trick) return;
+
+    try {
+      const { error } = await supabase
+        .from("tricks")
+        .delete()
+        .eq("id", trick.id);
+
+      if (error) throw error;
+
+      toast.success("Trick deleted successfully");
+      router.push("/trickipedia/tricks");
+    } catch (error) {
+      console.error("Failed to delete trick:", error);
+      toast.error("Failed to delete trick");
+    }
+  };
+
+  const canEdit =
+    user && (trick?.created_by === user.id || hasModeratorAccess());
 
   if (loading) {
     return (
@@ -183,7 +227,8 @@ export default function TrickDetailPage() {
                 <div
                   className="w-4 h-4 rounded-full"
                   style={{
-                    backgroundColor: trick.subcategory?.master_category.color,
+                    backgroundColor:
+                      trick.subcategory?.master_category.color || "#6b7280",
                   }}
                 />
                 <Badge variant="outline">
@@ -238,242 +283,256 @@ export default function TrickDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {user && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleLike}
-                      className={liked ? "text-red-500 border-red-500" : ""}
-                    >
-                      <Heart
-                        className={`h-4 w-4 mr-2 ${
-                          liked ? "fill-current" : ""
-                        }`}
-                      />
-                      {liked ? "Liked" : "Like"}
-                    </Button>
-                  )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleLike}
+                    className={liked ? "text-red-500 border-red-500" : ""}
+                  >
+                    <Heart
+                      className={`h-4 w-4 mr-2 ${liked ? "fill-current" : ""}`}
+                    />
+                    {liked ? "Liked" : "Like"}
+                  </Button>
                   <Button variant="outline" size="sm">
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
-                  {user && user.id === trick.created_by && (
-                    <Button variant="outline" size="sm" asChild>
-                      <Link href={`/trickipedia/tricks/${trick.slug}/edit`}>
-                        <Edit className="h-4 w-4 mr-2" />
-                        Edit
-                      </Link>
-                    </Button>
+
+                  {/* Permission-based Edit/Delete buttons */}
+                  {canEdit && (
+                    <>
+                      <Button variant="outline" size="sm" asChild>
+                        <Link href={`/trickipedia/tricks/${trick.slug}/edit`}>
+                          <Edit className="h-4 w-4 mr-2" />
+                          Edit
+                        </Link>
+                      </Button>
+
+                      <PermissionGate requireModerator>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Trash2 className="h-4 w-4 mr-2" />
+                              Delete
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Trick</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete &quot;
+                                {trick.name}&quot;? This action cannot be
+                                undone.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={handleDelete}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </PermissionGate>
+                    </>
                   )}
                 </div>
               </div>
             </div>
-
-            {/* Media */}
-            {(trick.image_urls.length > 0 || trick.video_urls.length > 0) && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Play className="h-5 w-5" />
-                    Media
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {trick.image_urls.length > 0 && (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {trick.image_urls.map((url, index) => (
-                        <img
-                          key={index}
-                          src={url || "/placeholder.svg"}
-                          alt={`${trick.name} demonstration ${index + 1}`}
-                          className="w-full aspect-video object-cover rounded-lg"
-                        />
-                      ))}
-                    </div>
-                  )}
-                  {trick.video_urls.length > 0 && (
-                    <div className="space-y-2">
-                      {trick.video_urls.map((url, index) => (
-                        <Button
-                          key={index}
-                          variant="outline"
-                          asChild
-                          className="w-full justify-start bg-transparent"
-                        >
-                          <a
-                            href={url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <ExternalLink className="h-4 w-4 mr-2" />
-                            Video Tutorial {index + 1}
-                          </a>
-                        </Button>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Step by Step Guide */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <CheckCircle className="h-5 w-5" />
-                  Step-by-Step Guide
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
+            {/* Additional Content */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Step-by-Step Guide</h2>
+              {trick.step_by_step_guide &&
+              trick.step_by_step_guide.length > 0 ? (
                 <div className="space-y-6">
                   {trick.step_by_step_guide.map((step, index) => (
-                    <div key={index} className="flex gap-4">
-                      <div className="flex-shrink-0 w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-sm">
-                        {step.step}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-semibold mb-2">{step.title}</h4>
-                        <p className="text-muted-foreground mb-3">
-                          {step.description}
-                        </p>
-                        {step.tips && step.tips.length > 0 && (
-                          <div className="bg-muted/50 rounded-lg p-3">
-                            <p className="text-sm font-medium mb-2 flex items-center gap-2">
-                              <Lightbulb className="h-4 w-4" />
-                              Tips:
-                            </p>
-                            <ul className="text-sm text-muted-foreground space-y-1">
-                              {step.tips.map((tip, tipIndex) => (
-                                <li
-                                  key={tipIndex}
-                                  className="flex items-start gap-2"
-                                >
-                                  <span className="text-primary">•</span>
-                                  {tip}
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
-                      </div>
+                    <div
+                      key={step.step}
+                      className="border-l-4 border-primary pl-6"
+                    >
+                      <h3 className="text-lg font-semibold mb-2">
+                        Step {step.step}: {step.title}
+                      </h3>
+                      <p className="text-muted-foreground mb-3">
+                        {step.description}
+                      </p>
+                      {step.tips && step.tips.length > 0 && (
+                        <div className="bg-muted/50 rounded-lg p-4">
+                          <h4 className="text-sm font-medium mb-2 flex items-center gap-2">
+                            <Lightbulb className="h-4 w-4" />
+                            Tips for this step:
+                          </h4>
+                          <ul className="list-disc pl-6 space-y-1">
+                            {step.tips.map((tip, tipIndex) => (
+                              <li
+                                key={tipIndex}
+                                className="text-sm text-muted-foreground"
+                              >
+                                {tip}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Tips and Common Mistakes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-green-600">
-                    <Lightbulb className="h-5 w-5" />
-                    Tips & Tricks
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm">{trick.tips_and_tricks}</p>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-600">
-                    <AlertTriangle className="h-5 w-5" />
-                    Common Mistakes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-sm">{trick.common_mistakes}</p>
-                </CardContent>
-              </Card>
+              ) : (
+                <p className="text-muted-foreground">
+                  No step-by-step guide available.
+                </p>
+              )}
+            </div>
+            {/* step_by_step_guide:
+    | {
+        step: number;
+        title: string;
+        description: string;
+        tips?: string[];
+      }[]
+    | null;
+  tips_and_tricks: string | null; */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Tips and Tricks</h2>
+              {trick.tips_and_tricks ? (
+                <div className="bg-muted/50 rounded-lg p-6">
+                  <div className="flex items-start gap-3">
+                    <Lightbulb className="h-5 w-5 text-primary mt-1 flex-shrink-0" />
+                    <div className="whitespace-pre-wrap text-muted-foreground">
+                      {trick.tips_and_tricks}
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <p className="text-muted-foreground">
+                  No tips and tricks available.
+                </p>
+              )}
             </div>
 
+            {/* Common Mistakes */}
+            {trick.common_mistakes && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Common Mistakes</h2>
+                <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-red-600 mt-1 flex-shrink-0" />
+                    <div className="whitespace-pre-wrap text-red-800">
+                      {trick.common_mistakes}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Safety Notes */}
-            <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-950/20">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-red-600">
-                  <AlertTriangle className="h-5 w-5" />
-                  Safety Notes
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-red-700 dark:text-red-300">
-                  {trick.safety_notes}
-                </p>
-              </CardContent>
-            </Card>
+            {trick.safety_notes && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Safety Notes</h2>
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-6">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-orange-600 mt-1 flex-shrink-0" />
+                    <div className="whitespace-pre-wrap text-orange-800">
+                      {trick.safety_notes}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Prerequisites */}
+            {trick.prerequisites && trick.prerequisites.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Prerequisites</h2>
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+                  <div className="flex items-start gap-3">
+                    <CheckCircle className="h-5 w-5 text-blue-600 mt-1 flex-shrink-0" />
+                    <div>
+                      <p className="text-blue-800 mb-3">
+                        Make sure you can do these tricks first:
+                      </p>
+                      <ul className="list-disc pl-6 space-y-1">
+                        {trick.prerequisites.map((prerequisite, index) => (
+                          <li key={index} className="text-blue-700">
+                            {prerequisite}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Video URLs */}
+            {trick.video_urls && trick.video_urls.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Video Tutorials</h2>
+                <div className="grid gap-4">
+                  {trick.video_urls.map((url, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center gap-3 p-4 border rounded-lg"
+                    >
+                      <Play className="h-5 w-5 text-primary" />
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline flex items-center gap-2"
+                      >
+                        Video Tutorial {index + 1}
+                        <ExternalLink className="h-4 w-4" />
+                      </a>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
-          <div className="space-y-6">
-            {/* Author Info */}
+          <div className="space-y-8">
             <Card>
               <CardHeader>
-                <CardTitle className="text-lg">Created by</CardTitle>
+                <CardTitle>Created By</CardTitle>
+                <CardDescription>
+                  {trick.created_by || "Unknown"}
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-3">
-                  <img
-                    src={trick.author?.avatar_url || "/placeholder.svg"}
-                    alt={trick.author?.username}
-                    className="w-12 h-12 rounded-full"
-                  />
-                  <div>
-                    <p className="font-medium">
-                      {trick.author?.full_name || trick.author?.username}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      @{trick.author?.username}
-                    </p>
-                  </div>
-                </div>
+                <p className="text-muted-foreground">
+                  {new Date(trick.created_at).toLocaleDateString()}
+                </p>
               </CardContent>
             </Card>
 
-            {/* Prerequisites */}
-            {trick.prerequisites.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Prerequisites</CardTitle>
-                  <CardDescription>
-                    Skills you should have before attempting this trick
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-2">
-                    {trick.prerequisites.map((prereq, index) => (
-                      <div key={index} className="flex items-center gap-2">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                        <span className="text-sm">{prereq}</span>
-                      </div>
+            <Card>
+              <CardHeader>
+                <CardTitle>Related Tricks</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {/* {trick.related_tricks.length > 0 ? (
+                  <ul className="space-y-2">
+                    {trick.related_tricks.map((relatedTrick) => (
+                      <li key={relatedTrick.id}>
+                        <Link
+                          href={`/trickipedia/tricks/${relatedTrick.slug}`}
+                          className="text-primary hover:underline"
+                        >
+                          {relatedTrick.name}
+                        </Link>
+                      </li>
                     ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {/* Tags */}
-            {trick.tags.length > 0 && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Tags</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2">
-                    {trick.tags.map((tag, index) => (
-                      <Badge
-                        key={index}
-                        variant="secondary"
-                        className="text-xs"
-                      >
-                        {tag}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
+                  </ul>
+                ) : (
+                  <p className="text-muted-foreground">
+                    No related tricks available.
+                  </p>
+                )} */}
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>

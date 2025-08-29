@@ -88,8 +88,33 @@ export async function getTricks(filters?: {
     query = query.textSearch("search_text", filters.search);
   }
 
-  // Get total count first
-  const { count } = await query.select("*", { count: "exact", head: true });
+  // Get total count first (separate query for count)
+  let countQuery = supabase
+    .from("tricks")
+    .select("*", { count: "exact", head: true })
+    .eq("is_published", true);
+
+  // Apply the same filters to count query
+  if (filters?.subcategory) {
+    countQuery = countQuery.eq("subcategories.slug", filters.subcategory);
+  }
+
+  if (filters?.category) {
+    countQuery = countQuery.eq(
+      "subcategories.master_categories.slug",
+      filters.category
+    );
+  }
+
+  if (filters?.difficulty) {
+    countQuery = countQuery.eq("difficulty_level", filters.difficulty);
+  }
+
+  if (filters?.search) {
+    countQuery = countQuery.textSearch("search_text", filters.search);
+  }
+
+  const { count } = await countQuery;
 
   // Apply pagination
   if (filters?.offset) {

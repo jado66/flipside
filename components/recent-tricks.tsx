@@ -116,7 +116,7 @@ export function RecentTricks() {
                 <div className="aspect-video relative overflow-hidden">
                   <img
                     src={
-                      trick.image_urls[0] ||
+                      (trick.image_urls?.[0] ?? "") ||
                       "/placeholder.svg?height=200&width=300&query=trick demonstration"
                     }
                     alt={trick.name}

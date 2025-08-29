@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation";
-import { getUser } from "@/lib/auth";
+// import { getUser } from "@/lib/auth";
 import { CreateHubForm } from "@/components/create-hub-form";
-import { createClient } from "@/lib/server";
+// import { createClient } from "@/lib/server";
 
 export default async function CreateHubPage() {
-  const user = await getUser();
+  // const user = await getUser();
 
-  if (!user) {
-    redirect("/login");
-  }
+  // if (!user) {
+  //   redirect("/login");
+  // }
 
-  const supabase = await createClient();
+  // const supabase = await createClient();
   // const { data: profile } = await supabase
   //   .from("users")
   //   .select("role")

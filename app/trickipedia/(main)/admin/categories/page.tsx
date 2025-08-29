@@ -86,7 +86,9 @@ export default function AdminCategoriesPage() {
   const filteredCategories = categories.filter((category) => {
     const matchesSearch =
       category.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      category.description.toLowerCase().includes(searchQuery.toLowerCase());
+      (category.description ?? "")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase());
     const matchesStatus = showInactive || category.is_active;
     return matchesSearch && matchesStatus;
   });
@@ -152,7 +154,9 @@ export default function AdminCategoriesPage() {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredCategories.map((category) => {
-              const IconComponent = getIconComponent(category.icon_name);
+              const IconComponent = getIconComponent(
+                category.icon_name || "circle"
+              );
               return (
                 <Card
                   key={category.id}
@@ -162,7 +166,7 @@ export default function AdminCategoriesPage() {
                     <div className="flex items-start justify-between">
                       <div
                         className="w-12 h-12 rounded-lg flex items-center justify-center"
-                        style={{ backgroundColor: category.color }}
+                        style={{ backgroundColor: category.color || "" }}
                       >
                         <IconComponent className="h-6 w-6 text-white" />
                       </div>
