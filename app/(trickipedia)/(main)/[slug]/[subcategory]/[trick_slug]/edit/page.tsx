@@ -57,7 +57,9 @@ export default function TrickEditPage() {
   }, [slug, user, hasModeratorAccess, router]);
 
   const handleCancel = () => {
-    router.push(`/${category}/${subcategory}/${trick.slug}`);
+    if (trick) {
+      router.push(`/${category}/${subcategory}/${trick.slug}`);
+    }
   };
 
   const handleSubmit = async (data: TrickData) => {

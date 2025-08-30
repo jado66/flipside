@@ -54,7 +54,7 @@ interface User {
 }
 
 export interface TrickFormProps {
-  mode: "view" | "edit";
+  mode: "view" | "edit" | "create"; // Added "create" mode
   trick: TrickData;
   onSubmit?: (data: TrickData) => void;
   loading?: boolean;
@@ -77,17 +77,17 @@ export function TrickForm({
   }, []);
 
   const [showPrerequisites, setShowPrerequisites] = useState<boolean>(
-    mode === "edit" && !!trick.prerequisites?.some((p) => p.trim())
+    mode !== "create" && !!trick.prerequisites?.some((p) => p.trim())
   );
   const [showStepGuide, setShowStepGuide] = useState<boolean>(
-    mode === "edit" &&
+    mode !== "create" &&
       !!(
         trick.step_by_step_guide?.length > 0 &&
         trick.step_by_step_guide.some((step) => step.title || step.description)
       )
   );
   const [showTipsAndTricks, setShowTipsAndTricks] = useState<boolean>(
-    mode === "edit" &&
+    mode !== "create" &&
       !!(
         trick.tips_and_tricks?.trim() ||
         trick.common_mistakes?.trim() ||
@@ -109,8 +109,8 @@ export function TrickForm({
       setInventorType("none");
     }
 
-    // Update optional sections visibility when editing and trick data has content
-    if (mode === "edit") {
+    // Update optional sections visibility when not in create mode and trick data has content
+    if (mode !== "create") {
       const hasPrerequisites = !!trick.prerequisites?.some((p) => p.trim());
       const hasStepGuide = !!(
         trick.step_by_step_guide?.length > 0 &&
@@ -132,6 +132,8 @@ export function TrickForm({
       if (hasStepGuide) sectionsToOpen.push("steps");
       if (hasTipsAndTricks) sectionsToOpen.push("tips-safety");
       setOpenSections(sectionsToOpen);
+    } else {
+      // In create mode, show all optional sections by default if desired, but for now keep as is
     }
   }, [
     trick.inventor_user_id,
@@ -292,7 +294,7 @@ export function TrickForm({
           )}
         </div>
 
-        {mode === "edit" ? (
+        {mode === "edit" || mode === "create" ? (
           <div className="space-y-2">
             {items.map((item, index) => (
               <div key={index} className="flex gap-2">
@@ -377,7 +379,7 @@ export function TrickForm({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 ">
+    <div className="max-w-4xl mx-auto p:0 md:p-6 ">
       <form onSubmit={handleSubmit} className="space-y-6">
         <Accordion
           type="multiple"
@@ -395,7 +397,7 @@ export function TrickForm({
                 <div className="text-left">
                   <h3 className="font-semibold">Basic Information</h3>
                   <p className="text-sm text-muted-foreground">
-                    Name, description, difficulty, and inventor
+                    Name, slug, category, description, difficulty, and inventor
                   </p>
                 </div>
               </div>
@@ -405,7 +407,9 @@ export function TrickForm({
                 {/* Name */}
                 <div className="space-y-2">
                   <Label htmlFor="name">Trick Name *</Label>
-                  {mode === "edit" ? (
+                  {mode === "view" ? (
+                    <div className="text-xl font-semibold">{formData.name}</div>
+                  ) : (
                     <Input
                       id="name"
                       value={formData.name}
@@ -413,15 +417,35 @@ export function TrickForm({
                       placeholder="Enter trick name"
                       required
                     />
+                  )}
+                </div>
+
+                {/* Slug (Route) */}
+                <div className="space-y-2">
+                  <Label htmlFor="slug">Route (Slug) *</Label>
+                  {mode === "view" ? (
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      {formData.slug}
+                    </div>
                   ) : (
-                    <div className="text-xl font-semibold">{formData.name}</div>
+                    <Input
+                      id="slug"
+                      value={formData.slug}
+                      onChange={(e) => handleChange("slug", e.target.value)}
+                      placeholder="Enter unique slug (e.g., my-trick-name)"
+                      required
+                    />
                   )}
                 </div>
 
                 {/* Description */}
                 <div className="space-y-2">
                   <Label htmlFor="description">Description *</Label>
-                  {mode === "edit" ? (
+                  {mode === "view" ? (
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      {formData.description}
+                    </div>
+                  ) : (
                     <Textarea
                       id="description"
                       value={formData.description}
@@ -432,10 +456,6 @@ export function TrickForm({
                       rows={4}
                       required
                     />
-                  ) : (
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      {formData.description}
-                    </div>
                   )}
                 </div>
 
@@ -446,7 +466,18 @@ export function TrickForm({
                     <Label>Trick Inventor (Optional)</Label>
                   </div>
 
-                  {mode === "edit" ? (
+                  {mode === "view" ? (
+                    getInventorDisplayName() && (
+                      <div className="p-3 bg-muted/50 rounded-lg">
+                        <span className="text-sm text-muted-foreground">
+                          Invented by:{" "}
+                        </span>
+                        <span className="font-medium">
+                          {getInventorDisplayName()}
+                        </span>
+                      </div>
+                    )
+                  ) : (
                     <div className="space-y-3">
                       <Select
                         value={inventorType}
@@ -501,17 +532,6 @@ export function TrickForm({
                         />
                       )}
                     </div>
-                  ) : (
-                    getInventorDisplayName() && (
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <span className="text-sm text-muted-foreground">
-                          Invented by:{" "}
-                        </span>
-                        <span className="font-medium">
-                          {getInventorDisplayName()}
-                        </span>
-                      </div>
-                    )
                   )}
                 </div>
 
@@ -521,7 +541,16 @@ export function TrickForm({
                     <Label htmlFor="difficulty">
                       Difficulty Level (1-10) *
                     </Label>
-                    {mode === "edit" ? (
+                    {mode === "view" ? (
+                      <Badge
+                        className={getDifficultyColor(
+                          formData.difficulty_level
+                        )}
+                      >
+                        {getDifficultyLabel(formData.difficulty_level)} (
+                        {formData.difficulty_level}/10)
+                      </Badge>
+                    ) : (
                       <Input
                         id="difficulty"
                         type="number"
@@ -535,20 +564,10 @@ export function TrickForm({
                           )
                         }
                       />
-                    ) : (
-                      <Badge
-                        className={getDifficultyColor(
-                          formData.difficulty_level
-                        )}
-                      >
-                        {getDifficultyLabel(formData.difficulty_level)} (
-                        {formData.difficulty_level}/10)
-                      </Badge>
                     )}
                   </div>
 
-                  {/* {mode === "edit" && (
-                    
+                  {/* {mode !== "view" && (
                     <div className="space-y-2">
                       <Label>Publication Status</Label>
                       <div className="flex items-center space-x-3">
@@ -563,7 +582,6 @@ export function TrickForm({
                         </Label>
                       </div>
                     </div>
-                    
                   )} */}
                 </div>
               </div>
@@ -611,7 +629,7 @@ export function TrickForm({
             </AccordionContent>
           </AccordionItem>
 
-          {/* Step-by-Step Guide */}
+          {/* Prerequisites */}
           {showPrerequisites && (
             <AccordionItem value="prerequisites" className="border rounded-lg">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
@@ -684,7 +702,13 @@ export function TrickForm({
                                 .join(" ")}
                             </Label>
                           </div>
-                          {mode === "edit" ? (
+                          {mode === "view" ? (
+                            fieldValue && (
+                              <div className="p-4 bg-muted/50 rounded-lg whitespace-pre-wrap text-pretty">
+                                {fieldValue}
+                              </div>
+                            )
+                          ) : (
                             <Textarea
                               value={fieldValue}
                               onChange={(e) =>
@@ -699,12 +723,6 @@ export function TrickForm({
                               )}...`}
                               rows={3}
                             />
-                          ) : (
-                            fieldValue && (
-                              <div className="p-4 bg-muted/50 rounded-lg whitespace-pre-wrap text-pretty">
-                                {fieldValue}
-                              </div>
-                            )
                           )}
                         </div>
                       );
@@ -717,36 +735,52 @@ export function TrickForm({
 
           <Separator className="my-4" />
 
-          {!showPrerequisites && (
-            <Button variant="ghost" onClick={() => setShowPrerequisites(true)}>
-              <PlusIcon />
+          {!showPrerequisites && (mode === "edit" || mode === "create") && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowPrerequisites(true)}
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
               Add Prerequisites
             </Button>
           )}
 
-          {!showStepGuide && (
-            <Button variant="ghost" onClick={() => setShowStepGuide(true)}>
-              <PlusIcon />
+          {!showStepGuide && (mode === "edit" || mode === "create") && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowStepGuide(true)}
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
               Add Step-by-Step Guide
             </Button>
           )}
 
-          {!showTipsAndTricks && (
-            <Button variant="ghost" onClick={() => setShowTipsAndTricks(true)}>
-              <PlusIcon />
+          {!showTipsAndTricks && (mode === "edit" || mode === "create") && (
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setShowTipsAndTricks(true)}
+            >
+              <PlusIcon className="h-4 w-4 mr-2" />
               Add Tips and Tricks
             </Button>
           )}
         </Accordion>
 
-        {mode === "edit" && (
+        {(mode === "edit" || mode === "create") && (
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t p-6 -mx-6 mt-8">
             <div className="flex gap-3 justify-end">
               <Button type="button" variant="outline" onClick={onCancel}>
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>
-                {loading ? "Saving..." : "Save Trick"}
+                {loading
+                  ? "Saving..."
+                  : mode === "create"
+                  ? "Create Trick"
+                  : "Save Trick"}
               </Button>
             </div>
           </div>
