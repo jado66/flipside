@@ -30,7 +30,9 @@ import type {
 import { TrickipediaLogo } from "../trickipedia-logo";
 import Link from "next/link";
 
-export function MasterSideNav() {
+export function MasterSideNav({
+  onItemClick,
+}: { onItemClick?: () => void } = {}) {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
   const [categories, setCategories] = useState<NavigationCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -230,7 +232,12 @@ export function MasterSideNav() {
                 <div className="block sm:hidden">
                   <div className="my-4 border-t border-border" />
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      asChild
+                      onClick={() => {
+                        if (onItemClick) onItemClick();
+                      }}
+                    >
                       <Link
                         href="/sports-and-disciplines"
                         className="w-full text-sm py-2 block"
@@ -240,7 +247,12 @@ export function MasterSideNav() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      asChild
+                      onClick={() => {
+                        if (onItemClick) onItemClick();
+                      }}
+                    >
                       <Link href="/store" className="w-full text-sm py-2 block">
                         Donate
                       </Link>
@@ -366,7 +378,13 @@ export function MasterSideNav() {
                                             <SidebarMenuSubItem
                                               key={trick.slug}
                                             >
-                                              <SidebarMenuSubButton asChild>
+                                              <SidebarMenuSubButton
+                                                asChild
+                                                onClick={() => {
+                                                  if (onItemClick)
+                                                    onItemClick();
+                                                }}
+                                              >
                                                 <Link
                                                   href={`/${category.slug}/${subcat.slug}/${trick.slug}`}
                                                   className="text-xs py-1 block hover:underline truncate"
@@ -395,7 +413,12 @@ export function MasterSideNav() {
                 <div className="block sm:hidden ">
                   <div className="my-4 border-t border-border" />
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      asChild
+                      onClick={() => {
+                        if (onItemClick) onItemClick();
+                      }}
+                    >
                       <Link
                         href="/login"
                         className="w-full text-sm py-2 block flex items-center justify-center border border-border rounded mb-2"
@@ -405,7 +428,12 @@ export function MasterSideNav() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                   <SidebarMenuItem>
-                    <SidebarMenuButton asChild>
+                    <SidebarMenuButton
+                      asChild
+                      onClick={() => {
+                        if (onItemClick) onItemClick();
+                      }}
+                    >
                       <Link
                         href="/login"
                         className="w-full text-sm py-2 block flex items-center justify-center bg-primary text-primary-foreground rounded"

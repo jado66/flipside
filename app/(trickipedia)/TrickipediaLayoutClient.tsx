@@ -41,7 +41,7 @@ export function TrickipediaLayoutClient({
               >
                 <X className="h-5 w-5" />
               </button>
-              <MasterSideNav />
+              <MasterSideNav onItemClick={() => setMobileSidebarOpen(false)} />
             </div>
             {/* Click outside to close */}
             <div
