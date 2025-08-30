@@ -23,10 +23,10 @@ export function ContributorBanner() {
               Trickipedia is powered by its passionate community of action
               sports enthusiasts. Anyone with an account can add and edit tricks
               across gymnastics, tricking, parkour, trampwall, and more. Your
-              knowledge and experience are essential to building the world's
-              most comprehensive trick database. Every contribution makes a
-              difference, no matter how small. Join us and help shape the future
-              of Trickipedia!
+              knowledge and experience are essential to building the
+              world&apos;s most comprehensive trick database. Every contribution
+              makes a difference, no matter how small. Join us and help shape
+              the future of Trickipedia!
             </p>
 
             <div className="flex flex-wrap gap-2">

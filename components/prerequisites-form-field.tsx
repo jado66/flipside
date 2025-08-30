@@ -214,7 +214,7 @@ export function PrerequisitesFormField({
                     onClick={() => addPrerequisite(inputValue)}
                     className="w-full"
                   >
-                    Add "{inputValue}" as custom prerequisite
+                    Add &quot;{inputValue}&quot; as custom prerequisite
                   </Button>
                 </div>
               ) : null}
