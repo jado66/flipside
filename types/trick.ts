@@ -1,5 +1,7 @@
 // types/trick.ts
 
+import { Trick } from "@/lib/tricks-data";
+
 export interface StepGuide {
   step: number;
   title: string;
@@ -108,4 +110,27 @@ export interface GetTricksParams {
   is_published?: boolean;
   limit?: number;
   offset?: number;
+}
+
+export interface PrerequisiteTrick {
+  id: string;
+  name: string;
+  slug: string;
+  subcategory: {
+    slug: string;
+    master_category: {
+      slug: string;
+    };
+  };
+}
+
+// This type represents how we'll handle prerequisites internally
+export type EnhancedPrerequisite = {
+  text: string;
+  linkedTrick?: PrerequisiteTrick;
+};
+
+// Add a helper type for the API response
+export interface TrickWithLinkedPrerequisites extends Trick {
+  prerequisite_tricks?: PrerequisiteTrick[];
 }

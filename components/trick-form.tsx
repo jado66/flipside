@@ -37,6 +37,7 @@ import {
 } from "lucide-react";
 import { Separator } from "./ui/separator";
 import { TrickData } from "@/types/trick";
+import { PrerequisitesFormField } from "@/components/prerequisites-form-field";
 
 interface StepGuide {
   step: number;
@@ -58,6 +59,7 @@ export interface TrickFormProps {
   onSubmit?: (data: TrickData) => void;
   loading?: boolean;
   users?: User[]; // Available users for inventor selection
+  onCancel?: () => void;
 }
 
 export function TrickForm({
@@ -66,6 +68,7 @@ export function TrickForm({
   onSubmit,
   loading,
   users = [],
+  onCancel,
 }: TrickFormProps) {
   const [formData, setFormData] = useState<TrickData>(trick);
   // Always set published to true for now
@@ -73,9 +76,24 @@ export function TrickForm({
     setFormData((prev) => ({ ...prev, is_published: true }));
   }, []);
 
-  const [showPrerequisites, setShowPrerequisites] = useState(false);
-  const [showStepGuide, setShowStepGuide] = useState(false);
-  const [showTipsAndTricks, setShowTipsAndTricks] = useState(false);
+  const [showPrerequisites, setShowPrerequisites] = useState<boolean>(
+    mode === "edit" && !!trick.prerequisites?.some((p) => p.trim())
+  );
+  const [showStepGuide, setShowStepGuide] = useState<boolean>(
+    mode === "edit" &&
+      !!(
+        trick.step_by_step_guide?.length > 0 &&
+        trick.step_by_step_guide.some((step) => step.title || step.description)
+      )
+  );
+  const [showTipsAndTricks, setShowTipsAndTricks] = useState<boolean>(
+    mode === "edit" &&
+      !!(
+        trick.tips_and_tricks?.trim() ||
+        trick.common_mistakes?.trim() ||
+        trick.safety_notes?.trim()
+      )
+  );
   const [openSections, setOpenSections] = useState<string[]>(["basic"]);
   const [inventorType, setInventorType] = useState<"none" | "user" | "name">(
     trick.inventor_user_id ? "user" : trick.inventor_name ? "name" : "none"
@@ -90,7 +108,41 @@ export function TrickForm({
     } else {
       setInventorType("none");
     }
-  }, [trick.inventor_user_id, trick.inventor_name]);
+
+    // Update optional sections visibility when editing and trick data has content
+    if (mode === "edit") {
+      const hasPrerequisites = !!trick.prerequisites?.some((p) => p.trim());
+      const hasStepGuide = !!(
+        trick.step_by_step_guide?.length > 0 &&
+        trick.step_by_step_guide.some((step) => step.title || step.description)
+      );
+      const hasTipsAndTricks = !!(
+        trick.tips_and_tricks?.trim() ||
+        trick.common_mistakes?.trim() ||
+        trick.safety_notes?.trim()
+      );
+
+      setShowPrerequisites(hasPrerequisites);
+      setShowStepGuide(hasStepGuide);
+      setShowTipsAndTricks(hasTipsAndTricks);
+
+      // Auto-expand sections that have content
+      const sectionsToOpen = ["basic"];
+      if (hasPrerequisites) sectionsToOpen.push("prerequisites");
+      if (hasStepGuide) sectionsToOpen.push("steps");
+      if (hasTipsAndTricks) sectionsToOpen.push("tips-safety");
+      setOpenSections(sectionsToOpen);
+    }
+  }, [
+    trick.inventor_user_id,
+    trick.inventor_name,
+    trick.prerequisites,
+    trick.step_by_step_guide,
+    trick.tips_and_tricks,
+    trick.common_mistakes,
+    trick.safety_notes,
+    mode,
+  ]);
 
   const handleChange = (field: keyof TrickData, value: any) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -559,7 +611,7 @@ export function TrickForm({
             </AccordionContent>
           </AccordionItem>
 
-          {/* Prerequisites */}
+          {/* Step-by-Step Guide */}
           {showPrerequisites && (
             <AccordionItem value="prerequisites" className="border rounded-lg">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
@@ -576,117 +628,13 @@ export function TrickForm({
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
-                {renderArrayField(
-                  "Prerequisites",
-                  "prerequisites",
-                  "e.g., Basic vault, Wall run",
-                  <GripVertical className="h-4 w-4" />
-                )}
-              </AccordionContent>
-            </AccordionItem>
-          )}
-
-          {/* Step-by-Step Guide */}
-          {showStepGuide && (
-            <AccordionItem value="steps" className="border rounded-lg">
-              <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                    <Lightbulb className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold">Step-by-Step Guide</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Detailed instructions for performing the trick
-                    </p>
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <div className="space-y-4">
-                  {mode === "edit" ? (
-                    <>
-                      {formData.step_by_step_guide.map((step, index) => (
-                        <Card
-                          key={index}
-                          className="border-l-4 border-l-primary"
-                        >
-                          <CardHeader className="pb-3">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3">
-                                <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold">
-                                  {step.step}
-                                </div>
-                                <CardTitle className="text-lg">
-                                  Step {step.step}
-                                </CardTitle>
-                              </div>
-                              {formData.step_by_step_guide.length > 1 && (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="sm"
-                                  onClick={() => removeStep(index)}
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              )}
-                            </div>
-                          </CardHeader>
-                          <CardContent className="space-y-3">
-                            <Input
-                              placeholder="Step title (e.g., 'Approach the obstacle')"
-                              value={step.title}
-                              onChange={(e) =>
-                                handleStepChange(index, "title", e.target.value)
-                              }
-                            />
-                            <Textarea
-                              placeholder="Detailed description of what to do in this step..."
-                              value={step.description}
-                              onChange={(e) =>
-                                handleStepChange(
-                                  index,
-                                  "description",
-                                  e.target.value
-                                )
-                              }
-                              rows={3}
-                            />
-                          </CardContent>
-                        </Card>
-                      ))}
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={addStep}
-                        className="w-full bg-transparent"
-                      >
-                        <Plus className="h-4 w-4 mr-2" />
-                        Add Step
-                      </Button>
-                    </>
-                  ) : (
-                    <div className="space-y-4">
-                      {formData.step_by_step_guide.map((step, idx) => (
-                        <div
-                          key={idx}
-                          className="flex gap-4 p-4 border rounded-lg"
-                        >
-                          <div className="w-8 h-8 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-sm font-semibold flex-shrink-0">
-                            {step.step}
-                          </div>
-                          <div className="flex-1">
-                            <h4 className="font-semibold mb-2">{step.title}</h4>
-                            <p className="text-muted-foreground text-pretty">
-                              {step.description}
-                            </p>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                <PrerequisitesFormField
+                  prerequisites={formData.prerequisites}
+                  onChange={(newPrerequisites) =>
+                    handleChange("prerequisites", newPrerequisites)
+                  }
+                  subcategoryId={formData.subcategory_id}
+                />
               </AccordionContent>
             </AccordionItem>
           )}
@@ -794,7 +742,7 @@ export function TrickForm({
         {mode === "edit" && (
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t p-6 -mx-6 mt-8">
             <div className="flex gap-3 justify-end">
-              <Button type="button" variant="outline">
+              <Button type="button" variant="outline" onClick={onCancel}>
                 Cancel
               </Button>
               <Button type="submit" disabled={loading}>

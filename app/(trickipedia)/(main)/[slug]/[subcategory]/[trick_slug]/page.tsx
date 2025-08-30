@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/card";
 import {
   getTrickBySlug,
+  getTrickBySlugWithLinks,
   incrementTrickViews,
   toggleTrickLike,
   type Trick,
@@ -51,6 +52,8 @@ import { createClient } from "@/lib/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
+import { PrerequisitesDisplay } from "@/components/prerequisites-display";
+import { TrickWithLinkedPrerequisites } from "@/types/trick";
 
 const DIFFICULTY_LABELS = {
   1: "Beginner",
@@ -83,7 +86,7 @@ export default function TrickDetailPage() {
   const router = useRouter();
   const trickslug = params.trick_slug as string;
   const { user, hasModeratorAccess } = useAuth();
-  const [trick, setTrick] = useState<Trick | null>(null);
+  const [trick, setTrick] = useState<TrickWithLinkedPrerequisites | null>(null);
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -92,7 +95,8 @@ export default function TrickDetailPage() {
   useEffect(() => {
     const loadTrick = async () => {
       try {
-        const data = await getTrickBySlug(trickslug);
+        // Use the enhanced function that fetches linked prerequisites
+        const data = await getTrickBySlugWithLinks(trickslug);
         setTrick(data);
         if (data) {
           setLikeCount(data.like_count);
@@ -120,7 +124,6 @@ export default function TrickDetailPage() {
 
     loadTrick();
   }, [trickslug, user]);
-
   const handleLike = async () => {
     if (!trick || !user) {
       toast.error("Please login to like tricks");
@@ -150,7 +153,9 @@ export default function TrickDetailPage() {
       if (error) throw error;
 
       toast.success("Trick deleted successfully");
-      router.push("/tricks");
+      router.push(
+        `/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}`
+      );
     } catch (error) {
       console.error("Failed to delete trick:", error);
       toast.error("Failed to delete trick");
@@ -196,13 +201,6 @@ export default function TrickDetailPage() {
     <div className="min-h-screen bg-background">
       <main className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 max-w-6xl">
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8 p-4 bg-muted/30 rounded-lg">
-          <Link
-            href={`/${trick.subcategory?.master_category.slug}`}
-            className="hover:text-primary transition-colors font-medium"
-          >
-            {trick.subcategory?.master_category.name}
-          </Link>
-          <span className="text-muted-foreground/60">/</span>
           <Link
             href={`/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}`}
             className="hover:text-primary transition-colors font-medium"
@@ -472,30 +470,28 @@ export default function TrickDetailPage() {
             )}
 
             {trick.prerequisites && trick.prerequisites.length > 0 && (
-              <Card className="border-emerald-200">
+              <Card className="border-emerald-200 dark:border-emerald-800">
                 <CardHeader>
-                  <CardTitle className="text-2xl flex items-center gap-2 text-emerald-700">
+                  <CardTitle className="text-2xl flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                     <CheckCircle className="h-6 w-6" />
                     Prerequisites
                   </CardTitle>
-                  <CardDescription className="text-emerald-600">
-                    Make sure you can do these tricks first
+                  <CardDescription className="text-emerald-600 dark:text-emerald-400">
+                    Master these skills before attempting this trick
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="grid gap-2">
-                    {trick.prerequisites.map((prerequisite, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 p-3 bg-emerald-50 rounded-lg"
-                      >
-                        <CheckCircle className="h-4 w-4 text-emerald-600 flex-shrink-0" />
-                        <span className="text-emerald-800 font-medium">
-                          {prerequisite}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
+                  <PrerequisitesDisplay
+                    prerequisites={trick.prerequisites}
+                    prerequisiteTricks={trick.prerequisite_tricks}
+                  />
+                  {trick.prerequisite_tricks &&
+                    trick.prerequisite_tricks.length > 0 && (
+                      <p className="text-xs text-muted-foreground mt-4 flex items-center gap-1">
+                        <ExternalLink className="h-3 w-3" />
+                        Click on linked prerequisites to view their details
+                      </p>
+                    )}
                 </CardContent>
               </Card>
             )}
@@ -569,12 +565,17 @@ export default function TrickDetailPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground mb-1">
-                    Invented by {trick.inventor_name}
-                  </p>
-                </div>
-                <Separator />
+                {trick.inventor_name && (
+                  <>
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground mb-1">
+                        Invented by {trick.inventor_name}
+                      </p>
+                    </div>
+                    <Separator />
+                  </>
+                )}
+
                 <div>
                   <p className="text-sm font-medium text-muted-foreground mb-1">
                     Difficulty

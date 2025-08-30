@@ -56,6 +56,10 @@ export default function TrickEditPage() {
     }
   }, [slug, user, hasModeratorAccess, router]);
 
+  const handleCancel = () => {
+    router.push(`/${category}/${subcategory}/${trick.slug}`);
+  };
+
   const handleSubmit = async (data: TrickData) => {
     if (!trick) return;
 
@@ -118,7 +122,7 @@ export default function TrickEditPage() {
         {/* Header */}
         <div className="mb-8">
           <Button variant="ghost" asChild className="mb-4">
-            <Link href={`/tricks/${slug}`}>
+            <Link href={`/${category}/${subcategory}/${trick.slug}`}>
               <ArrowLeft className="h-4 w-4 mr-2" />
               Back to Trick
             </Link>
@@ -136,6 +140,7 @@ export default function TrickEditPage() {
             trick={formTrick}
             onSubmit={handleSubmit}
             loading={loading}
+            onCancel={handleCancel}
           />
         </div>
       </div>

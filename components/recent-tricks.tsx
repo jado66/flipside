@@ -124,7 +124,7 @@ export function RecentTricks() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {tricks.map((trick) => (
             <Link key={trick.id} href={getTrickPath(trick)}>
-              <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden">
+              <Card className="pt-0 h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden">
                 <div className="aspect-video relative overflow-hidden">
                   <img
                     src={

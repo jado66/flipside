@@ -29,6 +29,11 @@ import type {
 } from "./types";
 import { TrickipediaLogo } from "../trickipedia-logo";
 import Link from "next/link";
+import { createClient } from "@/lib/client";
+import type { User } from "@supabase/supabase-js";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/contexts/auth-provider";
 
 export function MasterSideNav({
   onItemClick,
@@ -37,6 +42,17 @@ export function MasterSideNav({
   const [categories, setCategories] = useState<NavigationCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const supabase = createClient();
+  const router = useRouter();
+
+  const { user, logout } = useAuth();
+
+  const handleSignOut = async () => {
+    await logout();
+    router.push("/");
+    if (onItemClick) onItemClick();
+  };
 
   // Load initial categories
   useEffect(() => {
@@ -246,7 +262,7 @@ export function MasterSideNav({
                       </Link>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
-                  <SidebarMenuItem>
+                  {/* <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
                       onClick={() => {
@@ -257,7 +273,7 @@ export function MasterSideNav({
                         Donate
                       </Link>
                     </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  </SidebarMenuItem> */}
                   {/* Separator */}
                   <div className="my-2 border-t border-border" />
                 </div>
@@ -304,6 +320,26 @@ export function MasterSideNav({
                         {/* Subcategories */}
                         {isCategoryExpanded && (
                           <SidebarMenuSub>
+                            {/* Add "All Categories" link if there are more than 3 subcategories */}
+                            {!category.subcategoriesLoading &&
+                              (category.subcategories?.length ?? 0) > 3 && (
+                                <SidebarMenuSubItem>
+                                  <SidebarMenuSubButton
+                                    asChild
+                                    onClick={() => {
+                                      if (onItemClick) onItemClick();
+                                    }}
+                                  >
+                                    <Link
+                                      href={`/${category.slug}`}
+                                      className="text-xs md:text-sm py-1 block font-medium text-primary hover:underline"
+                                    >
+                                      All Categories
+                                    </Link>
+                                  </SidebarMenuSubButton>
+                                </SidebarMenuSubItem>
+                              )}
+
                             {category.subcategoriesLoading ? (
                               <SidebarMenuSubItem>
                                 <div className="flex items-center py-2">
@@ -357,6 +393,27 @@ export function MasterSideNav({
                                     {/* Tricks */}
                                     {isSubcatExpanded && (
                                       <SidebarMenuSub>
+                                        {/* Add "All Tricks" link if there are more than 3 tricks */}
+                                        {!subcat.tricksLoading &&
+                                          (subcat.tricks?.length ?? 0) > 3 && (
+                                            <SidebarMenuSubItem>
+                                              <SidebarMenuSubButton
+                                                asChild
+                                                onClick={() => {
+                                                  if (onItemClick)
+                                                    onItemClick();
+                                                }}
+                                              >
+                                                <Link
+                                                  href={`/${category.slug}/${subcat.slug}`}
+                                                  className="text-xs py-1 block font-medium text-primary hover:underline"
+                                                >
+                                                  All Tricks
+                                                </Link>
+                                              </SidebarMenuSubButton>
+                                            </SidebarMenuSubItem>
+                                          )}
+
                                         {subcat.tricksLoading ? (
                                           <SidebarMenuSubItem>
                                             <div className="flex items-center py-1">
@@ -369,9 +426,24 @@ export function MasterSideNav({
                                         ) : (subcat.tricks?.length ?? 0) ===
                                           0 ? (
                                           <SidebarMenuSubItem>
-                                            <div className="text-xs text-muted-foreground py-1 ">
-                                              No tricks
-                                            </div>
+                                            <SidebarMenuSubButton
+                                              asChild
+                                              onClick={() => {
+                                                if (onItemClick) onItemClick();
+                                              }}
+                                            >
+                                              <Link
+                                                href={
+                                                  user
+                                                    ? `/${category.slug}/${subcat.slug}/new`
+                                                    : "/login"
+                                                }
+                                                className="text-xs py-1 block hover:underline truncate"
+                                                title={"Add Trick"}
+                                              >
+                                                Add First Trick
+                                              </Link>
+                                            </SidebarMenuSubButton>
                                           </SidebarMenuSubItem>
                                         ) : (
                                           (subcat.tricks ?? []).map((trick) => (
@@ -409,39 +481,110 @@ export function MasterSideNav({
                   })
                 )}
 
-                {/* Mobile-only login/join buttons after categories */}
-                <div className="block sm:hidden ">
+                {/* Mobile-only user nav or login/join buttons after categories */}
+                <div className="block sm:hidden">
                   <div className="my-4 border-t border-border" />
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      onClick={() => {
-                        if (onItemClick) onItemClick();
-                      }}
-                    >
-                      <Link
-                        href="/login"
-                        className="w-full text-sm py-2 block flex items-center justify-center border border-border rounded mb-2"
-                      >
-                        <span className="mr-2">Sign In</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      onClick={() => {
-                        if (onItemClick) onItemClick();
-                      }}
-                    >
-                      <Link
-                        href="/login"
-                        className="w-full text-sm py-2 block flex items-center justify-center bg-primary text-primary-foreground rounded"
-                      >
-                        <span className="mr-2">Join Now</span>
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  {user ? (
+                    // User navigation for logged-in users
+                    <>
+                      <SidebarMenuItem>
+                        <div className="flex items-center space-x-3 px-3 py-2 mb-3">
+                          <Avatar className="h-8 w-8">
+                            <AvatarImage
+                              src={user.user_metadata?.avatar_url}
+                              alt="Avatar"
+                            />
+                            <AvatarFallback>
+                              {user.user_metadata?.first_name?.[0]?.toUpperCase() ||
+                                user.email?.[0]?.toUpperCase() ||
+                                "U"}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col min-w-0">
+                            {/* <p className="text-sm font-medium leading-none truncate">
+                              {user.user_metadata?.first_name}{" "}
+                              {user.user_metadata?.last_name}
+                            </p> */}
+                            <p className="text-xs leading-none text-muted-foreground truncate mt-1">
+                              {user.email}
+                            </p>
+                          </div>
+                        </div>
+                      </SidebarMenuItem>
+                      {/* <SidebarMenuItem>
+                        <SidebarMenuButton
+                          asChild
+                          onClick={() => {
+                            if (onItemClick) onItemClick();
+                          }}
+                        >
+                          <Link
+                            href="/profile"
+                            className="w-full text-sm py-2 block hover:bg-accent hover:text-accent-foreground rounded"
+                          >
+                            Profile
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem> */}
+                      {/* <SidebarMenuItem>
+                        <SidebarMenuButton
+                          asChild
+                          onClick={() => {
+                            if (onItemClick) onItemClick();
+                          }}
+                        >
+                          <Link
+                            href="/dashboard"
+                            className="w-full text-sm py-2 block hover:bg-accent hover:text-accent-foreground rounded"
+                          >
+                            Dashboard
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem> */}
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          onClick={handleSignOut}
+                          className="w-full text-sm py-2 block hover:bg-accent hover:text-accent-foreground rounded text-left"
+                        >
+                          Sign out
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </>
+                  ) : (
+                    // Login buttons for non-authenticated users
+                    <>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          asChild
+                          onClick={() => {
+                            if (onItemClick) onItemClick();
+                          }}
+                        >
+                          <Link
+                            href="/login"
+                            className="w-full text-sm py-2 block flex items-center justify-center border border-border rounded mb-2"
+                          >
+                            <span className="mr-2">Sign In</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                      <SidebarMenuItem>
+                        <SidebarMenuButton
+                          asChild
+                          onClick={() => {
+                            if (onItemClick) onItemClick();
+                          }}
+                        >
+                          <Link
+                            href="/login"
+                            className="w-full text-sm py-2 block flex items-center justify-center bg-primary text-primary-foreground rounded"
+                          >
+                            <span className="mr-2">Join Now</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    </>
+                  )}
                 </div>
               </SidebarMenu>
             </SidebarGroupContent>

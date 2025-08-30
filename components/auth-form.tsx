@@ -26,6 +26,7 @@ import {
 import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/contexts/auth-provider";
 
 export function AuthForm({ trickipedia = false }) {
   const [email, setEmail] = useState("");
@@ -39,21 +40,23 @@ export function AuthForm({ trickipedia = false }) {
   const router = useRouter();
   const supabase = createClient();
 
+  // Use the auth context
+  const { login } = useAuth();
+
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      const success = await login(email, password);
 
-      if (error) throw error;
-
-      router.push(trickipedia ? "/dashboard" : "/sports-and-disciplines");
-      router.refresh();
+      if (success) {
+        router.push(trickipedia ? "/" : "/sports-and-disciplines");
+        // Remove router.refresh() as it's not needed with proper state management
+      } else {
+        setError("Invalid email or password");
+      }
     } catch (error: any) {
       setError(error.message);
     } finally {
@@ -89,8 +92,8 @@ export function AuthForm({ trickipedia = false }) {
           "Please check your email and click the confirmation link to complete your registration."
         );
       } else {
-        router.push("/dashboard");
-        router.refresh();
+        router.push("/");
+        // Remove router.refresh() as the auth state listener will handle updates
       }
     } catch (error: any) {
       setError(error.message);

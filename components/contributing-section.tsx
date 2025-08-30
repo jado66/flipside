@@ -9,8 +9,8 @@ export default function ContributingSection() {
             Join the Movement
           </h2>
           <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Trickipedia is powered by its passionate community of parkour
-            enthusiasts
+            Trickipedia is powered by its passionate community of action sports
+            enthusiasts like you.
           </p>
         </div>
 

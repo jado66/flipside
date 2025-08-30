@@ -18,6 +18,7 @@ import {
 } from "@/lib/subcategories-data";
 import { getTricks, type Trick } from "@/lib/tricks-data";
 import { ArrowLeft, ArrowRight, Plus, Eye, Heart, Clock } from "lucide-react";
+import { useAuth } from "@/contexts/auth-provider";
 
 const DIFFICULTY_LABELS = {
   1: "Beginner",
@@ -53,6 +54,8 @@ export default function SubcategoryPage() {
   const [tricks, setTricks] = useState<Trick[]>([]);
   const [loading, setLoading] = useState(true);
   const [tricksLoading, setTricksLoading] = useState(true);
+
+  const { user } = useAuth();
 
   useEffect(() => {
     const loadSubcategory = async () => {
@@ -192,7 +195,7 @@ export default function SubcategoryPage() {
                   key={trick.id}
                   href={`/${categorySlug}/${subcategorySlug}/${trick.slug}`}
                 >
-                  <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden">
+                  <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden pt-0">
                     <div className="aspect-video relative overflow-hidden">
                       <img
                         src={
@@ -292,6 +295,27 @@ export default function SubcategoryPage() {
                   </Card>
                 </Link>
               ))}
+
+              {/* Add New Trick Card */}
+              <Link
+                href={
+                  user ? `/${categorySlug}/${subcategorySlug}/new` : `/login`
+                }
+              >
+                <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group border-dashed border-2 border-muted-foreground/25 hover:border-primary/50">
+                  <div className="aspect-video relative overflow-hidden bg-muted/30 flex items-center justify-center">
+                    <Plus className="h-12 w-12 text-muted-foreground group-hover:text-primary transition-colors" />
+                  </div>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg leading-tight text-center">
+                      Add New Trick
+                    </CardTitle>
+                    <CardDescription className="text-sm text-center">
+                      Share your knowledge with the community
+                    </CardDescription>
+                  </CardHeader>
+                </Card>
+              </Link>
             </div>
           ) : (
             <div className="text-center py-12 bg-muted/30 rounded-lg">

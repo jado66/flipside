@@ -157,7 +157,8 @@ export default function CategoryPage() {
                     </CardHeader>
                     <CardContent className="pt-0 mt-auto">
                       <Badge variant="outline" className="text-xs">
-                        {subcategory.trick_count} tricks
+                        {subcategory.trick_count}{" "}
+                        {subcategory.trick_count === 1 ? "trick" : "tricks"}
                       </Badge>
                     </CardContent>
                   </Card>

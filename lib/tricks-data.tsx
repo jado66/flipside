@@ -549,3 +549,177 @@ export async function getInventors(): Promise<{
     names: Array.from(uniqueNameInventors) as string[],
   };
 }
+
+// Add these to your existing tricks-data.ts file
+
+// First, add these types at the top of the file
+export interface PrerequisiteTrick {
+  id: string;
+  name: string;
+  slug: string;
+  subcategory: {
+    slug: string;
+    master_category: {
+      slug: string;
+    };
+  };
+}
+
+export interface TrickWithLinkedPrerequisites extends Trick {
+  prerequisite_tricks?: PrerequisiteTrick[];
+}
+
+/**
+ * Fetches prerequisite tricks for the given prerequisite names
+ * @param prerequisites Array of prerequisite strings
+ * @returns Map of prerequisite text to trick data
+ */
+export async function fetchPrerequisiteTricks(
+  prerequisites: string[]
+): Promise<Map<string, PrerequisiteTrick>> {
+  const supabase = await createClient();
+  const prerequisiteMap = new Map<string, PrerequisiteTrick>();
+
+  if (!prerequisites || prerequisites.length === 0) {
+    return prerequisiteMap;
+  }
+
+  // Clean up prerequisites for matching (case-insensitive)
+  const cleanedPrerequisites = prerequisites.map((p) => p.trim());
+
+  // Build query to find matching tricks across all subcategories
+  let query = supabase
+    .from("tricks")
+    .select(
+      `
+      id,
+      name,
+      slug,
+      subcategory:subcategories!inner(
+        slug,
+        master_category:master_categories!inner(
+          slug
+        )
+      )
+    `
+    )
+    .eq("is_published", true);
+
+  // Use case-insensitive matching for each prerequisite
+  // We'll fetch all potential matches and filter client-side for exact matching
+  const orConditions = cleanedPrerequisites
+    .map((p) => `name.ilike.%${p}%`)
+    .join(",");
+
+  query = query.or(orConditions);
+
+  const { data, error } = await query;
+
+  if (error) {
+    console.error("Error fetching prerequisite tricks:", error);
+    return prerequisiteMap;
+  }
+
+  // Create map of prerequisite text to trick data with exact case-insensitive matching
+  data?.forEach((trick) => {
+    const trickNameLower = trick.name.toLowerCase();
+    prerequisites.forEach((prereq) => {
+      if (prereq.toLowerCase() === trickNameLower) {
+        prerequisiteMap.set(prereq, trick as PrerequisiteTrick);
+      }
+    });
+  });
+
+  return prerequisiteMap;
+}
+
+/**
+ * Enhanced getTrickBySlug that includes linked prerequisite tricks
+ */
+export async function getTrickBySlugWithLinks(
+  slug: string
+): Promise<TrickWithLinkedPrerequisites | null> {
+  const trick = await getTrickBySlug(slug);
+
+  if (!trick || !trick.prerequisites || trick.prerequisites.length === 0) {
+    return trick;
+  }
+
+  // Fetch linked tricks for prerequisites
+  const prerequisiteMap = await fetchPrerequisiteTricks(
+    trick.prerequisites,
+    trick.subcategory_id
+  );
+
+  // Add the linked tricks to the response, maintaining the original order
+  const prerequisiteTricks: PrerequisiteTrick[] = [];
+  trick.prerequisites.forEach((prereq) => {
+    const linkedTrick = prerequisiteMap.get(prereq);
+    if (linkedTrick) {
+      prerequisiteTricks.push(linkedTrick);
+    }
+  });
+
+  return {
+    ...trick,
+    prerequisite_tricks: prerequisiteTricks,
+  };
+}
+
+/**
+ * Helper to check if a prerequisite string matches a known trick
+ */
+export function getPrerequisiteLink(
+  prerequisiteText: string,
+  prerequisiteTricks?: PrerequisiteTrick[]
+): PrerequisiteTrick | undefined {
+  if (!prerequisiteTricks) return undefined;
+
+  return prerequisiteTricks.find(
+    (trick) => trick.name.toLowerCase() === prerequisiteText.toLowerCase()
+  );
+}
+
+export async function searchPotentialPrerequisites(
+  search: string,
+  subcategoryId?: string, // Keep for backwards compatibility but don't use
+  excludeTrickId?: string
+): Promise<{ id: string; name: string; slug: string }[]> {
+  const supabase = await createClient();
+
+  // Validate search input
+  if (!search || search.trim().length < 2) {
+    return [];
+  }
+
+  // Build the base query
+  const { data, error } = await supabase
+    .from("tricks")
+    .select("id, name, slug")
+    .ilike("name", `%${search.trim()}%`)
+    .eq("is_published", true)
+    .order("name")
+    .limit(10);
+
+  if (error) {
+    console.error("Error searching prerequisites:", error);
+    return [];
+  }
+
+  // If no data returned
+  if (!data || data.length === 0) {
+    console.log("No tricks found for search:", search);
+    return [];
+  }
+
+  // Filter out the current trick if excludeTrickId is provided
+  let results = data;
+  if (excludeTrickId) {
+    results = data.filter((trick) => trick.id !== excludeTrickId);
+    console.log(
+      `Filtered out trick with ID ${excludeTrickId}, ${results.length} results remaining`
+    );
+  }
+
+  return results;
+}
