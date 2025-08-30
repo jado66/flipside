@@ -123,17 +123,8 @@ export function TrickipediaHeroSection() {
             comprehensive trick database.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-12">
-            <Button size="lg" className="text-lg px-8" asChild>
-              <Link href="/sports-and-disciplines">
-                Explore Tricks
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-            </Button>
-          </div>
-
           {/* Hero Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto">
+          {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-2xl mx-auto">
             {loading ? (
               // Loading state
               Array.from({ length: 4 }).map((_, index) => (
@@ -193,6 +184,65 @@ export function TrickipediaHeroSection() {
                 </div>
               </>
             )}
+          </div> */}
+
+          {/* Discipline Cards */}
+          <div className="grid grid-cols-2  gap-4 max-w-2xl mx-auto mt-8">
+            <Link
+              href="/trickipedia/parkour"
+              className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
+            >
+              <div className="text-center">
+                <div className="text-lg font-semibold group-hover:text-primary transition-colors">
+                  Parkour
+                </div>
+                <div className="text-xs group-hover:text-primary transition-colors mt-1">
+                  View Tricks
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/trickipedia/tricking"
+              className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
+            >
+              <div className="text-center">
+                <div className="text-lg font-semibold group-hover:text-primary transition-colors">
+                  Tricking
+                </div>
+                <div className="text-xs group-hover:text-primary mt-1 transition-colors">
+                  View Tricks
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/trickipedia/gymnastics"
+              className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
+            >
+              <div className="text-center">
+                <div className="text-lg font-semibold  group-hover:text-primary transition-colors">
+                  Gymnastics
+                </div>
+                <div className="text-xs group-hover:text-primary mt-1 transition-colors">
+                  View Tricks
+                </div>
+              </div>
+            </Link>
+
+            <Link
+              href="/trickipedia/trampwall"
+              className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
+            >
+              <div className="text-center">
+                <div className="text-lg font-semibold group-hover:text-primary transition-colors">
+                  Trampwall
+                </div>
+                <div className="text-xs group-hover:text-primary mt-1 transition-colors">
+                  View Tricks
+                </div>
+              </div>
+            </Link>
           </div>
 
           {/* Additional info for empty database */}

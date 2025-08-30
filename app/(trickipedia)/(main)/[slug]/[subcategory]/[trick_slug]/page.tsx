@@ -92,6 +92,17 @@ export default function TrickDetailPage() {
   const [likeCount, setLikeCount] = useState(0);
   const supabase = createClient();
 
+  const handleShare = async () => {
+    try {
+      const currentUrl = window.location.href;
+      await navigator.clipboard.writeText(currentUrl);
+      toast.success("Link copied to clipboard!");
+    } catch (error) {
+      console.error("Failed to copy link:", error);
+      toast.error("Failed to copy link to clipboard");
+    }
+  };
+
   useEffect(() => {
     const loadTrick = async () => {
       try {
@@ -272,7 +283,7 @@ export default function TrickDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
-                  <Button
+                  {/* <Button
                     variant={liked ? "default" : "outline"}
                     size="sm"
                     onClick={handleLike}
@@ -284,8 +295,8 @@ export default function TrickDetailPage() {
                       className={`h-4 w-4 mr-2 ${liked ? "fill-current" : ""}`}
                     />
                     {liked ? "Liked" : "Like"}
-                  </Button>
-                  <Button variant="outline" size="sm">
+                  </Button> */}
+                  <Button variant="outline" size="sm" onClick={handleShare}>
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
@@ -337,83 +348,82 @@ export default function TrickDetailPage() {
               </div>
             </div>
 
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-2xl flex items-center gap-2">
-                  <Target className="h-6 w-6 text-primary" />
-                  Step-by-Step Guide
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {Array.isArray(trick.step_by_step_guide) &&
-                trick.step_by_step_guide.length > 0 ? (
-                  <div className="space-y-6">
-                    {trick.step_by_step_guide.map((step, index) => {
-                      // Defensive: ensure step number, title, description, tips[]
-                      const stepNum =
-                        typeof step.step === "number" ? step.step : index + 1;
-                      const title = step.title || `Step ${stepNum}`;
-                      const description = step.description || "";
-                      let tips = step.tips;
-                      if (!Array.isArray(tips)) {
-                        // @ts-expect-error #TODO fix me
-                        if (typeof tips === "string" && tips.trim()) {
-                          tips = [tips];
-                        } else {
-                          tips = [];
+            {Array.isArray(trick.step_by_step_guide) &&
+              trick.step_by_step_guide.length > 0 &&
+              trick.step_by_step_guide.some(
+                (step) => step.title?.trim() || step.description?.trim()
+              ) && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-2xl flex items-center gap-2">
+                      <Target className="h-6 w-6 text-primary" />
+                      Step-by-Step Guide
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-6">
+                      {trick.step_by_step_guide.map((step, index) => {
+                        // Defensive: ensure step number, title, description, tips[]
+                        const stepNum =
+                          typeof step.step === "number" ? step.step : index + 1;
+                        const title = step.title || `Step ${stepNum}`;
+                        const description = step.description || "";
+                        let tips = step.tips;
+                        if (!Array.isArray(tips)) {
+                          // @ts-expect-error #TODO fix me
+                          if (typeof tips === "string" && tips.trim()) {
+                            tips = [tips];
+                          } else {
+                            tips = [];
+                          }
                         }
-                      }
-                      return (
-                        <div key={stepNum} className="relative">
-                          {trick.step_by_step_guide &&
-                            index < trick.step_by_step_guide.length - 1 && (
-                              <div className="absolute left-6 top-12 w-0.5 h-full bg-border" />
-                            )}
-                          <div className="flex gap-4">
-                            <div className="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg">
-                              {stepNum}
-                            </div>
-                            <div className="flex-1 space-y-3">
-                              <h3 className="text-xl font-semibold leading-tight">
-                                {title}
-                              </h3>
-                              <p className="text-muted-foreground leading-relaxed">
-                                {description}
-                              </p>
-                              {tips.length > 0 && (
-                                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                                  <h4 className="text-sm font-semibold mb-2 flex items-center gap-2 text-blue-900">
-                                    <Lightbulb className="h-4 w-4" />
-                                    Pro Tips
-                                  </h4>
-                                  <ul className="space-y-1">
-                                    {tips.map((tip, tipIndex) => (
-                                      <li
-                                        key={tipIndex}
-                                        className="text-sm text-blue-800 flex items-start gap-2"
-                                      >
-                                        <span className="text-blue-400 mt-1">
-                                          •
-                                        </span>
-                                        <span>{tip}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
+                        return (
+                          <div key={stepNum} className="relative">
+                            {trick.step_by_step_guide &&
+                              index < trick.step_by_step_guide.length - 1 && (
+                                <div className="absolute left-6 top-12 w-0.5 h-full bg-border" />
                               )}
+                            <div className="flex gap-4">
+                              <div className="flex-shrink-0 w-12 h-12 bg-primary text-primary-foreground rounded-full flex items-center justify-center font-bold text-lg">
+                                {stepNum}
+                              </div>
+                              <div className="flex-1 space-y-3">
+                                <h3 className="text-xl font-semibold leading-tight">
+                                  {title}
+                                </h3>
+                                <p className="text-muted-foreground leading-relaxed">
+                                  {description}
+                                </p>
+                                {tips.length > 0 && (
+                                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-2 text-blue-900">
+                                      <Lightbulb className="h-4 w-4" />
+                                      Pro Tips
+                                    </h4>
+                                    <ul className="space-y-1">
+                                      {tips.map((tip, tipIndex) => (
+                                        <li
+                                          key={tipIndex}
+                                          className="text-sm text-blue-800 flex items-start gap-2"
+                                        >
+                                          <span className="text-blue-400 mt-1">
+                                            •
+                                          </span>
+                                          <span>{tip}</span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    No step-by-step guide available for this trick yet.
-                  </p>
-                )}
-              </CardContent>
-            </Card>
+                        );
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
             {trick.tips_and_tricks && (
               <Card>

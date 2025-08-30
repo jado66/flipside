@@ -146,8 +146,26 @@ export function TrickForm({
     mode,
   ]);
 
+  // Convert string to kebab case
+  const toKebabCase = (str: string) => {
+    return str
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-") // Replace non-alphanumeric characters with hyphens
+      .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+  };
+
   const handleChange = (field: keyof TrickData, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+    setFormData((prev) => {
+      const newData = { ...prev, [field]: value };
+
+      // Auto-populate slug when name changes (only in create/edit mode)
+      if (field === "name" && (mode === "create" || mode === "edit")) {
+        newData.slug = toKebabCase(value);
+      }
+
+      return newData;
+    });
   };
 
   const handleInventorTypeChange = (type: "none" | "user" | "name") => {
@@ -422,19 +440,24 @@ export function TrickForm({
 
                 {/* Slug (Route) */}
                 <div className="space-y-2">
-                  <Label htmlFor="slug">Route (Slug) *</Label>
+                  <Label htmlFor="slug">Route *</Label>
                   {mode === "view" ? (
                     <div className="p-4 bg-muted/50 rounded-lg">
                       {formData.slug}
                     </div>
                   ) : (
-                    <Input
-                      id="slug"
-                      value={formData.slug}
-                      onChange={(e) => handleChange("slug", e.target.value)}
-                      placeholder="Enter unique slug (e.g., my-trick-name)"
-                      required
-                    />
+                    <div className="space-y-1">
+                      <Input
+                        id="slug"
+                        value={formData.slug}
+                        onChange={(e) => handleChange("slug", e.target.value)}
+                        placeholder="Auto-generated from trick name (e.g., my-trick-name)"
+                        required
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        This is the URL route for the trick and must be unique.
+                      </p>
+                    </div>
                   )}
                 </div>
 
@@ -551,19 +574,31 @@ export function TrickForm({
                         {formData.difficulty_level}/10)
                       </Badge>
                     ) : (
-                      <Input
-                        id="difficulty"
-                        type="number"
-                        min="1"
-                        max="10"
-                        value={formData.difficulty_level}
-                        onChange={(e) =>
+                      <Select
+                        value={formData.difficulty_level.toString()}
+                        onValueChange={(value) =>
                           handleChange(
                             "difficulty_level",
-                            Number.parseInt(e.target.value) || 1
+                            Number.parseInt(value)
                           )
                         }
-                      />
+                      >
+                        <SelectTrigger id="difficulty">
+                          <SelectValue placeholder="Select difficulty level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 - Beginner</SelectItem>
+                          <SelectItem value="2">2 - Beginner</SelectItem>
+                          <SelectItem value="3">3 - Beginner</SelectItem>
+                          <SelectItem value="4">4 - Intermediate</SelectItem>
+                          <SelectItem value="5">5 - Intermediate</SelectItem>
+                          <SelectItem value="6">6 - Intermediate</SelectItem>
+                          <SelectItem value="7">7 - Advanced</SelectItem>
+                          <SelectItem value="8">8 - Advanced</SelectItem>
+                          <SelectItem value="9">9 - Advanced</SelectItem>
+                          <SelectItem value="10">10 - Advanced</SelectItem>
+                        </SelectContent>
+                      </Select>
                     )}
                   </div>
 

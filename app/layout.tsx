@@ -48,7 +48,7 @@ export default function RootLayout({
       <body
         className={`font-sans  ${GeistSans.variable} ${GeistMono.variable}`}
       >
-        <Toaster />
+        <Toaster position="top-center" />
         <PWARegister />
         <AuthProvider>{children}</AuthProvider>
       </body>

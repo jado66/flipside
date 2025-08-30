@@ -62,12 +62,12 @@ export function TrickipediaHeader({
             >
               Sports &amp; Disciplines
             </Link>
-            <Link
+            {/* <Link
               href="/store"
               className="text-foreground hover:text-primary transition-colors"
             >
               Donate
-            </Link>
+            </Link> */}
             {/* <Link
               href="/"
               className="text-foreground hover:text-primary transition-colors"

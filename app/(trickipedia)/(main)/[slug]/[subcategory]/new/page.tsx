@@ -122,7 +122,7 @@ export default function TrickNewPage() {
           <Button variant="ghost" asChild className="mb-4">
             <Link href={`/${category}/${subcategorySlug}`}>
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Subcategory
+              Back to {subcategory?.name}
             </Link>
           </Button>
 
