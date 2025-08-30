@@ -3,14 +3,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
 import { DonorBanner } from "@/components/donor-banner";
-import { ThemeProvider } from "@/components/theme-provider";
-import { TrickipediaHeader } from "@/components/trickipedia-header";
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarInset,
-} from "@/components/ui/sidebar";
-import { MasterSideNav } from "@/components/side-nav";
+import { TrickipediaLayoutClient } from "./TrickipediaLayoutClient";
+import { Menu, X } from "lucide-react";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -41,21 +35,12 @@ export default function RootLayout({
       <body
         className={`font-sans trickipedia-theme ${geistSans.variable} ${geistMono.variable}`}
       >
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="trickipedia"
-          themes={["trickipedia"]}
+        <TrickipediaLayoutClient
+          geistSans={geistSans.variable}
+          geistMono={geistMono.variable}
         >
-          <TrickipediaHeader />
-          <SidebarProvider defaultOpen={true}>
-            <div className="flex min-h-screen w-full">
-              <Sidebar className="hidden md:flex md:w-65 border-r bg-muted/10">
-                <MasterSideNav />
-              </Sidebar>
-              <SidebarInset className="flex-1">{children}</SidebarInset>
-            </div>
-          </SidebarProvider>
-        </ThemeProvider>
+          {children}
+        </TrickipediaLayoutClient>
       </body>
     </html>
   );

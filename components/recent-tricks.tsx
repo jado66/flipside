@@ -73,6 +73,18 @@ export function RecentTricks() {
     return date.toLocaleDateString();
   };
 
+  // Helper function to build the new path structure
+  const getTrickPath = (trick: Trick) => {
+    if (!trick.subcategory) return "#"; // fallback if subcategory data is missing
+    return `/${trick.subcategory.master_category.slug}/${trick.subcategory.slug}/${trick.slug}`;
+  };
+
+  const getAllTricksPath = () => {
+    // You might want to replace this with a specific category/subcategory or create a general tricks listing page
+    // For now, I'm using a generic path - you may need to adjust this based on your routing structure
+    return "/browse-tricks"; // or whatever your general tricks listing page is
+  };
+
   if (loading) {
     return (
       <section className="py-16 bg-muted/30">
@@ -102,7 +114,7 @@ export function RecentTricks() {
             asChild
             className="hidden sm:flex bg-transparent"
           >
-            <Link href="/tricks">
+            <Link href={getAllTricksPath()}>
               View All Tricks
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
@@ -111,7 +123,7 @@ export function RecentTricks() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {tricks.map((trick) => (
-            <Link key={trick.id} href={`/tricks/${trick.slug}`}>
+            <Link key={trick.id} href={getTrickPath(trick)}>
               <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden">
                 <div className="aspect-video relative overflow-hidden">
                   <img
@@ -195,7 +207,7 @@ export function RecentTricks() {
 
         <div className="text-center mt-8 sm:hidden">
           <Button variant="outline" asChild>
-            <Link href="/tricks">
+            <Link href={getAllTricksPath()}>
               View All Tricks
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>

@@ -27,6 +27,8 @@ import type {
   NavigationSubcategory,
   NavigationTrick,
 } from "./types";
+import { TrickipediaLogo } from "../trickipedia-logo";
+import Link from "next/link";
 
 export function MasterSideNav() {
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
@@ -211,13 +213,44 @@ export function MasterSideNav() {
 
   return (
     <>
-      <div className="h-16" />
+      {/* Desktop spacer for topbar, only visible on desktop */}
+      <div className="h-16 hidden sm:block" />
+
+      {/* Mobile logo */}
+      <div className="block sm:hidden flex">
+        <TrickipediaLogo />
+      </div>
 
       <div className="w-full">
         <SidebarContent>
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
+                {/* Mobile-only links above categories */}
+                <div className="block sm:hidden">
+                  <div className="my-4 border-t border-border" />
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link
+                        href="/sports-and-disciplines"
+                        className="w-full text-sm py-2 block"
+                      >
+                        Sports &amp; Disciplines
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link href="/store" className="w-full text-sm py-2 block">
+                        Donate
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  {/* Separator */}
+                  <div className="my-2 border-t border-border" />
+                </div>
+
+                {/* Categories */}
                 {isLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin" />
@@ -248,9 +281,7 @@ export function MasterSideNav() {
                         >
                           <div className="flex items-center gap-2 cursor-pointer text-sm md:text-base">
                             <Icon className="h-4 w-4 md:h-5 md:w-5" />
-                            <span className="hidden xs:inline md:inline truncate">
-                              {category.name}
-                            </span>
+                            <span className=" truncate">{category.name}</span>
                             {isCategoryExpanded ? (
                               <ChevronDown className="h-3 w-3 md:h-4 md:w-4 ml-1" />
                             ) : (
@@ -265,14 +296,14 @@ export function MasterSideNav() {
                               <SidebarMenuSubItem>
                                 <div className="flex items-center py-2">
                                   <Loader2 className="h-3 w-3 md:h-4 md:w-4 animate-spin" />
-                                  <span className="ml-2 text-xs hidden md:inline">
+                                  <span className="ml-2 text-xs ">
                                     Loading subcategories...
                                   </span>
                                 </div>
                               </SidebarMenuSubItem>
                             ) : (category.subcategories?.length ?? 0) === 0 ? (
                               <SidebarMenuSubItem>
-                                <div className="text-xs text-muted-foreground py-2 hidden md:block">
+                                <div className="text-xs text-muted-foreground py-2 ">
                                   No subcategories
                                 </div>
                               </SidebarMenuSubItem>
@@ -318,7 +349,7 @@ export function MasterSideNav() {
                                           <SidebarMenuSubItem>
                                             <div className="flex items-center py-1">
                                               <Loader2 className="h-2 w-2 md:h-3 md:w-3 animate-spin" />
-                                              <span className="ml-2 text-xs hidden md:inline">
+                                              <span className="ml-2 text-xs ">
                                                 Loading tricks...
                                               </span>
                                             </div>
@@ -326,7 +357,7 @@ export function MasterSideNav() {
                                         ) : (subcat.tricks?.length ?? 0) ===
                                           0 ? (
                                           <SidebarMenuSubItem>
-                                            <div className="text-xs text-muted-foreground py-1 hidden md:block">
+                                            <div className="text-xs text-muted-foreground py-1 ">
                                               No tricks
                                             </div>
                                           </SidebarMenuSubItem>
@@ -336,13 +367,13 @@ export function MasterSideNav() {
                                               key={trick.slug}
                                             >
                                               <SidebarMenuSubButton asChild>
-                                                <a
+                                                <Link
                                                   href={`/${category.slug}/${subcat.slug}/${trick.slug}`}
                                                   className="text-xs py-1 block hover:underline truncate"
                                                   title={trick.name}
                                                 >
                                                   {trick.name}
-                                                </a>
+                                                </Link>
                                               </SidebarMenuSubButton>
                                             </SidebarMenuSubItem>
                                           ))
@@ -359,6 +390,31 @@ export function MasterSideNav() {
                     );
                   })
                 )}
+
+                {/* Mobile-only login/join buttons after categories */}
+                <div className="block sm:hidden ">
+                  <div className="my-4 border-t border-border" />
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link
+                        href="/login"
+                        className="w-full text-sm py-2 block flex items-center justify-center border border-border rounded mb-2"
+                      >
+                        <span className="mr-2">Sign In</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild>
+                      <Link
+                        href="/login"
+                        className="w-full text-sm py-2 block flex items-center justify-center bg-primary text-primary-foreground rounded"
+                      >
+                        <span className="mr-2">Join Now</span>
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </div>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

@@ -238,12 +238,6 @@ export default function CategoryPage() {
             <h2 className="text-2xl font-bold">
               Popular {category.name} Tricks
             </h2>
-            <Button variant="outline" asChild>
-              <Link href={`/tricks?category=${category.slug}`}>
-                View All Tricks
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
           </div>
           <div className="text-center py-12 bg-muted/30 rounded-lg">
             <p className="text-muted-foreground">

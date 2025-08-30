@@ -1,83 +1,231 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Users, BookOpen, MessageSquare, TrendingUp } from "lucide-react"
+"use client";
+import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Users,
+  BookOpen,
+  MessageSquare,
+  TrendingUp,
+  Loader2,
+} from "lucide-react";
+import { createClient } from "@/lib/client"; // Adjust import path as needed
 
-const stats = [
-  {
-    title: "Active Members",
-    value: "1,247",
-    change: "+12%",
-    changeType: "positive" as const,
-    icon: Users,
-    description: "Growing community of athletes",
-  },
-  {
-    title: "Total Tricks",
-    value: "515",
-    change: "+8%",
-    changeType: "positive" as const,
-    icon: BookOpen,
-    description: "Comprehensive trick database",
-  },
-  {
-    title: "Comments",
-    value: "3,892",
-    change: "+23%",
-    changeType: "positive" as const,
-    icon: MessageSquare,
-    description: "Community discussions",
-  },
-  {
-    title: "Monthly Views",
-    value: "28.5k",
-    change: "+15%",
-    changeType: "positive" as const,
-    icon: TrendingUp,
-    description: "Learning sessions this month",
-  },
-]
+interface Stats {
+  totalUsers: number;
+  totalTricks: number;
+  totalViews: number;
+  publishedTricks: number;
+}
+
+interface StatItem {
+  title: string;
+  value: string;
+  change?: string;
+  changeType: "positive" | "negative";
+  icon: any;
+  description: string;
+}
 
 export function CommunityStats() {
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        setLoading(true);
+        const supabase = await createClient();
+
+        // Fetch all stats in parallel
+        const [
+          { count: totalUsers },
+          { count: totalTricks },
+          { count: publishedTricks },
+          { data: viewsData },
+        ] = await Promise.all([
+          // Total users count
+          supabase.from("users").select("*", { count: "exact", head: true }),
+
+          // Total tricks count
+          supabase.from("tricks").select("*", { count: "exact", head: true }),
+
+          // Published tricks count
+          supabase
+            .from("tricks")
+            .select("*", { count: "exact", head: true })
+            .eq("is_published", true),
+
+          // Sum of all view counts
+          supabase.from("tricks").select("view_count").eq("is_published", true),
+        ]);
+
+        // Calculate total views
+        const totalViews =
+          viewsData?.reduce((sum, trick) => sum + (trick.view_count || 0), 0) ||
+          0;
+
+        setStats({
+          totalUsers: totalUsers || 0,
+          totalTricks: totalTricks || 0,
+          totalViews,
+          publishedTricks: publishedTricks || 0,
+        });
+      } catch (err) {
+        console.error("Error fetching stats:", err);
+        setError("Failed to load community stats");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchStats();
+  }, []);
+
+  // Format numbers for display
+  const formatNumber = (num: number): string => {
+    if (num >= 1000000) {
+      return (num / 1000000).toFixed(1) + "M";
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(1) + "k";
+    }
+    return num.toLocaleString();
+  };
+
+  // Generate stats array based on real data
+  const getStatsArray = (stats: Stats): StatItem[] => [
+    {
+      title: "Active Members",
+      value: formatNumber(stats.totalUsers),
+      change: stats.totalUsers > 0 ? "+12%" : "0%", // You could calculate real growth if you have historical data
+      changeType: "positive" as const,
+      icon: Users,
+      description: "Registered community members",
+    },
+    {
+      title: "Published Tricks",
+      value: formatNumber(stats.publishedTricks),
+      change: stats.publishedTricks > 0 ? "+8%" : "0%", // You could calculate real growth if you have historical data
+      changeType: "positive" as const,
+      icon: BookOpen,
+      description: "Available trick tutorials",
+    },
+    {
+      title: "Total Views",
+      value: formatNumber(stats.totalViews),
+      change: stats.totalViews > 0 ? "+23%" : "0%", // You could calculate real growth if you have historical data
+      changeType: "positive" as const,
+      icon: TrendingUp,
+      description: "Community engagement",
+    },
+    {
+      title: "Total Content",
+      value: formatNumber(stats.totalTricks),
+      change: stats.totalTricks > 0 ? "+15%" : "0%", // You could calculate real growth if you have historical data
+      changeType: "positive" as const,
+      icon: MessageSquare,
+      description: "Including drafts and published",
+    },
+  ];
+
+  if (loading) {
+    return (
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-3xl font-bold text-balance mb-4">
+              Growing Community
+            </h2>
+            <p className="text-lg text-muted-foreground text-pretty max-w-2xl mx-auto">
+              Join thousands of athletes sharing knowledge and pushing the
+              boundaries of movement.
+            </p>
+          </div>
+          <div className="flex justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (error) {
+    return (
+      <section className="py-16 bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <p className="text-lg text-destructive">{error}</p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  if (!stats) return null;
+
+  const statsArray = getStatsArray(stats);
+
   return (
     <section className="py-16 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-balance mb-4">Growing Community</h2>
+          <h2 className="text-3xl font-bold text-balance mb-4">
+            Growing Community
+          </h2>
           <p className="text-lg text-muted-foreground text-pretty max-w-2xl mx-auto">
-            Join thousands of athletes sharing knowledge and pushing the boundaries of movement.
+            Join thousands of athletes sharing knowledge and pushing the
+            boundaries of movement.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {stats.map((stat, index) => {
-            const IconComponent = stat.icon
+          {statsArray.map((stat, index) => {
+            const IconComponent = stat.icon;
             return (
-              <Card key={index} className="text-center hover:shadow-lg transition-shadow duration-300">
+              <Card
+                key={index}
+                className="text-center hover:shadow-lg transition-shadow duration-300"
+              >
                 <CardHeader className="pb-3">
                   <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center mx-auto mb-4">
                     <IconComponent className="h-6 w-6 text-primary" />
                   </div>
-                  <CardTitle className="text-3xl font-bold text-primary mb-1">{stat.value}</CardTitle>
+                  <CardTitle className="text-3xl font-bold text-primary mb-1">
+                    {stat.value}
+                  </CardTitle>
                   <div className="flex items-center justify-center space-x-2">
                     <span className="text-sm font-medium">{stat.title}</span>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        stat.changeType === "positive"
-                          ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
-                          : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
-                      }`}
-                    >
-                      {stat.change}
-                    </span>
+                    {stat.change && (
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          stat.changeType === "positive"
+                            ? "bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-400"
+                            : "bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-400"
+                        }`}
+                      >
+                        {stat.change}
+                      </span>
+                    )}
                   </div>
                 </CardHeader>
                 <CardContent className="pt-0">
-                  <p className="text-sm text-muted-foreground">{stat.description}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {stat.description}
+                  </p>
                 </CardContent>
               </Card>
-            )
+            );
           })}
         </div>
+
+        {stats.totalUsers === 0 && (
+          <div className="text-center mt-8">
+            <p className="text-muted-foreground">
+              Be the first to join our community!
+            </p>
+          </div>
+        )}
       </div>
     </section>
-  )
+  );
 }
