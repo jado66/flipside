@@ -16,7 +16,7 @@ export default function ContributingSection() {
 
         <div className="grid md:grid-cols-2 gap-8 mb-12">
           {/* Regular Contributors Card */}
-          <div className="bg-card rounded-2xl shadow-xl p-8 border border-border/50 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+          <div className="flex flex-col bg-card rounded-2xl shadow-xl p-8 border border-border/50 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
             <div className="flex items-center mb-6">
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mr-4">
                 <User />
@@ -24,10 +24,13 @@ export default function ContributingSection() {
               <h3 className="text-2xl font-bold">Contributors</h3>
             </div>
             <p className="text-muted-foreground leading-relaxed mb-6">
-              Regular users can add and edit tricks, helping to grow and improve
-              Trickipedia for everyone. Your knowledge and experience help build
-              the world&apos;s most comprehensive trick database.
+              Anyone with an account can add and edit tricks, helping to grow
+              and improve Trickipedia for everyone. Your knowledge and
+              experience help build the world&apos;s most comprehensive trick
+              database.
             </p>
+            <div className="flex-grow" />
+
             <div className="flex items-center text-sm text-primary font-medium">
               <span>Start contributing today</span>
             </div>
@@ -56,24 +59,13 @@ export default function ContributingSection() {
             </div>
             <p className="text-muted-foreground leading-relaxed mb-6">
               Moderators have advanced privileges, including the ability to add
-              new categories and help organize content. Help shape the future of
+              new categories and help organize content. To become a moderator,
+              you must reach out to <b>@jdparkour</b> on Instagram to have
+              moderator permissions granted. Help shape the future of
               Trickipedia and guide our growing community.
             </p>
             <div className="flex items-center text-sm text-primary font-medium">
               <span>Apply for moderation</span>
-              <svg
-                className="w-4 h-4 ml-2"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 5l7 7-7 7"
-                />
-              </svg>
             </div>
           </div>
         </div>
@@ -81,9 +73,9 @@ export default function ContributingSection() {
         <div className="text-center bg-primary/5 rounded-2xl p-8 border border-primary/10">
           <h3 className="text-2xl font-bold mb-4">Ready to Make an Impact?</h3>
           <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
-            If you&apos;re passionate about parkour and want to help shape the
-            future of Trickipedia, reach out to become a moderator and join our
-            core team.
+            If you&apos;re passionate about action sports and want to help shape
+            the future of Trickipedia, reach out to <b>@jdparkour</b> on
+            Instagram to become a moderator and join our core team.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <div className="flex items-center bg-card rounded-full px-6 py-3 shadow-md border border-border/50">
