@@ -19,6 +19,7 @@ import {
 import { getTricks, type Trick } from "@/lib/tricks-data";
 import { ArrowLeft, ArrowRight, Plus, Eye, Heart, Clock } from "lucide-react";
 import { useAuth } from "@/contexts/auth-provider";
+import { TrickImage } from "@/components/trick-image";
 
 const DIFFICULTY_LABELS = {
   1: "Beginner",
@@ -197,11 +198,8 @@ export default function SubcategoryPage() {
                 >
                   <Card className="h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden pt-0">
                     <div className="aspect-video relative overflow-hidden">
-                      <img
-                        src={
-                          (trick.image_urls?.[0] ?? "") ||
-                          "/placeholder.svg?height=200&width=300&query=trick demonstration"
-                        }
+                      <TrickImage
+                        trick={trick}
                         alt={trick.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                       />

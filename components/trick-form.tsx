@@ -364,7 +364,7 @@ export function TrickForm({
                 {nonEmptyItems.map((item, idx) => (
                   <img
                     key={idx}
-                    src={item || "/placeholder.svg"}
+                    src={item || "/trick-placeholder.png"}
                     alt="Trick image"
                     className="aspect-video object-cover rounded-lg border"
                   />

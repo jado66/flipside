@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Heart, Clock, ArrowRight } from "lucide-react";
 import { getTricks, type Trick } from "@/lib/tricks-data";
+import { TrickImage } from "@/components/trick-image";
 
 const DIFFICULTY_COLORS = {
   1: "bg-green-500",
@@ -126,11 +127,8 @@ export function RecentTricks() {
             <Link key={trick.id} href={getTrickPath(trick)}>
               <Card className="pt-0 h-full hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group overflow-hidden">
                 <div className="aspect-video relative overflow-hidden">
-                  <img
-                    src={
-                      (trick.image_urls?.[0] ?? "") ||
-                      "/placeholder.svg?height=200&width=300&query=trick demonstration"
-                    }
+                  <TrickImage
+                    trick={trick}
                     alt={trick.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                   />
