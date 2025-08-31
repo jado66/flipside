@@ -262,10 +262,10 @@ export default function SubcategoryPage() {
                             <Eye className="h-3 w-3" />
                             <span>{trick.view_count.toLocaleString()}</span>
                           </div>
-                          <div className="flex items-center space-x-1">
+                          {/* <div className="flex items-center space-x-1">
                             <Heart className="h-3 w-3" />
                             <span>{trick.like_count}</span>
-                          </div>
+                          </div> */}
                         </div>
                         <div className="flex items-center space-x-1">
                           <Clock className="h-3 w-3" />

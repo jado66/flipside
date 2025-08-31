@@ -1,4 +1,3 @@
-import { createClient } from "./client";
 import { supabase } from "./supbase";
 
 export interface Trick {
@@ -281,64 +280,6 @@ export async function deleteTrick(id: string): Promise<void> {
     console.error("Error deleting trick:", error);
     throw new Error("Failed to delete trick");
   }
-}
-
-// Increment trick view count
-export async function incrementTrickViews(id: string): Promise<void> {
-  const { error } = await supabase.rpc("increment_trick_views", {
-    trick_id: id,
-  });
-
-  if (error) {
-    console.error("Error incrementing trick views:", error);
-    // Don't throw error for view count increment failures
-  }
-}
-
-// Toggle trick like (you'll need to implement a likes table)
-export async function toggleTrickLike(
-  trickId: string,
-  userId: string
-): Promise<{ liked: boolean; likeCount: number }> {
-  // Check if user already liked this trick
-  const { data: existingLike } = await supabase
-    .from("trick_likes")
-    .select("id")
-    .eq("trick_id", trickId)
-    .eq("user_id", userId)
-    .single();
-
-  let liked: boolean;
-
-  if (existingLike) {
-    // Remove like
-    await supabase
-      .from("trick_likes")
-      .delete()
-      .eq("trick_id", trickId)
-      .eq("user_id", userId);
-    liked = false;
-  } else {
-    // Add like
-    await supabase
-      .from("trick_likes")
-      .insert([{ trick_id: trickId, user_id: userId }]);
-    liked = true;
-  }
-
-  // Get updated like count
-  const { count } = await supabase
-    .from("trick_likes")
-    .select("*", { count: "exact", head: true })
-    .eq("trick_id", trickId);
-
-  // Update trick like count
-  await supabase
-    .from("tricks")
-    .update({ like_count: count || 0 })
-    .eq("id", trickId);
-
-  return { liked, likeCount: count || 0 };
 }
 
 // Get navigation data with hierarchical structure for side nav

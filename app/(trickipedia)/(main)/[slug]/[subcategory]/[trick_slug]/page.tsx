@@ -15,8 +15,6 @@ import {
 import {
   getTrickBySlug,
   getTrickBySlugWithLinks,
-  incrementTrickViews,
-  toggleTrickLike,
   type Trick,
 } from "@/lib/tricks-data";
 import {
@@ -54,6 +52,7 @@ import { Separator } from "@/components/ui/separator";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { PrerequisitesDisplay } from "@/components/prerequisites-display";
 import { supabase } from "@/lib/supbase";
+import { incrementTrickViews, toggleTrickLike } from "@/lib/tricks-client";
 
 const DIFFICULTY_LABELS = {
   1: "Beginner",
@@ -113,17 +112,17 @@ export default function TrickDetailPage() {
           // Increment view count
           await incrementTrickViews(data.id);
 
-          // Check if user has liked this trick
-          if (user) {
-            const { data: likeData } = await supabase
-              .from("trick_likes")
-              .select("id")
-              .eq("trick_id", data.id)
-              .eq("user_id", user.id)
-              .single();
+          // // Check if user has liked this trick
+          // if (user) {
+          //   const { data: likeData } = await supabase
+          //     .from("trick_likes")
+          //     .select("id")
+          //     .eq("trick_id", data.id)
+          //     .eq("user_id", user.id)
+          //     .single();
 
-            setLiked(!!likeData);
-          }
+          //   setLiked(!!likeData);
+          // }
         }
       } catch (error) {
         console.error("Failed to load trick:", error);
@@ -274,11 +273,11 @@ export default function TrickDetailPage() {
                     </span>
                     <span>views</span>
                   </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
+                  {/* <div className="flex items-center gap-2 text-muted-foreground">
                     <Heart className="h-4 w-4" />
                     <span className="font-medium">{likeCount}</span>
                     <span>likes</span>
-                  </div>
+                  </div> */}
                 </div>
 
                 <div className="flex items-center gap-2 flex-wrap">
