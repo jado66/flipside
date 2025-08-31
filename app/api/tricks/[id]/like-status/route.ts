@@ -4,10 +4,10 @@ import { supabaseService } from "@/lib/supabase-service";
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: trickId } = params;
+    const { id: trickId } = await params;
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get("userId");
 
@@ -65,10 +65,10 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: trickId } = params;
+    const { id: trickId } = await params;
     const body = await request.json();
     const { userIds } = body; // Array of user IDs to check
 

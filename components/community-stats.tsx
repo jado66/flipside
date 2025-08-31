@@ -94,14 +94,14 @@ export function CommunityStats() {
 
   // Generate stats array based on real data
   const getStatsArray = (stats: Stats): StatItem[] => [
-    {
-      title: "Active Members",
-      value: formatNumber(stats.totalUsers),
-      change: stats.totalUsers > 0 ? "+12%" : "0%", // You could calculate real growth if you have historical data
-      changeType: "positive" as const,
-      icon: Users,
-      description: "Registered community members",
-    },
+    // {
+    //   title: "Active Members",
+    //   value: formatNumber(stats.totalUsers),
+    //   change: stats.totalUsers > 0 ? "+12%" : "0%", // You could calculate real growth if you have historical data
+    //   changeType: "positive" as const,
+    //   icon: Users,
+    //   description: "Registered community members",
+    // },
     {
       title: "Published Tricks",
       value: formatNumber(stats.publishedTricks),
@@ -178,7 +178,7 @@ export function CommunityStats() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {statsArray.map((stat, index) => {
             const IconComponent = stat.icon;
             return (

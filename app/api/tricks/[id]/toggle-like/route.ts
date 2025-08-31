@@ -4,10 +4,11 @@ import { supabaseService } from "@/lib/supabase-service";
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id: trickId } = params;
+    const { id } = await params;
+    const trickId = id;
     const body = await request.json();
     const { userId } = body;
 

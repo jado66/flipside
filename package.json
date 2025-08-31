@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "npx eslint . --config eslint.config.mjs",
+    "lint": "npx eslint . --config eslint.config.mjs --quiet",
     "tsc": "tsc --noEmit"
   },
   "dependencies": {
