@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { supabase } from "./supbase";
 
 export interface Subcategory {
   id: string;
@@ -22,8 +23,6 @@ export async function getSubcategoriesByMasterCategory(
   masterCategoryId: string,
   includeInactive = true
 ): Promise<Subcategory[]> {
-  const supabase = await createClient();
-
   let query = supabase
     .from("subcategories")
     .select(
@@ -56,8 +55,6 @@ export async function getSubcategoriesByMasterCategory(
 
 // Get all subcategories
 export async function getAllSubcategories(): Promise<Subcategory[]> {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("subcategories")
     .select(
@@ -86,8 +83,6 @@ export async function getSubcategoryBySlug(
   masterCategorySlug: string,
   subcategorySlug: string
 ): Promise<Subcategory | null> {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("subcategories")
     .select(
@@ -123,8 +118,6 @@ export async function createSubcategory(
     "id" | "created_at" | "updated_at" | "master_category" | "trick_count"
   >
 ): Promise<Subcategory> {
-  const supabase = await createClient();
-
   const { data: newSubcategory, error } = await supabase
     .from("subcategories")
     .insert([data])
@@ -158,8 +151,6 @@ export async function updateSubcategory(
     >
   >
 ): Promise<Subcategory> {
-  const supabase = await createClient();
-
   const updateData = {
     ...data,
     updated_at: new Date().toISOString(),
@@ -192,8 +183,6 @@ export async function updateSubcategory(
 
 // Delete subcategory
 export async function deleteSubcategory(id: string): Promise<void> {
-  const supabase = await createClient();
-
   const { error } = await supabase.from("subcategories").delete().eq("id", id);
 
   if (error) {

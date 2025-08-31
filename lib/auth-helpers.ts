@@ -1,9 +1,9 @@
 // lib/auth-helpers.ts
-import { createClient } from "@/lib/client";
+
 import { redirect } from "next/navigation";
+import { supabase } from "./supbase";
 
 export async function checkAuth() {
-  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -42,7 +42,6 @@ export async function requireModerator() {
 }
 
 export async function canManageCategories(userId: string): Promise<boolean> {
-  const supabase = createClient();
   const { data: profile } = await supabase
     .from("users")
     .select("role")
@@ -56,8 +55,6 @@ export async function canEditTrick(
   userId: string,
   trickId: string
 ): Promise<boolean> {
-  const supabase = createClient();
-
   // Check if user is admin/moderator
   const { data: profile } = await supabase
     .from("users")

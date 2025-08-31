@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { createClient } from "@/lib/client";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import { Calendar, Clock, MapPin, Users, DollarSign, User } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { supabase } from "@/lib/supbase";
 
 interface Event {
   id: string;
@@ -46,7 +47,6 @@ export default function EventPage() {
   const [user, setUser] = useState<any>(null);
   const [isRegistered, setIsRegistered] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     if (params.id) {

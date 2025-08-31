@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { supabase } from "./supbase";
 
 export interface MasterCategory {
   id: string;
@@ -16,8 +17,6 @@ export interface MasterCategory {
 
 // Get active master categories with trick counts
 export async function getMasterCategories(): Promise<MasterCategory[]> {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("master_categories")
     .select(
@@ -50,8 +49,6 @@ export async function getMasterCategories(): Promise<MasterCategory[]> {
 
 // Get all master categories (including inactive)
 export async function getAllMasterCategories(): Promise<MasterCategory[]> {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("master_categories")
     .select(
@@ -85,8 +82,6 @@ export async function getAllMasterCategories(): Promise<MasterCategory[]> {
 export async function getMasterCategoryBySlug(
   slug: string
 ): Promise<MasterCategory | null> {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("master_categories")
     .select(
@@ -124,8 +119,6 @@ export async function getMasterCategoryBySlug(
 export async function createMasterCategory(
   data: Omit<MasterCategory, "id" | "created_at" | "updated_at">
 ): Promise<MasterCategory> {
-  const supabase = await createClient();
-
   const { data: newCategory, error } = await supabase
     .from("master_categories")
     .insert([data])
@@ -145,8 +138,6 @@ export async function updateMasterCategory(
   id: string,
   data: Partial<MasterCategory>
 ): Promise<MasterCategory> {
-  const supabase = await createClient();
-
   const updateData = {
     ...data,
     updated_at: new Date().toISOString(),
@@ -169,8 +160,6 @@ export async function updateMasterCategory(
 
 // Delete master category
 export async function deleteMasterCategory(id: string): Promise<void> {
-  const supabase = await createClient();
-
   const { error } = await supabase
     .from("master_categories")
     .delete()

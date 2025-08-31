@@ -1,13 +1,13 @@
 import { redirect, notFound } from "next/navigation";
-import { createClient } from "@/lib/server";
+
 import { CreateHubForm } from "@/components/create-hub-form";
+import { supabase } from "@/lib/supbase";
 
 interface EditHubPageProps {
   params: { id: string };
 }
 
 export default async function EditHubPage({ params }: EditHubPageProps) {
-  const supabase = await createClient();
   const { data: hub, error } = await supabase
     .from("hubs")
     .select("*")

@@ -3,7 +3,7 @@
 import type React from "react";
 
 import { useState } from "react";
-import { createClient } from "@/lib/client";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -27,6 +27,7 @@ import { useRouter } from "next/navigation";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-provider";
+import { supabase } from "@/lib/supbase";
 
 export function AuthForm({ trickipedia = false }) {
   const [email, setEmail] = useState("");
@@ -38,7 +39,6 @@ export function AuthForm({ trickipedia = false }) {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
-  const supabase = createClient();
 
   // Use the auth context
   const { login } = useAuth();

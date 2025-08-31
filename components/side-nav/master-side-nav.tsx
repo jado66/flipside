@@ -15,7 +15,7 @@ import {
 import { iconMap } from "./icon-map";
 import { TrickipediaLogo } from "../trickipedia-logo";
 import Link from "next/link";
-import { createClient } from "@/lib/client";
+
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-provider";
@@ -24,7 +24,6 @@ import { useNavigation } from "@/contexts/navigation-provider";
 export function MasterSideNav({
   onItemClick,
 }: { onItemClick?: () => void } = {}) {
-  const supabase = createClient();
   const router = useRouter();
   const { user, logout } = useAuth();
 

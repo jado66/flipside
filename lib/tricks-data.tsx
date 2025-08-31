@@ -1,4 +1,5 @@
 import { createClient } from "./client";
+import { supabase } from "./supbase";
 
 export interface Trick {
   id: string;
@@ -65,8 +66,6 @@ export async function getTricks(filters?: {
   limit?: number;
   offset?: number;
 }): Promise<{ tricks: Trick[]; total: number }> {
-  const supabase = await createClient();
-
   let query = supabase
     .from("tricks")
     .select(
@@ -164,8 +163,6 @@ export async function getTricks(filters?: {
 
 // Get trick by slug
 export async function getTrickBySlug(slug: string): Promise<Trick | null> {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("tricks")
     .select(
@@ -209,8 +206,6 @@ export async function createTrick(
     | "inventor"
   >
 ): Promise<Trick> {
-  const supabase = await createClient();
-
   const { data: newTrick, error } = await supabase
     .from("tricks")
     .insert([
@@ -247,8 +242,6 @@ export async function updateTrick(
   id: string,
   data: Partial<Trick>
 ): Promise<Trick> {
-  const supabase = await createClient();
-
   const updateData = {
     ...data,
     updated_at: new Date().toISOString(),
@@ -282,8 +275,6 @@ export async function updateTrick(
 
 // Delete trick
 export async function deleteTrick(id: string): Promise<void> {
-  const supabase = await createClient();
-
   const { error } = await supabase.from("tricks").delete().eq("id", id);
 
   if (error) {
@@ -294,8 +285,6 @@ export async function deleteTrick(id: string): Promise<void> {
 
 // Increment trick view count
 export async function incrementTrickViews(id: string): Promise<void> {
-  const supabase = await createClient();
-
   const { error } = await supabase.rpc("increment_trick_views", {
     trick_id: id,
   });
@@ -311,8 +300,6 @@ export async function toggleTrickLike(
   trickId: string,
   userId: string
 ): Promise<{ liked: boolean; likeCount: number }> {
-  const supabase = await createClient();
-
   // Check if user already liked this trick
   const { data: existingLike } = await supabase
     .from("trick_likes")
@@ -356,8 +343,6 @@ export async function toggleTrickLike(
 
 // Get navigation data with hierarchical structure for side nav
 export async function getNavigationData() {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("master_categories")
     .select(
@@ -406,8 +391,6 @@ export async function getUsers(): Promise<
     username?: string | null;
   }[]
 > {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("users")
     .select("id, first_name, last_name, username")
@@ -430,8 +413,6 @@ export async function getTricksByInventor(
     offset?: number;
   }
 ): Promise<{ tricks: Trick[]; total: number }> {
-  const supabase = await createClient();
-
   let query = supabase
     .from("tricks")
     .select(
@@ -491,8 +472,6 @@ export async function getInventors(): Promise<{
   }[];
   names: string[];
 }> {
-  const supabase = await createClient();
-
   // Get user inventors
   const { data: userInventors, error: userError } = await supabase
     .from("tricks")
@@ -577,7 +556,6 @@ export interface TrickWithLinkedPrerequisites extends Trick {
 export async function fetchPrerequisiteTricks(
   prerequisites: string[]
 ): Promise<Map<string, PrerequisiteTrick>> {
-  const supabase = await createClient();
   const prerequisiteMap = new Map<string, PrerequisiteTrick>();
 
   if (!prerequisites || prerequisites.length === 0) {
@@ -687,8 +665,6 @@ export async function searchPotentialPrerequisites(
   subcategoryId?: string, // Keep for backwards compatibility but don't use
   excludeTrickId?: string
 ): Promise<{ id: string; name: string; slug: string }[]> {
-  const supabase = await createClient();
-
   // Validate search input
   if (!search || search.trim().length < 2) {
     return [];

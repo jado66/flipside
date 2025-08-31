@@ -8,11 +8,10 @@ import {
   type ReactNode,
 } from "react";
 
-import { createClient } from "@/lib/client";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supbase";
 
 export async function getUser() {
-  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -20,7 +19,6 @@ export async function getUser() {
 }
 
 export async function getUserProfile() {
-  const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -84,8 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    const supabase = createClient();
-
     // Get initial session
     const getInitialSession = async () => {
       try {
@@ -122,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
       setIsLoading(true);
-      const supabase = createClient();
+
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -143,7 +139,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = async (): Promise<void> => {
     try {
-      const supabase = createClient();
       await supabase.auth.signOut();
       // The auth state listener will handle clearing the user state
     } catch (error) {

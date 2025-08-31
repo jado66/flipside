@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/client";
+
 import { MainNav } from "@/components/main-nav";
 import { ScheduleCard } from "@/components/schedule-card";
 import { ScheduleForm } from "@/components/schedule-form";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Filter } from "lucide-react";
+import { supabase } from "@/lib/supbase";
 
 interface Schedule {
   id: string;
@@ -44,7 +45,6 @@ export default function SchedulePage() {
   const [loading, setLoading] = useState(true);
   const [filterDay, setFilterDay] = useState<string>("all");
   const [user, setUser] = useState<any>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     loadUser();

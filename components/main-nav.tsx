@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { createClient } from "@/lib/client";
+
 import { Button } from "@/components/ui/button";
 import { UserNav } from "@/components/user-nav";
 import {
@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supbase";
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -30,7 +31,6 @@ export function MainNav() {
   const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const supabase = createClient();
 
   useEffect(() => {
     const getUser = async () => {

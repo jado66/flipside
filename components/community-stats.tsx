@@ -8,7 +8,8 @@ import {
   TrendingUp,
   Loader2,
 } from "lucide-react";
-import { createClient } from "@/lib/client"; // Adjust import path as needed
+import { supabase } from "@/lib/supbase";
+// Adjust import path as needed
 
 interface Stats {
   totalUsers: number;
@@ -35,7 +36,6 @@ export function CommunityStats() {
     const fetchStats = async () => {
       try {
         setLoading(true);
-        const supabase = await createClient();
 
         // Fetch all stats in parallel
         const [

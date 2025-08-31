@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/client";
+
 import { MainNav } from "@/components/main-nav";
 import { EventCard } from "@/components/event-card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, X } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/lib/supbase";
 
 interface Event {
   id: string;
@@ -68,7 +69,6 @@ export default function EventsPage() {
     skill_level: "All Levels",
     city: "",
   });
-  const supabase = createClient();
 
   useEffect(() => {
     loadEvents();

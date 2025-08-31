@@ -48,12 +48,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { createClient } from "@/lib/client";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { PrerequisitesDisplay } from "@/components/prerequisites-display";
+import { supabase } from "@/lib/supbase";
 
 const DIFFICULTY_LABELS = {
   1: "Beginner",
@@ -90,7 +90,6 @@ export default function TrickDetailPage() {
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
-  const supabase = createClient();
 
   const handleShare = async () => {
     try {

@@ -1,12 +1,10 @@
-import { createClient } from "@/lib/client";
 import type { DatabaseUser, UserRole } from "@/lib/types/database";
+import { supabase } from "./supbase";
 
 export type User = DatabaseUser;
 export type { UserRole };
 
 export async function getUsers(): Promise<User[]> {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("users")
     .select("*")
@@ -24,8 +22,6 @@ export async function updateUserRole(
   userId: string,
   newRole: UserRole
 ): Promise<void> {
-  const supabase = await createClient();
-
   const { error } = await supabase
     .from("users")
     .update({
@@ -44,8 +40,6 @@ export async function updateMultipleUserRoles(
   userIds: string[],
   newRole: UserRole
 ): Promise<void> {
-  const supabase = await createClient();
-
   const { error } = await supabase
     .from("users")
     .update({
@@ -61,8 +55,6 @@ export async function updateMultipleUserRoles(
 }
 
 export async function getUserById(userId: string): Promise<User | null> {
-  const supabase = await createClient();
-
   const { data, error } = await supabase
     .from("users")
     .select("*")
@@ -81,8 +73,6 @@ export async function searchUsers(
   searchTerm: string,
   roleFilter?: UserRole
 ): Promise<User[]> {
-  const supabase = await createClient();
-
   let query = supabase.from("users").select("*");
 
   if (searchTerm) {

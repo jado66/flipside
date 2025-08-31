@@ -3,7 +3,8 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Play, Loader2 } from "lucide-react";
-import { createClient } from "@/lib/client"; // Adjust import path as needed
+import { supabase } from "@/lib/supbase";
+// Adjust import path as needed
 
 interface HeroStats {
   totalTricks: number;
@@ -19,8 +20,6 @@ export function TrickipediaHeroSection() {
   useEffect(() => {
     const fetchHeroStats = async () => {
       try {
-        const supabase = await createClient();
-
         // Fetch all stats in parallel
         const [
           { count: totalTricks },

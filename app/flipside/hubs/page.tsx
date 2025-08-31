@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/client";
+
 import { MainNav } from "@/components/main-nav";
 import { HubCard } from "@/components/hub-card";
 import { HubSearch } from "@/components/hub-search";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
+import { supabase } from "@/lib/supbase";
 
 interface Hub {
   id: string;
@@ -34,7 +35,6 @@ export default function HubsPage() {
   const [hubs, setHubs] = useState<Hub[]>([]);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     loadHubs();

@@ -17,8 +17,8 @@ import { UserNav } from "@/components/user-nav";
 
 import { TrickipediaLogo } from "@/components/trickipedia-logo";
 
-import { createClient } from "@/lib/client";
 import type { User } from "@supabase/supabase-js";
+import { supabase } from "@/lib/supbase";
 
 export function TrickipediaHeader({
   onMobileMenuClick,
@@ -26,8 +26,6 @@ export function TrickipediaHeader({
   onMobileMenuClick?: () => void;
 }) {
   const [user, setUser] = useState<User | null>(null);
-
-  const supabase = createClient();
 
   useEffect(() => {
     const getUser = async () => {

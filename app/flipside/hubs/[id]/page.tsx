@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { createClient } from "@/lib/server";
+
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,6 +25,7 @@ import { MapPin, Phone, Globe, Mail, Heart, Calendar } from "lucide-react";
 // Removed next/image usage
 import Link from "next/link";
 import { HubScheduleView } from "@/components/hub-schedule-view";
+import { supabase } from "@/lib/supbase";
 
 interface HubPageProps {
   params: Promise<{ id: string }>;
@@ -32,7 +33,6 @@ interface HubPageProps {
 
 export default async function HubPage({ params }: HubPageProps) {
   const { id } = await params;
-  const supabase = await createClient();
 
   // Fetch hub data - fetch both images array and legacy image_url for backwards compatibility
   const { data: hub, error } = await supabase
@@ -70,7 +70,7 @@ export default async function HubPage({ params }: HubPageProps) {
 
   async function handleDelete() {
     "use server";
-    const supabase = await createClient();
+
     await supabase.from("hubs").delete().eq("id", id);
     redirect("/hubs");
   }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/lib/client";
+
 import { MainNav } from "@/components/main-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Clock, Plus, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
+import { supabase } from "@/lib/supbase";
 
 interface DashboardData {
   upcomingEvents: any[];
@@ -30,7 +31,6 @@ export default function DashboardPage() {
   });
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any>(null);
-  const supabase = createClient();
 
   useEffect(() => {
     loadDashboardData();

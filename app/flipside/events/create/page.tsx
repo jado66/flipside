@@ -1,6 +1,5 @@
 import { redirect } from "next/navigation";
 import { CreateEventForm } from "@/components/create-event-form";
-import { createClient } from "@/lib/server";
 
 export default async function CreateEventPage() {
   // const user = await getUser();
@@ -9,7 +8,7 @@ export default async function CreateEventPage() {
   //   redirect("/login");
   // }
 
-  // const supabase = await createClient();
+  //
   // const { data: profile } = await supabase
   //   .from("users")
   //   .select("role")
