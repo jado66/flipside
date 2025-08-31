@@ -188,7 +188,7 @@ export function TrickipediaHeroSection() {
           {/* Discipline Cards */}
           <div className="grid grid-cols-2  gap-4 max-w-2xl mx-auto mt-8">
             <Link
-              href="/trickipedia/parkour"
+              href="/parkour"
               className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
             >
               <div className="text-center">
@@ -202,7 +202,7 @@ export function TrickipediaHeroSection() {
             </Link>
 
             <Link
-              href="/trickipedia/tricking"
+              href="/tricking"
               className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
             >
               <div className="text-center">
@@ -216,7 +216,7 @@ export function TrickipediaHeroSection() {
             </Link>
 
             <Link
-              href="/trickipedia/gymnastics"
+              href="/gymnastics"
               className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
             >
               <div className="text-center">
@@ -230,7 +230,7 @@ export function TrickipediaHeroSection() {
             </Link>
 
             <Link
-              href="/trickipedia/trampwall"
+              href="/trampwall"
               className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
             >
               <div className="text-center">
