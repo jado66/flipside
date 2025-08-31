@@ -92,8 +92,8 @@ export function MasterSideNav({
         <TrickipediaLogo />
       </div>
 
-      <div className="w-full">
-        <SidebarContent>
+      <div className="w-full flex flex-col min-h-0 flex-1">
+        <SidebarContent className="flex-1 overflow-y-auto">
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>

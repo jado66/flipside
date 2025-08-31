@@ -37,17 +37,19 @@ export function TrickipediaLayoutClient({
         {mobileSidebarOpen && (
           <SidebarProvider defaultOpen={true}>
             <div className="fixed inset-0 z-50 bg-black/40 flex">
-              <div className="bg-background w-[90vw] max-w-[420px] h-full shadow-lg relative animate-slide-in-left overflow-y-auto px-2 pt-2">
+              <div className="bg-background w-[90vw] max-w-[420px] h-full shadow-lg relative animate-slide-in-left flex flex-col px-2 pt-2">
                 <button
                   aria-label="Close menu"
-                  className="absolute top-2 right-2 p-2 rounded hover:bg-muted"
+                  className="absolute top-2 right-2 p-2 rounded hover:bg-muted z-10"
                   onClick={() => setMobileSidebarOpen(false)}
                 >
                   <X className="h-5 w-5" />
                 </button>
-                <MasterSideNav
-                  onItemClick={() => setMobileSidebarOpen(false)}
-                />
+                <div className="flex-1 overflow-y-auto min-h-0">
+                  <MasterSideNav
+                    onItemClick={() => setMobileSidebarOpen(false)}
+                  />
+                </div>
               </div>
               {/* Click outside to close */}
               <div
