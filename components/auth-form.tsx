@@ -186,7 +186,7 @@ export function AuthForm({ trickipedia = false }) {
           <span className="ml-2">Continue with Google</span>
         </Button>
 
-        <Button
+        {/* <Button
           type="button"
           variant="outline"
           onClick={() => handleSocialLogin("facebook")}
@@ -199,7 +199,7 @@ export function AuthForm({ trickipedia = false }) {
             <FacebookIcon />
           )}
           <span className="ml-2">Continue with Facebook</span>
-        </Button>
+        </Button> */}
       </div>
     </div>
   );
@@ -305,7 +305,7 @@ export function AuthForm({ trickipedia = false }) {
                       />
                     </div>
                   </div>
-                  <div className="space-y-2">
+                  {/* <div className="space-y-2">
                     <Label htmlFor="role">Account Type</Label>
                     <Select
                       value={role}
@@ -321,7 +321,7 @@ export function AuthForm({ trickipedia = false }) {
                         <SelectItem value="business">Business Owner</SelectItem>
                       </SelectContent>
                     </Select>
-                  </div>
+                  </div> */}
                   <div className="space-y-2">
                     <Label htmlFor="signup-email">Email</Label>
                     <Input
@@ -364,7 +364,7 @@ export function AuthForm({ trickipedia = false }) {
                   )}
                   <Button
                     type="submit"
-                    className="w-full bg-orange-600 hover:bg-orange-700"
+                    className="w-full"
                     disabled={loading || !!socialLoading}
                   >
                     {loading ? "Creating Account..." : "Create Account"}
