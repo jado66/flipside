@@ -5,6 +5,7 @@ import "../globals.css";
 import { DonorBanner } from "@/components/donor-banner";
 import { TrickipediaLayoutClient } from "./TrickipediaLayoutClient";
 import { Menu, X } from "lucide-react";
+import { TrickipediaFooter } from "@/components/trickipdedia-footer";
 
 const geistSans = Geist({
   subsets: ["latin"],
@@ -40,6 +41,7 @@ export default function RootLayout({
           geistMono={geistMono.variable}
         >
           {children}
+          <TrickipediaFooter />
         </TrickipediaLayoutClient>
       </body>
     </html>

@@ -7,6 +7,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { AuthProvider } from "@/contexts/auth-provider";
 import { PWARegister } from "@/components/pwa-register";
 import { Toaster } from "sonner";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata: Metadata = {
   title: "Trickipedia",
@@ -51,6 +52,7 @@ export default function RootLayout({
         <Toaster position="top-center" />
         <PWARegister />
         <AuthProvider>{children}</AuthProvider>
+        <Analytics />
       </body>
     </html>
   );

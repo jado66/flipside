@@ -11,6 +11,7 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
+  SidebarHeader,
 } from "@/components/ui/sidebar";
 import { iconMap } from "./icon-map";
 import { TrickipediaLogo } from "../trickipedia-logo";
@@ -98,28 +99,13 @@ export function MasterSideNav({
             <SidebarGroupContent>
               <SidebarMenu>
                 {/* Mobile-only links above categories */}
-                <div className="block sm:hidden">
-                  <div className="my-4 border-t border-border" />
-                  <SidebarMenuItem>
-                    <SidebarMenuButton
-                      asChild
-                      onClick={() => {
-                        if (onItemClick) onItemClick();
-                      }}
-                    >
-                      <Link
-                        href="/sports-and-disciplines"
-                        className="w-full text-sm py-2 block"
-                      >
-                        Sports &amp; Disciplines
-                      </Link>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                  {/* Separator */}
-                  <div className="my-2 border-t border-border" />
-                </div>
 
                 {/* Categories */}
+                <Link href="/sports-and-disciplines" className="w-full block">
+                  <SidebarHeader className="text-lg ">
+                    Sports &amp; Disciplines
+                  </SidebarHeader>
+                </Link>
                 {isLoading ? (
                   <div className="flex items-center justify-center py-8">
                     <Loader2 className="h-6 w-6 animate-spin" />
@@ -318,6 +304,11 @@ export function MasterSideNav({
                   {user ? (
                     // User navigation for logged-in users
                     <>
+                      <Link href="/contribute" className="w-full block">
+                        <SidebarHeader className="text-md ">
+                          Help Contribute
+                        </SidebarHeader>
+                      </Link>
                       <SidebarMenuItem>
                         <div className="flex items-center space-x-3 px-3 py-2 mb-3">
                           {/* <Avatar className="h-8 w-8">

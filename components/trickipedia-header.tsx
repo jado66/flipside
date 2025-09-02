@@ -55,17 +55,18 @@ export function TrickipediaHeader({
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
+              href="/contribute"
+              className="text-foreground hover:text-primary transition-colors"
+            >
+              Contribute
+            </Link>
+            <Link
               href="/sports-and-disciplines"
               className="text-foreground hover:text-primary transition-colors"
             >
               Sports &amp; Disciplines
             </Link>
-            {/* <Link
-              href="/store"
-              className="text-foreground hover:text-primary transition-colors"
-            >
-              Donate
-            </Link> */}
+
             {/* <Link
               href="/"
               className="text-foreground hover:text-primary transition-colors"

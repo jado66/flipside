@@ -7,7 +7,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import {
   Accordion,
   AccordionContent,
@@ -32,12 +31,14 @@ import {
   Video,
   ImageIcon,
   Tag,
-  User,
-  PlusIcon,
+  UserIcon,
+  Eye,
+  Play,
+  ExternalLink,
 } from "lucide-react";
-import { Separator } from "./ui/separator";
-import { TrickData } from "@/types/trick";
+import type { TrickData } from "@/types/trick";
 import { PrerequisitesFormField } from "@/components/prerequisites-form-field";
+import { TrickImage } from "@/components/trick-image";
 
 interface StepGuide {
   step: number;
@@ -46,21 +47,30 @@ interface StepGuide {
   tips: string[];
 }
 
-interface User {
-  id: string;
-  first_name: string;
-  last_name: string;
-  username?: string;
-}
-
 export interface TrickFormProps {
-  mode: "view" | "edit" | "create"; // Added "create" mode
+  mode: "view" | "edit" | "create";
   trick: TrickData;
   onSubmit?: (data: TrickData) => void;
   loading?: boolean;
-  users?: User[]; // Available users for inventor selection
+  users?: {
+    id: string;
+    first_name: string;
+    last_name: string;
+    username?: string;
+  }[];
   onCancel?: () => void;
 }
+
+const getYouTubeVideoId = (url: string) => {
+  const regex =
+    /(?:youtube\.com\/(?:[^/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?/\s]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+};
+
+const getYouTubeThumbnail = (videoId: string) => {
+  return `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+};
 
 export function TrickForm({
   mode,
@@ -71,6 +81,7 @@ export function TrickForm({
   onCancel,
 }: TrickFormProps) {
   const [formData, setFormData] = useState<TrickData>(trick);
+
   // Always set published to true for now
   useEffect(() => {
     setFormData((prev) => ({ ...prev, is_published: true }));
@@ -94,6 +105,10 @@ export function TrickForm({
         trick.safety_notes?.trim()
       )
   );
+  const [showInventor, setShowInventor] = useState<boolean>(
+    mode !== "create" && !!(trick.inventor_user_id || trick.inventor_name)
+  );
+
   const [openSections, setOpenSections] = useState<string[]>(["basic"]);
   const [inventorType, setInventorType] = useState<"none" | "user" | "name">(
     trick.inventor_user_id ? "user" : trick.inventor_name ? "name" : "none"
@@ -121,19 +136,20 @@ export function TrickForm({
         trick.common_mistakes?.trim() ||
         trick.safety_notes?.trim()
       );
+      const hasInventor = !!(trick.inventor_user_id || trick.inventor_name);
 
       setShowPrerequisites(hasPrerequisites);
       setShowStepGuide(hasStepGuide);
       setShowTipsAndTricks(hasTipsAndTricks);
+      setShowInventor(hasInventor);
 
       // Auto-expand sections that have content
       const sectionsToOpen = ["basic"];
       if (hasPrerequisites) sectionsToOpen.push("prerequisites");
       if (hasStepGuide) sectionsToOpen.push("steps");
       if (hasTipsAndTricks) sectionsToOpen.push("tips-safety");
+      if (hasInventor) sectionsToOpen.push("inventor");
       setOpenSections(sectionsToOpen);
-    } else {
-      // In create mode, show all optional sections by default if desired, but for now keep as is
     }
   }, [
     trick.inventor_user_id,
@@ -151,8 +167,8 @@ export function TrickForm({
     return str
       .trim()
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-") // Replace non-alphanumeric characters with hyphens
-      .replace(/^-+|-+$/g, ""); // Remove leading/trailing hyphens
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
   };
 
   const handleChange = (field: keyof TrickData, value: any) => {
@@ -288,6 +304,98 @@ export function TrickForm({
     return formData.inventor_name || null;
   };
 
+  const renderMediaPreview = () => {
+    const hasImages = formData.image_urls.some((url) => url.trim());
+    const hasVideos = formData.video_urls.some((url) => url.trim());
+
+    if (!hasImages && !hasVideos && mode === "view") return null;
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Main preview using TrickImage logic */}
+          <div className="space-y-2">
+            <div className="aspect-video bg-muted rounded-lg overflow-hidden border-2 border-dashed border-muted-foreground/20">
+              <TrickImage
+                trick={formData as any}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          </div>
+
+          {/* Additional images */}
+          {hasImages && (
+            <div className="space-y-2">
+              <Label className="text-xs text-muted-foreground">
+                Images ({formData.image_urls.filter((url) => url.trim()).length}
+                )
+              </Label>
+              <div className="grid grid-cols-2 gap-2 max-h-32 overflow-y-auto">
+                {formData.image_urls
+                  .filter((url) => url.trim())
+                  .map((url, idx) => (
+                    <div
+                      key={idx}
+                      className="aspect-video bg-muted rounded overflow-hidden"
+                    >
+                      <img
+                        src={url || "/placeholder.svg"}
+                        alt={`Preview ${idx + 1}`}
+                        className="w-full h-full object-cover"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src =
+                            "/trick-placeholder.png";
+                        }}
+                      />
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Video thumbnails */}
+        {hasVideos && (
+          <div className="space-y-2">
+            <Label className="text-xs text-muted-foreground">
+              Videos ({formData.video_urls.filter((url) => url.trim()).length})
+            </Label>
+            <div className="flex gap-2 overflow-x-auto pb-2">
+              {formData.video_urls
+                .filter((url) => url.trim())
+                .map((url, idx) => {
+                  const youtubeId = getYouTubeVideoId(url);
+                  return (
+                    <div key={idx} className="flex-shrink-0 relative group">
+                      <div className="w-24 h-16 bg-muted rounded overflow-hidden border">
+                        {youtubeId ? (
+                          <img
+                            src={
+                              getYouTubeThumbnail(youtubeId) ||
+                              "/placeholder.svg"
+                            }
+                            alt={`Video ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center">
+                            <Video className="h-4 w-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Play className="h-3 w-3 text-white" />
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderArrayField = (
     title: string,
     field: keyof TrickData,
@@ -305,7 +413,7 @@ export function TrickForm({
         <div className="flex items-center gap-2">
           {icon}
           <Label className="text-sm font-medium">{title}</Label>
-          {mode === "view" && nonEmptyItems.length > 0 && (
+          {nonEmptyItems.length > 0 && (
             <Badge variant="secondary" className="text-xs">
               {nonEmptyItems.length}
             </Badge>
@@ -325,6 +433,17 @@ export function TrickForm({
                   placeholder={placeholder}
                   className="flex-1"
                 />
+                {type === "url" && item.trim() && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => window.open(item, "_blank")}
+                    className="px-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                  </Button>
+                )}
                 {items.length > 1 && (
                   <Button
                     type="button"
@@ -359,33 +478,31 @@ export function TrickForm({
                   </Badge>
                 ))}
               </div>
-            ) : field === "image_urls" ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            ) : field === "video_urls" ? (
+              <div className="space-y-2">
                 {nonEmptyItems.map((item, idx) => (
-                  <img
+                  <div
                     key={idx}
-                    src={item || "/trick-placeholder.png"}
-                    alt="Trick image"
-                    className="aspect-video object-cover rounded-lg border"
-                  />
+                    className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg"
+                  >
+                    <Video className="h-4 w-4 text-muted-foreground" />
+                    <a
+                      href={item}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline text-sm flex-1 truncate"
+                    >
+                      {item}
+                    </a>
+                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
+                  </div>
                 ))}
               </div>
             ) : (
               <div className="space-y-2">
                 {nonEmptyItems.map((item, idx) => (
                   <div key={idx} className="p-3 bg-muted/50 rounded-lg text-sm">
-                    {field === "video_urls" ? (
-                      <a
-                        href={item}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        {item}
-                      </a>
-                    ) : (
-                      item
-                    )}
+                    {item}
                   </div>
                 ))}
               </div>
@@ -397,15 +514,63 @@ export function TrickForm({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p:0 md:p-6 ">
+    <div className="max-w-4xl mx-auto p-0 md:p-6">
+      {(mode === "edit" || mode === "create") && (
+        <Card className="mb-6 border-primary/20">
+          <CardHeader className="pb-4">
+            <div className="flex items-center gap-2">
+              <Eye className="h-5 w-5 text-primary" />
+              <CardTitle className="text-lg">Live Preview</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {renderMediaPreview()}
+
+            <div className="mt-4 pt-4 border-t">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex-1">
+                  <h3 className="text-lg font-semibold text-balance">
+                    {formData.name || "Untitled Trick"}
+                  </h3>
+                  {formData.description && (
+                    <p className="text-sm text-muted-foreground mt-1 text-pretty">
+                      {formData.description}
+                    </p>
+                  )}
+                  <div className="flex items-center gap-2 mt-2">
+                    {formData.difficulty_level > 0 && (
+                      <Badge
+                        className={getDifficultyColor(
+                          formData.difficulty_level
+                        )}
+                      >
+                        {getDifficultyLabel(formData.difficulty_level)}
+                      </Badge>
+                    )}
+                    {formData.tags
+                      .filter(Boolean)
+                      .slice(0, 3)
+                      .map((tag, idx) => (
+                        <Badge key={idx} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
         <Accordion
           type="multiple"
           value={openSections}
           onValueChange={setOpenSections}
-          className="space-y-4 "
+          className="space-y-4"
         >
-          {/* Basic Information */}
+          {/* Basic Information - simplified without inventor */}
           <AccordionItem value="basic" className="border rounded-lg">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
@@ -415,7 +580,7 @@ export function TrickForm({
                 <div className="text-left">
                   <h3 className="font-semibold">Basic Information</h3>
                   <p className="text-sm text-muted-foreground">
-                    Name, slug, category, description, difficulty, and inventor
+                    Name, description, difficulty, and route
                   </p>
                 </div>
               </div>
@@ -442,18 +607,24 @@ export function TrickForm({
                 <div className="space-y-2">
                   <Label htmlFor="slug">Route *</Label>
                   {mode === "view" ? (
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      {formData.slug}
+                    <div className="p-4 bg-muted/50 rounded-lg font-mono text-sm">
+                      /{formData.slug}
                     </div>
                   ) : (
                     <div className="space-y-1">
-                      <Input
-                        id="slug"
-                        value={formData.slug}
-                        onChange={(e) => handleChange("slug", e.target.value)}
-                        placeholder="Auto-generated from trick name (e.g., my-trick-name)"
-                        required
-                      />
+                      <div className="flex">
+                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                          /
+                        </span>
+                        <Input
+                          id="slug"
+                          value={formData.slug}
+                          onChange={(e) => handleChange("slug", e.target.value)}
+                          placeholder="untitle-trick"
+                          required
+                          className="rounded-l-none"
+                        />
+                      </div>
                       <p className="text-xs text-muted-foreground">
                         This is the URL route for the trick and must be unique.
                       </p>
@@ -465,7 +636,7 @@ export function TrickForm({
                 <div className="space-y-2">
                   <Label htmlFor="description">Description *</Label>
                   {mode === "view" ? (
-                    <div className="p-4 bg-muted/50 rounded-lg">
+                    <div className="p-4 bg-muted/50 rounded-lg text-pretty">
                       {formData.description}
                     </div>
                   ) : (
@@ -482,148 +653,46 @@ export function TrickForm({
                   )}
                 </div>
 
-                {/* Inventor */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    <Label>Trick Inventor (Optional)</Label>
-                  </div>
-
+                {/* Difficulty */}
+                <div className="space-y-2">
+                  <Label htmlFor="difficulty">Difficulty Level (1-10) *</Label>
                   {mode === "view" ? (
-                    getInventorDisplayName() && (
-                      <div className="p-3 bg-muted/50 rounded-lg">
-                        <span className="text-sm text-muted-foreground">
-                          Invented by:{" "}
-                        </span>
-                        <span className="font-medium">
-                          {getInventorDisplayName()}
-                        </span>
-                      </div>
-                    )
+                    <Badge
+                      className={getDifficultyColor(formData.difficulty_level)}
+                    >
+                      {getDifficultyLabel(formData.difficulty_level)} (
+                      {formData.difficulty_level}/10)
+                    </Badge>
                   ) : (
-                    <div className="space-y-3">
-                      <Select
-                        value={inventorType}
-                        onValueChange={(value: "none" | "user" | "name") =>
-                          handleInventorTypeChange(value)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="none">
-                            No inventor specified
-                          </SelectItem>
-                          <SelectItem value="user">
-                            Select registered user
-                          </SelectItem>
-                          <SelectItem value="name">
-                            Enter inventor name
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-
-                      {inventorType === "user" && (
-                        <Select
-                          value={formData.inventor_user_id || ""}
-                          onValueChange={(value) =>
-                            handleChange("inventor_user_id", value || null)
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a user" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {users.map((user) => (
-                              <SelectItem key={user.id} value={user.id}>
-                                {user.username ||
-                                  `${user.first_name} ${user.last_name}`}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      )}
-
-                      {inventorType === "name" && (
-                        <Input
-                          value={formData.inventor_name || ""}
-                          onChange={(e) =>
-                            handleChange("inventor_name", e.target.value)
-                          }
-                          placeholder="Enter inventor name"
-                        />
-                      )}
-                    </div>
+                    <Select
+                      value={formData.difficulty_level.toString()}
+                      onValueChange={(value) =>
+                        handleChange("difficulty_level", Number.parseInt(value))
+                      }
+                    >
+                      <SelectTrigger id="difficulty">
+                        <SelectValue placeholder="Select difficulty level" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 - Beginner</SelectItem>
+                        <SelectItem value="2">2 - Beginner</SelectItem>
+                        <SelectItem value="3">3 - Beginner</SelectItem>
+                        <SelectItem value="4">4 - Intermediate</SelectItem>
+                        <SelectItem value="5">5 - Intermediate</SelectItem>
+                        <SelectItem value="6">6 - Intermediate</SelectItem>
+                        <SelectItem value="7">7 - Advanced</SelectItem>
+                        <SelectItem value="8">8 - Advanced</SelectItem>
+                        <SelectItem value="9">9 - Advanced</SelectItem>
+                        <SelectItem value="10">10 - Advanced</SelectItem>
+                      </SelectContent>
+                    </Select>
                   )}
-                </div>
-
-                {/* Difficulty & Published Status (hidden for now) */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="difficulty">
-                      Difficulty Level (1-10) *
-                    </Label>
-                    {mode === "view" ? (
-                      <Badge
-                        className={getDifficultyColor(
-                          formData.difficulty_level
-                        )}
-                      >
-                        {getDifficultyLabel(formData.difficulty_level)} (
-                        {formData.difficulty_level}/10)
-                      </Badge>
-                    ) : (
-                      <Select
-                        value={formData.difficulty_level.toString()}
-                        onValueChange={(value) =>
-                          handleChange(
-                            "difficulty_level",
-                            Number.parseInt(value)
-                          )
-                        }
-                      >
-                        <SelectTrigger id="difficulty">
-                          <SelectValue placeholder="Select difficulty level" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="1">1 - Beginner</SelectItem>
-                          <SelectItem value="2">2 - Beginner</SelectItem>
-                          <SelectItem value="3">3 - Beginner</SelectItem>
-                          <SelectItem value="4">4 - Intermediate</SelectItem>
-                          <SelectItem value="5">5 - Intermediate</SelectItem>
-                          <SelectItem value="6">6 - Intermediate</SelectItem>
-                          <SelectItem value="7">7 - Advanced</SelectItem>
-                          <SelectItem value="8">8 - Advanced</SelectItem>
-                          <SelectItem value="9">9 - Advanced</SelectItem>
-                          <SelectItem value="10">10 - Advanced</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  </div>
-
-                  {/* {mode !== "view" && (
-                    <div className="space-y-2">
-                      <Label>Publication Status</Label>
-                      <div className="flex items-center space-x-3">
-                        <Switch
-                          checked={formData.is_published}
-                          onCheckedChange={(checked) =>
-                            handleChange("is_published", checked)
-                          }
-                        />
-                        <Label className="text-sm">
-                          {formData.is_published ? "Published" : "Draft"}
-                        </Label>
-                      </div>
-                    </div>
-                  )} */}
                 </div>
               </div>
             </AccordionContent>
           </AccordionItem>
 
-          {/* Media & Tags */}
+          {/* Media & Tags - enhanced with preview */}
           <AccordionItem value="media" className="border rounded-lg">
             <AccordionTrigger className="px-6 py-4 hover:no-underline">
               <div className="flex items-center gap-3">
@@ -640,6 +709,9 @@ export function TrickForm({
             </AccordionTrigger>
             <AccordionContent className="px-6 pb-6">
               <div className="space-y-6">
+                {/* Preview section for edit/create modes */}
+                {(mode === "edit" || mode === "create") && renderMediaPreview()}
+
                 {renderArrayField(
                   "Video URLs",
                   "video_urls",
@@ -768,40 +840,149 @@ export function TrickForm({
             </AccordionItem>
           )}
 
-          <Separator className="my-4" />
+          {showInventor && (
+            <AccordionItem value="inventor" className="border rounded-lg">
+              <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                    <UserIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-semibold">Trick Inventor</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Credit the person who created this trick
+                    </p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="px-6 pb-6">
+                {mode === "view" ? (
+                  getInventorDisplayName() && (
+                    <div className="p-4 bg-muted/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <UserIcon className="h-4 w-4 text-muted-foreground" />
+                        <span className="text-sm text-muted-foreground">
+                          Invented by:{" "}
+                        </span>
+                        <span className="font-medium">
+                          {getInventorDisplayName()}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                ) : (
+                  <div className="space-y-4">
+                    <Select
+                      value={inventorType}
+                      onValueChange={(value: "none" | "user" | "name") =>
+                        handleInventorTypeChange(value)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">
+                          No inventor specified
+                        </SelectItem>
+                        <SelectItem value="user">
+                          Select registered user
+                        </SelectItem>
+                        <SelectItem value="name">
+                          Enter inventor name
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
 
-          {!showPrerequisites && (mode === "edit" || mode === "create") && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowPrerequisites(true)}
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Prerequisites
-            </Button>
+                    {inventorType === "user" && (
+                      <Select
+                        value={formData.inventor_user_id || ""}
+                        onValueChange={(value) =>
+                          handleChange("inventor_user_id", value || null)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select a user" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {users.map((user) => (
+                            <SelectItem key={user.id} value={user.id}>
+                              {user.username ||
+                                `${user.first_name} ${user.last_name}`}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    )}
+
+                    {inventorType === "name" && (
+                      <Input
+                        value={formData.inventor_name || ""}
+                        onChange={(e) =>
+                          handleChange("inventor_name", e.target.value)
+                        }
+                        placeholder="Enter inventor name"
+                      />
+                    )}
+                  </div>
+                )}
+              </AccordionContent>
+            </AccordionItem>
           )}
 
-          {!showStepGuide && (mode === "edit" || mode === "create") && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowStepGuide(true)}
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Step-by-Step Guide
-            </Button>
-          )}
+          <div className="flex flex-wrap gap-2 pt-4">
+            {!showPrerequisites && (mode === "edit" || mode === "create") && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowPrerequisites(true)}
+                className="text-muted-foreground"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Prerequisites
+              </Button>
+            )}
 
-          {!showTipsAndTricks && (mode === "edit" || mode === "create") && (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => setShowTipsAndTricks(true)}
-            >
-              <PlusIcon className="h-4 w-4 mr-2" />
-              Add Tips and Tricks
-            </Button>
-          )}
+            {!showStepGuide && (mode === "edit" || mode === "create") && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowStepGuide(true)}
+                className="text-muted-foreground"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Step-by-Step Guide
+              </Button>
+            )}
+
+            {!showTipsAndTricks && (mode === "edit" || mode === "create") && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowTipsAndTricks(true)}
+                className="text-muted-foreground"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Tips and Tricks
+              </Button>
+            )}
+
+            {!showInventor && (mode === "edit" || mode === "create") && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowInventor(true)}
+                className="text-muted-foreground"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Add Inventor Credit
+              </Button>
+            )}
+          </div>
         </Accordion>
 
         {(mode === "edit" || mode === "create") && (
