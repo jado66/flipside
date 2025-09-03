@@ -117,7 +117,7 @@ export function TrickipediaHeroSection() {
             Discipline
           </h1>
           <p className="text-xl text-muted-foreground text-pretty mb-8 max-w-2xl mx-auto">
-            The ultimate collaborative wiki for parkour, tricking, gymnastics,
+            The ultimate collaborative wiki for parkour, tricking, trampoline,
             and trampwall. Learn, share, and perfect your skills with our
             comprehensive trick database.
           </p>
@@ -216,12 +216,12 @@ export function TrickipediaHeroSection() {
             </Link>
 
             <Link
-              href="/gymnastics"
+              href="/trampoline"
               className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
             >
               <div className="text-center">
                 <div className="text-lg font-semibold  group-hover:text-primary transition-colors">
-                  Gymnastics
+                  Trampoline
                 </div>
                 <div className="text-xs group-hover:text-primary mt-1 transition-colors">
                   View Tricks

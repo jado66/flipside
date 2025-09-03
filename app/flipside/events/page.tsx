@@ -51,7 +51,7 @@ const SPORTS_OPTIONS = [
   "trampoline",
   "tricking",
   "freerunning",
-  "gymnastics",
+  "trampoline",
   "martial arts",
   "breakdancing",
 ];

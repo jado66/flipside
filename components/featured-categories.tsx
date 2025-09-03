@@ -23,7 +23,7 @@ import { getNavigationData } from "@/lib/tricks-data";
 const iconMap: Record<string, any> = {
   parkour: Zap,
   tricking: RotateCcw,
-  gymnastics: Activity,
+  trampoline: Activity,
   trampwall: Bounce,
   // Add more icon mappings as needed
 };

@@ -1,26 +1,40 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Search, X } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Search, X } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 interface HubSearchProps {
-  onSearch: (filters: SearchFilters) => void
+  onSearch: (filters: SearchFilters) => void;
 }
 
 interface SearchFilters {
-  query: string
-  sport: string
-  city: string
-  state: string
+  query: string;
+  sport: string;
+  city: string;
+  state: string;
 }
 
-const SPORTS = ["parkour", "trampoline", "tricking", "freerunning", "gymnastics", "martial arts", "breakdancing"]
+const SPORTS = [
+  "parkour",
+  "trampoline",
+  "tricking",
+  "freerunning",
+  "trampoline",
+  "martial arts",
+  "breakdancing",
+];
 
-const STATES = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"]
+const STATES = ["CA", "NY", "TX", "FL", "IL", "PA", "OH", "GA", "NC", "MI"];
 
 export function HubSearch({ onSearch }: HubSearchProps) {
   const [filters, setFilters] = useState<SearchFilters>({
@@ -28,19 +42,24 @@ export function HubSearch({ onSearch }: HubSearchProps) {
     sport: "All Sports",
     city: "",
     state: "All States",
-  })
+  });
 
   const handleSearch = () => {
-    onSearch(filters)
-  }
+    onSearch(filters);
+  };
 
   const clearFilters = () => {
-    const clearedFilters = { query: "", sport: "All Sports", city: "", state: "All States" }
-    setFilters(clearedFilters)
-    onSearch(clearedFilters)
-  }
+    const clearedFilters = {
+      query: "",
+      sport: "All Sports",
+      city: "",
+      state: "All States",
+    };
+    setFilters(clearedFilters);
+    onSearch(clearedFilters);
+  };
 
-  const hasActiveFilters = Object.values(filters).some((value) => value !== "")
+  const hasActiveFilters = Object.values(filters).some((value) => value !== "");
 
   return (
     <div className="space-y-4">
@@ -54,13 +73,19 @@ export function HubSearch({ onSearch }: HubSearchProps) {
             className="pl-10"
           />
         </div>
-        <Button onClick={handleSearch} className="bg-orange-600 hover:bg-orange-700">
+        <Button
+          onClick={handleSearch}
+          className="bg-orange-600 hover:bg-orange-700"
+        >
           Search
         </Button>
       </div>
 
       <div className="flex flex-wrap gap-4">
-        <Select value={filters.sport} onValueChange={(value) => setFilters({ ...filters, sport: value })}>
+        <Select
+          value={filters.sport}
+          onValueChange={(value) => setFilters({ ...filters, sport: value })}
+        >
           <SelectTrigger className="w-[180px]">
             <SelectValue placeholder="Sport" />
           </SelectTrigger>
@@ -81,7 +106,10 @@ export function HubSearch({ onSearch }: HubSearchProps) {
           className="w-[150px]"
         />
 
-        <Select value={filters.state} onValueChange={(value) => setFilters({ ...filters, state: value })}>
+        <Select
+          value={filters.state}
+          onValueChange={(value) => setFilters({ ...filters, state: value })}
+        >
           <SelectTrigger className="w-[100px]">
             <SelectValue placeholder="State" />
           </SelectTrigger>
@@ -105,12 +133,20 @@ export function HubSearch({ onSearch }: HubSearchProps) {
 
       {hasActiveFilters && (
         <div className="flex flex-wrap gap-2">
-          {filters.query && <Badge variant="secondary">Search: {filters.query}</Badge>}
-          {filters.sport && filters.sport !== "All Sports" && <Badge variant="secondary">Sport: {filters.sport}</Badge>}
-          {filters.city && <Badge variant="secondary">City: {filters.city}</Badge>}
-          {filters.state && filters.state !== "All States" && <Badge variant="secondary">State: {filters.state}</Badge>}
+          {filters.query && (
+            <Badge variant="secondary">Search: {filters.query}</Badge>
+          )}
+          {filters.sport && filters.sport !== "All Sports" && (
+            <Badge variant="secondary">Sport: {filters.sport}</Badge>
+          )}
+          {filters.city && (
+            <Badge variant="secondary">City: {filters.city}</Badge>
+          )}
+          {filters.state && filters.state !== "All States" && (
+            <Badge variant="secondary">State: {filters.state}</Badge>
+          )}
         </div>
       )}
     </div>
-  )
+  );
 }

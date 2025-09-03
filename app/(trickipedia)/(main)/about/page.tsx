@@ -83,17 +83,25 @@ export default function AboutPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="prose prose-sm max-w-none">
-                <div className="grid md:grid-cols-2 gap-6">
+                <div className="grid md:grid-cols-3 gap-6">
                   <div>
                     <h4 className="font-semibold mb-2">Sports Covered</h4>
                     <ul className="space-y-1">
+                      <li>Parkour &amp; Freerunning</li>
+                      <li>Tricking</li>
+                      <li>Trampoline</li>
+                      <li>Trampwall</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-2">Soon We&apos; Have</h4>
+                    <ul className="space-y-1">
                       <li>Skateboarding</li>
                       <li>BMX</li>
-                      <li>Scootering</li>
                       <li>Snowboarding</li>
                       <li>Skiing</li>
                       <li>Surfing</li>
-                      <li>Parkour</li>
+                      <li>Gymnastics</li>
                       <li>And many more...</li>
                     </ul>
                   </div>

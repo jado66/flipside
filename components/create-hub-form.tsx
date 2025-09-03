@@ -27,7 +27,7 @@ const SPORTS_OPTIONS = [
   "tricking",
   "freerunning",
   "trampwall",
-  "gymnastics",
+  "trampoline",
   "martial arts",
   "breakdancing",
 ];
