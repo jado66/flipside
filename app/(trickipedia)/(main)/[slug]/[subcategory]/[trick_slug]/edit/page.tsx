@@ -53,12 +53,6 @@ export default function TrickEditPage() {
           return;
         }
 
-        if (!hasModeratorAccess() && data.created_by !== user.id) {
-          toast.error("You don't have permission to edit this trick");
-          router.push(`/${category}/${subcategory}/${data.slug}`);
-          return;
-        }
-
         setTrick(data);
         setError(null);
       } catch (error) {

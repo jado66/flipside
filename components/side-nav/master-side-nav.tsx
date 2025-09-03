@@ -83,6 +83,18 @@ export function MasterSideNav({
     }
   };
 
+  const CloseSideBarLink = ({ children, href, className }) => {
+    return (
+      <Link
+        href={href}
+        className={`w-full text-lg py-0 block flex items-center justify-center border border-border rounded mb-2 ${className}`}
+        onClick={onItemClick}
+      >
+        {children}
+      </Link>
+    );
+  };
+
   return (
     <>
       {/* Desktop spacer for topbar, only visible on desktop */}
@@ -102,7 +114,7 @@ export function MasterSideNav({
 
                 {/* Categories */}
                 <Link href="/sports-and-disciplines" className="w-full block">
-                  <SidebarHeader className="text-lg ">
+                  <SidebarHeader className="text-2xl ">
                     Sports &amp; Disciplines
                   </SidebarHeader>
                 </Link>
@@ -127,8 +139,9 @@ export function MasterSideNav({
                           onClick={async () => {
                             toggleExpanded(category.slug, true, category.slug);
                           }}
+                          className="text-xl md:text-base"
                         >
-                          <div className="flex items-center gap-2 cursor-pointer text-sm md:text-base">
+                          <div className="flex items-center gap-2 cursor-pointer">
                             <Icon className="h-4 w-4 md:h-5 md:w-5" />
                             <span className=" truncate">{category.name}</span>
                             {isCategoryExpanded ? (
@@ -150,10 +163,11 @@ export function MasterSideNav({
                                     onClick={() => {
                                       if (onItemClick) onItemClick();
                                     }}
+                                    className="text-md md:text-sm"
                                   >
                                     <Link
                                       href={`/${category.slug}`}
-                                      className="text-xs md:text-sm py-1 block font-medium text-primary hover:underline"
+                                      className=" py-1 block font-medium text-primary hover:underline"
                                     >
                                       All Categories
                                     </Link>
@@ -195,8 +209,9 @@ export function MasterSideNav({
                                         );
                                       }}
                                       isActive={isSubcatExpanded}
+                                      className="text-md md:text-xs"
                                     >
-                                      <div className="flex items-center gap-2 cursor-pointer text-xs md:text-sm py-1">
+                                      <div className="flex items-center gap-2 cursor-pointer py-1">
                                         <span className="truncate">
                                           {subcat.name}
                                         </span>
@@ -220,10 +235,11 @@ export function MasterSideNav({
                                                   if (onItemClick)
                                                     onItemClick();
                                                 }}
+                                                className="text-md md:text-xs"
                                               >
                                                 <Link
                                                   href={`/${category.slug}/${subcat.slug}`}
-                                                  className="text-xs py-1 block font-medium text-primary hover:underline"
+                                                  className="py-1 block font-medium text-primary hover:underline"
                                                 >
                                                   All Tricks
                                                 </Link>
@@ -248,6 +264,7 @@ export function MasterSideNav({
                                               onClick={() => {
                                                 if (onItemClick) onItemClick();
                                               }}
+                                              className="text-md md:text-xs"
                                             >
                                               <Link
                                                 href={
@@ -255,7 +272,7 @@ export function MasterSideNav({
                                                     ? `/${category.slug}/${subcat.slug}/new`
                                                     : "/login"
                                                 }
-                                                className="text-xs py-1 block hover:underline truncate"
+                                                className=" py-1 block hover:underline truncate"
                                                 title={"Add Trick"}
                                               >
                                                 Add First Trick
@@ -273,10 +290,11 @@ export function MasterSideNav({
                                                   if (onItemClick)
                                                     onItemClick();
                                                 }}
+                                                className="text-md md:text-xs"
                                               >
                                                 <Link
                                                   href={`/${category.slug}/${subcat.slug}/${trick.slug}`}
-                                                  className="text-xs py-1 block hover:underline truncate"
+                                                  className="py-1 block hover:underline truncate"
                                                   title={trick.name}
                                                 >
                                                   {trick.name}
@@ -301,17 +319,23 @@ export function MasterSideNav({
                 {/* Mobile-only user nav or login/join buttons after categories */}
                 <div className="block sm:hidden">
                   <div className="my-4 border-t border-border" />
+                  <CloseSideBarLink href="/about" className="w-full block">
+                    <SidebarHeader className="text-md ">About</SidebarHeader>
+                  </CloseSideBarLink>
+                  <CloseSideBarLink href="/contribute" className="w-full block">
+                    <SidebarHeader className="text-md ">
+                      Help Contribute
+                    </SidebarHeader>
+                  </CloseSideBarLink>
+                  <CloseSideBarLink href="/faqs" className="w-full block">
+                    <SidebarHeader className="text-md ">FAQs</SidebarHeader>
+                  </CloseSideBarLink>
+                  <div className="my-4 border-t border-border" />
                   {user ? (
                     // User navigation for logged-in users
                     <>
-                      <Link href="/contribute" className="w-full block">
-                        <SidebarHeader className="text-md ">
-                          Help Contribute
-                        </SidebarHeader>
-                      </Link>
                       <SidebarMenuItem>
-                        <div className="flex items-center space-x-3 px-3 py-2 mb-3">
-                          {/* <Avatar className="h-8 w-8">
+                        {/* <Avatar className="h-8 w-8">
                             <AvatarImage
                               src={user.user_metadata?.avatar_url}
                               alt="Avatar"
@@ -322,17 +346,21 @@ export function MasterSideNav({
                                 "U"}
                             </AvatarFallback>
                           </Avatar> */}
-                          <div className="flex flex-col min-w-0">
-                            <p className="text-xs leading-none text-muted-foreground truncate mt-1">
-                              {user.email}
-                            </p>
-                          </div>
-                        </div>
+
+                        {/* <p className="text-xs leading-none text-muted-foreground truncate"> */}
+                        <CloseSideBarLink
+                          href={`/profile`}
+                          className=" block hover:underline truncate"
+                        >
+                          <SidebarHeader>{user.email}</SidebarHeader>
+                        </CloseSideBarLink>
+
+                        {/* </p> */}
                       </SidebarMenuItem>
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={handleSignOut}
-                          className="w-full text-sm py-2 block hover:bg-accent hover:text-accent-foreground rounded text-left"
+                          className="w-full text-lg py-6 block flex items-center justify-center border border-border rounded mb-2"
                         >
                           Sign out
                         </SidebarMenuButton>
@@ -341,36 +369,19 @@ export function MasterSideNav({
                   ) : (
                     // Login buttons for non-authenticated users
                     <>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          asChild
-                          onClick={() => {
-                            if (onItemClick) onItemClick();
-                          }}
-                        >
-                          <Link
-                            href="/login"
-                            className="w-full text-sm py-2 block flex items-center justify-center border border-border rounded mb-2"
-                          >
-                            <span className="mr-2">Sign In</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          asChild
-                          onClick={() => {
-                            if (onItemClick) onItemClick();
-                          }}
-                        >
-                          <Link
-                            href="/login"
-                            className="w-full text-sm py-2 block flex items-center justify-center bg-primary text-primary-foreground rounded"
-                          >
-                            <span className="mr-2">Join Now</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
+                      <CloseSideBarLink
+                        href={`/login`}
+                        className=" block hover:underline truncate"
+                      >
+                        <SidebarHeader>Sign In</SidebarHeader>
+                      </CloseSideBarLink>
+
+                      <CloseSideBarLink
+                        href={`/login`}
+                        className=" block hover:underline truncate bg-primary text-primary-foreground"
+                      >
+                        <SidebarHeader>Join Now</SidebarHeader>
+                      </CloseSideBarLink>
                     </>
                   )}
                 </div>

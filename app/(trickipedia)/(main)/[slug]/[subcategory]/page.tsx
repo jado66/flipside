@@ -272,23 +272,6 @@ export default function SubcategoryPage() {
                           <span>{formatTimeAgo(trick.created_at)}</span>
                         </div>
                       </div>
-
-                      {trick.author && (
-                        <div className="flex items-center gap-2">
-                          <img
-                            src={
-                              trick.author?.profile_image_url ||
-                              "/placeholder.svg"
-                            }
-                            alt={`${trick.author.first_name} ${trick.author.last_name}`}
-                            className="w-5 h-5 rounded-full"
-                          />
-                          <span className="text-xs text-muted-foreground">
-                            by {trick.author.first_name}{" "}
-                            {trick.author.last_name}
-                          </span>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 </Link>

@@ -217,14 +217,6 @@ export function CommunityStats() {
             );
           })}
         </div>
-
-        {stats.totalUsers === 0 && (
-          <div className="text-center mt-8">
-            <p className="text-muted-foreground">
-              Be the first to join our community!
-            </p>
-          </div>
-        )}
       </div>
     </section>
   );

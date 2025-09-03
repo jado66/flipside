@@ -110,7 +110,7 @@ export function RecentTricks() {
               Discover the latest techniques added by our community.
             </p>
           </div>
-          <Button
+          {/* <Button
             variant="outline"
             asChild
             className="hidden sm:flex bg-transparent"
@@ -119,7 +119,7 @@ export function RecentTricks() {
               View All Tricks
               <ArrowRight className="ml-2 h-4 w-4" />
             </Link>
-          </Button>
+          </Button> */}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

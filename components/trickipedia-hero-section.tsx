@@ -186,7 +186,7 @@ export function TrickipediaHeroSection() {
           </div> */}
 
           {/* Discipline Cards */}
-          <div className="grid grid-cols-2  gap-4 max-w-2xl mx-auto mt-8">
+          {/* <div className="grid grid-cols-2  gap-4 max-w-2xl mx-auto mt-8">
             <Link
               href="/parkour"
               className="group p-4 bg-card-foreground/80 text-background hover:bg-background rounded-lg border border-border hover:border-primary/50 transition-all duration-200 hover:shadow-md"
@@ -242,7 +242,7 @@ export function TrickipediaHeroSection() {
                 </div>
               </div>
             </Link>
-          </div>
+          </div> */}
 
           {/* Additional info for empty database */}
           {stats && stats.totalTricks === 0 && (

@@ -22,7 +22,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Trickipedia - Master Every Trick",
   description:
-    "The ultimate collaborative wiki for parkour, tricking, trampoline, and trampwall.",
+    "The ultimate collaborative wiki for parkour, tricking, gymnastics, and trampwall.",
   generator: "v0.app",
 };
 

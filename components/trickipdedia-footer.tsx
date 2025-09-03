@@ -63,7 +63,7 @@ export function TrickipediaFooter() {
               </li>
               <li>
                 <Link
-                  href="/help"
+                  href="/faqs"
                   className="text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   Help & FAQ

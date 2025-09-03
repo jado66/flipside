@@ -19,6 +19,7 @@ import { Search, ArrowRight, Settings } from "lucide-react";
 import * as Icons from "lucide-react";
 import { PermissionGate } from "@/components/permission-gate";
 import type { MasterCategory } from "@/lib/types/database";
+import { iconMap } from "@/components/side-nav";
 
 export default function CategoriesPage() {
   const { categories, loading, error } = useMasterCategories();
@@ -31,12 +32,6 @@ export default function CategoriesPage() {
   );
 
   const getIconComponent = (iconName: string) => {
-    const iconMap: Record<string, React.ComponentType<any>> = {
-      zap: Icons.Zap,
-      "rotate-ccw": Icons.RotateCcw,
-      activity: Icons.Activity,
-      bounce: Icons.Zap, // Using Zap as fallback for bounce
-    };
     return iconMap[iconName] || Icons.Circle;
   };
 

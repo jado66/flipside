@@ -58,6 +58,12 @@ export function TrickipediaHeader({
               href="/contribute"
               className="text-foreground hover:text-primary transition-colors"
             >
+              About
+            </Link>
+            <Link
+              href="/contribute"
+              className="text-foreground hover:text-primary transition-colors"
+            >
               Contribute
             </Link>
             <Link
@@ -65,6 +71,12 @@ export function TrickipediaHeader({
               className="text-foreground hover:text-primary transition-colors"
             >
               Sports &amp; Disciplines
+            </Link>
+            <Link
+              href="/faqs"
+              className="text-foreground hover:text-primary transition-colors"
+            >
+              FAQs
             </Link>
 
             {/* <Link

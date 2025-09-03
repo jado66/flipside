@@ -10,23 +10,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Zap,
-  RotateCcw,
-  Activity,
-  Bone as Bounce,
-  Loader2,
-} from "lucide-react";
-import { getNavigationData } from "@/lib/tricks-data";
 
-// Icon mapping - you can expand this based on your database icon_name values
-const iconMap: Record<string, any> = {
-  parkour: Zap,
-  tricking: RotateCcw,
-  trampoline: Activity,
-  trampwall: Bounce,
-  // Add more icon mappings as needed
-};
+import { Loader2 } from "lucide-react";
+import { getNavigationData } from "@/lib/tricks-data";
+import { iconMap } from "./side-nav/icon-map";
 
 // Color mapping based on your database color values
 const getColorClass = (color: string | null) => {
@@ -139,8 +126,9 @@ export function FeaturedCategories() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {categories.map((category) => {
-            // Get icon component, fallback to Zap if not found
-            const IconComponent = iconMap[category.icon_name || ""] || Zap;
+            // Get icon component, fallback to iconMap.zap if not found
+            const IconComponent =
+              iconMap[category.icon_name || "zap"] || iconMap.zap;
             const colorClass = getColorClass(category.color);
 
             return (

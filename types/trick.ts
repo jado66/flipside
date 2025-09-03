@@ -35,7 +35,6 @@ export interface TrickData {
   view_count?: number;
   like_count?: number;
   is_published: boolean;
-  created_by?: string;
   created_at?: string;
   updated_at?: string;
   search_text?: string;
@@ -68,7 +67,6 @@ export interface TrickInsert {
   image_urls?: string[];
   tags?: string[];
   is_published?: boolean;
-  created_by: string;
   inventor_user_id?: string | null;
   inventor_name?: string | null;
 }

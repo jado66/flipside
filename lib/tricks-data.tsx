@@ -25,7 +25,6 @@ export interface Trick {
   view_count: number;
   like_count: number;
   is_published: boolean;
-  created_by: string | null;
   created_at: string;
   updated_at: string;
   // New inventor fields
@@ -41,11 +40,7 @@ export interface Trick {
       color: string | null;
     };
   };
-  author?: {
-    first_name: string;
-    last_name: string;
-    profile_image_url?: string | null;
-  };
+
   inventor?: {
     first_name: string;
     last_name: string;
@@ -75,7 +70,6 @@ export async function getTricks(filters?: {
         slug,
         master_category:master_categories!inner(name, slug, color)
       ),
-      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
       inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `,
       { count: "exact" }
@@ -172,7 +166,6 @@ export async function getTrickBySlug(slug: string): Promise<Trick | null> {
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
       inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `
     )
@@ -201,7 +194,6 @@ export async function createTrick(
     | "view_count"
     | "like_count"
     | "subcategory"
-    | "author"
     | "inventor"
   >
 ): Promise<Trick> {
@@ -222,7 +214,6 @@ export async function createTrick(
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
       inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `
     )
@@ -258,7 +249,6 @@ export async function updateTrick(
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
       inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `
     )
@@ -364,7 +354,6 @@ export async function getTricksByInventor(
         slug,
         master_category:master_categories(name, slug, color)
       ),
-      author:users!tricks_created_by_fkey(first_name, last_name, profile_image_url),
       inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `,
       { count: "exact" }

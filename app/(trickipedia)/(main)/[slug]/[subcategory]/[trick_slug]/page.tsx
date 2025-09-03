@@ -580,18 +580,6 @@ export default function TrickDetailPage() {
               </Card>
             )}
 
-            <p className="font-medium">
-              Post by{" "}
-              {trick.author
-                ? `${trick.author.first_name} ${trick.author.last_name}`
-                : "Unknown Author"}{" "}
-              on{" "}
-              {new Date(trick.created_at).toLocaleDateString("en-US", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </p>
             {/* last edited */}
             <p className="text-sm text-muted-foreground">
               Last edited on{" "}

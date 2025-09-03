@@ -6,6 +6,9 @@ import {
   RotateCcw,
   Activity,
   Circle,
+  BrickWall,
+  Diamond,
+  Waypoints,
 } from "lucide-react";
 
 export const iconMap = {
@@ -17,6 +20,9 @@ export const iconMap = {
   activity: Activity,
   bounce: Zap, // Using Zap as fallback for bounce
   circle: Circle,
+  wall: BrickWall,
+  diamond: Diamond,
+  waypoints: Waypoints,
   // Legacy support for old naming convention
   Zap,
   Target,
