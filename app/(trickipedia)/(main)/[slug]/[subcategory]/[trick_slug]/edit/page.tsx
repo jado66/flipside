@@ -17,16 +17,29 @@ export default function TrickEditPage() {
   const category = params.slug as string;
   const slug = params.trick_slug as string;
   const subcategory = params.subcategory as string;
-  const { user, hasModeratorAccess } = useAuth();
+  const { user, hasModeratorAccess, isLoading: authLoading } = useAuth();
 
   const [trick, setTrick] = useState<Trick | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [loadingTrick, setLoadingTrick] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadTrick = async () => {
+      // Wait for auth to load
+      if (authLoading) return;
+
+      if (!slug) {
+        setError("Invalid trick identifier");
+        setLoading(false);
+        return;
+      }
+
       try {
+        console.log("Loading trick:", { slug, userExists: !!user });
+
         const data = await getTrickBySlug(slug);
+
         if (!data) {
           toast.error("Trick not found");
           router.push(`/${category}/${subcategory}`);
@@ -34,65 +47,153 @@ export default function TrickEditPage() {
         }
 
         // Check permissions
-        const canEdit = user;
-        if (!canEdit) {
+        if (!user) {
+          toast.error("You must be logged in to edit tricks");
+          router.push(`/${category}/${subcategory}/${data.slug}`);
+          return;
+        }
+
+        if (!hasModeratorAccess() && data.created_by !== user.id) {
           toast.error("You don't have permission to edit this trick");
           router.push(`/${category}/${subcategory}/${data.slug}`);
           return;
         }
 
         setTrick(data);
+        setError(null);
       } catch (error) {
         console.error("Failed to load trick:", error);
+        setError(
+          error instanceof Error ? error.message : "Failed to load trick"
+        );
         toast.error("Failed to load trick");
-        router.push(`/${category}/${subcategory}`);
       } finally {
-        setLoadingTrick(false);
+        setLoading(false);
       }
     };
 
-    if (slug && user !== undefined) {
-      loadTrick();
-    }
-  }, [slug, user, hasModeratorAccess, router]);
+    loadTrick();
+  }, [
+    slug,
+    user,
+    authLoading,
+    hasModeratorAccess,
+    router,
+    category,
+    subcategory,
+  ]);
 
   const handleCancel = () => {
     if (trick) {
       router.push(`/${category}/${subcategory}/${trick.slug}`);
+    } else {
+      router.push(`/${category}/${subcategory}`);
     }
   };
 
   const handleSubmit = async (data: TrickData) => {
-    if (!trick) return;
+    if (!trick || submitLoading) return;
 
-    setLoading(true);
+    setSubmitLoading(true);
     try {
       await updateTrick(trick.id, data);
       toast.success("Trick updated successfully!");
-
       router.push(`/${category}/${subcategory}/${data.slug}`);
     } catch (error) {
       console.error("Failed to update trick:", error);
-      toast.error("Failed to update trick");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to update trick"
+      );
     } finally {
-      setLoading(false);
+      setSubmitLoading(false);
     }
   };
 
-  if (loadingTrick) {
+  const handleRetry = () => {
+    setLoading(true);
+    setError(null);
+    // Trigger useEffect by updating a dependency (we can use a simple state toggle)
+    window.location.reload();
+  };
+
+  // Show loading while auth is loading
+  if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">
+                {authLoading
+                  ? "Checking authentication..."
+                  : "Loading trick..."}
+              </p>
+            </div>
           </div>
         </div>
       </div>
     );
   }
 
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center max-w-md">
+              <div className="mb-4">
+                <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-destructive text-2xl">⚠</span>
+                </div>
+                <h2 className="text-xl font-semibold mb-2">
+                  Failed to Load Trick
+                </h2>
+                <p className="text-muted-foreground mb-4">{error}</p>
+                <div className="space-y-2">
+                  <Button onClick={handleRetry} className="mr-2">
+                    Try Again
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push(`/${category}/${subcategory}`)}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Back to Category
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show not found state
   if (!trick) {
-    return null;
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold mb-2">Trick Not Found</h2>
+              <p className="text-muted-foreground mb-4">
+                The requested trick could not be found.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/${category}/${subcategory}`)}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Category
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // Convert trick data to form format
@@ -141,7 +242,7 @@ export default function TrickEditPage() {
             mode="edit"
             trick={formTrick}
             onSubmit={handleSubmit}
-            loading={loading}
+            loading={submitLoading}
             onCancel={handleCancel}
           />
         </div>

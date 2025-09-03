@@ -22,23 +22,19 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  Plus,
-  Trash2,
   GripVertical,
   Star,
   AlertTriangle,
   Lightbulb,
   Video,
-  ImageIcon,
-  Tag,
   UserIcon,
   Eye,
   Play,
-  ExternalLink,
 } from "lucide-react";
 import type { TrickData } from "@/types/trick";
 import { PrerequisitesFormField } from "@/components/prerequisites-form-field";
 import { TrickImage } from "@/components/trick-image";
+import { MediaTagsSection } from "./media-tags-section";
 
 interface StepGuide {
   step: number;
@@ -372,6 +368,7 @@ export function TrickForm({
                           <img
                             src={
                               getYouTubeThumbnail(youtubeId) ||
+                              "/placeholder.svg" ||
                               "/placeholder.svg"
                             }
                             alt={`Video ${idx + 1}`}
@@ -396,125 +393,8 @@ export function TrickForm({
     );
   };
 
-  const renderArrayField = (
-    title: string,
-    field: keyof TrickData,
-    placeholder: string,
-    icon: React.ReactNode,
-    type: "text" | "url" = "text"
-  ) => {
-    const items = formData[field] as string[];
-    const nonEmptyItems = items.filter(Boolean);
-
-    if (mode === "view" && nonEmptyItems.length === 0) return null;
-
-    return (
-      <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          {icon}
-          <Label className="text-sm font-medium">{title}</Label>
-          {nonEmptyItems.length > 0 && (
-            <Badge variant="secondary" className="text-xs">
-              {nonEmptyItems.length}
-            </Badge>
-          )}
-        </div>
-
-        {mode === "edit" || mode === "create" ? (
-          <div className="space-y-2">
-            {items.map((item, index) => (
-              <div key={index} className="flex gap-2">
-                <Input
-                  type={type}
-                  value={item}
-                  onChange={(e) =>
-                    handleArrayChange(field, index, e.target.value)
-                  }
-                  placeholder={placeholder}
-                  className="flex-1"
-                />
-                {type === "url" && item.trim() && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => window.open(item, "_blank")}
-                    className="px-2"
-                  >
-                    <ExternalLink className="h-4 w-4" />
-                  </Button>
-                )}
-                {items.length > 1 && (
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => removeArrayItem(field, index)}
-                    className="px-2"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => addArrayItem(field)}
-              className="w-full"
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add {title.slice(0, -1)}
-            </Button>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {field === "tags" ? (
-              <div className="flex flex-wrap gap-2">
-                {nonEmptyItems.map((item, idx) => (
-                  <Badge key={idx} variant="outline">
-                    {item}
-                  </Badge>
-                ))}
-              </div>
-            ) : field === "video_urls" ? (
-              <div className="space-y-2">
-                {nonEmptyItems.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg"
-                  >
-                    <Video className="h-4 w-4 text-muted-foreground" />
-                    <a
-                      href={item}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-blue-600 hover:underline text-sm flex-1 truncate"
-                    >
-                      {item}
-                    </a>
-                    <ExternalLink className="h-3 w-3 text-muted-foreground" />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {nonEmptyItems.map((item, idx) => (
-                  <div key={idx} className="p-3 bg-muted/50 rounded-lg text-sm">
-                    {item}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-    );
-  };
-
   return (
-    <div className="max-w-4xl mx-auto p-0 md:p-6">
+    <div className="max-w-4xl mx-auto p-6 space-y-8">
       {(mode === "edit" || mode === "create") && (
         <Card className="mb-6 border-primary/20">
           <CardHeader className="pb-4">
@@ -566,8 +446,7 @@ export function TrickForm({
       <form onSubmit={handleSubmit} className="space-y-6">
         <Accordion
           type="multiple"
-          value={openSections}
-          onValueChange={setOpenSections}
+          defaultValue={["basic", "details", "media"]}
           className="space-y-4"
         >
           {/* Basic Information - simplified without inventor */}
@@ -693,48 +572,17 @@ export function TrickForm({
           </AccordionItem>
 
           {/* Media & Tags - enhanced with preview */}
-          <AccordionItem value="media" className="border rounded-lg">
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
-                  <ImageIcon className="h-5 w-5 text-purple-600 dark:text-purple-400" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold">Media & Tags</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Videos, images, and categorization
-                  </p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-6">
-              <div className="space-y-6">
-                {/* Preview section for edit/create modes */}
-                {(mode === "edit" || mode === "create") && renderMediaPreview()}
-
-                {renderArrayField(
-                  "Video URLs",
-                  "video_urls",
-                  "https://youtube.com/watch?v=...",
-                  <Video className="h-4 w-4" />,
-                  "url"
-                )}
-                {renderArrayField(
-                  "Image URLs",
-                  "image_urls",
-                  "https://example.com/image.jpg",
-                  <ImageIcon className="h-4 w-4" />,
-                  "url"
-                )}
-                {renderArrayField(
-                  "Tags",
-                  "tags",
-                  "e.g., beginner-friendly, outdoor, urban",
-                  <Tag className="h-4 w-4" />
-                )}
-              </div>
-            </AccordionContent>
-          </AccordionItem>
+          <MediaTagsSection
+            formData={formData}
+            mode={mode}
+            onArrayChange={(field, index, value) =>
+              handleArrayChange(field as keyof TrickData, index, value)
+            }
+            onAddItem={(field) => addArrayItem(field as keyof TrickData)}
+            onRemoveItem={(field, index) =>
+              removeArrayItem(field as keyof TrickData, index)
+            }
+          />
 
           {/* Prerequisites */}
           {showPrerequisites && (
@@ -929,60 +777,6 @@ export function TrickForm({
               </AccordionContent>
             </AccordionItem>
           )}
-
-          <div className="flex flex-wrap gap-2 pt-4">
-            {!showPrerequisites && (mode === "edit" || mode === "create") && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowPrerequisites(true)}
-                className="text-muted-foreground"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Prerequisites
-              </Button>
-            )}
-
-            {!showStepGuide && (mode === "edit" || mode === "create") && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowStepGuide(true)}
-                className="text-muted-foreground"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Step-by-Step Guide
-              </Button>
-            )}
-
-            {!showTipsAndTricks && (mode === "edit" || mode === "create") && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowTipsAndTricks(true)}
-                className="text-muted-foreground"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Tips and Tricks
-              </Button>
-            )}
-
-            {!showInventor && (mode === "edit" || mode === "create") && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowInventor(true)}
-                className="text-muted-foreground"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Inventor Credit
-              </Button>
-            )}
-          </div>
         </Accordion>
 
         {(mode === "edit" || mode === "create") && (

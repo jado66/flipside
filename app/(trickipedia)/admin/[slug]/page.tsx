@@ -97,12 +97,23 @@ export default function AdminSubcategoriesPage() {
     }
   };
 
+  // Enhanced version of your handleDelete function
   const handleDelete = async (id: string) => {
+    console.log("handleDelete called with ID:", id);
+
     try {
       await deleteSubcategory(id);
+      console.log("Delete completed, reloading subcategories...");
       await loadSubcategories();
+      console.log("Subcategories reloaded");
     } catch (error) {
       console.error("Failed to delete subcategory:", error);
+      // Consider adding user-facing error handling here
+      alert(
+        `Failed to delete subcategory: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     }
   };
 

@@ -663,7 +663,38 @@ export default function TrickDetailPage() {
               </CardContent>
             </Card> */}
 
-            <Card>
+            {user ? (
+              <Link
+                href={`/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}/${trick.slug}/edit`}
+              >
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Edit className="h-5 w-5 text-muted-foreground" />
+                      Suggest Changes
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    Is there anything you would like to change? Is there
+                    anything missing? Click here to edit.
+                  </CardContent>
+                </Card>
+              </Link>
+            ) : (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Edit className="h-5 w-5 text-muted-foreground" />
+                    Suggest Changes
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  Login to make changes.
+                </CardContent>
+              </Card>
+            )}
+
+            <Card className="mt-6">
               <CardContent className="flex flex-row align-center">
                 <Link
                   href={`/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}`}

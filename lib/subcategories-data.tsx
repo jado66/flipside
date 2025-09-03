@@ -183,10 +183,24 @@ export async function updateSubcategory(
 
 // Delete subcategory
 export async function deleteSubcategory(id: string): Promise<void> {
-  const { error } = await supabase.from("subcategories").delete().eq("id", id);
+  console.log("Attempting to delete subcategory with ID:", id);
 
-  if (error) {
-    console.error("Error deleting subcategory:", error);
-    throw new Error("Failed to delete subcategory");
+  try {
+    const { data, error, status, statusText } = await supabase
+      .from("subcategories")
+      .delete()
+      .eq("id", id);
+
+    console.log("Delete response:", { data, error, status, statusText });
+
+    if (error) {
+      console.error("Supabase error deleting subcategory:", error);
+      throw new Error(`Failed to delete subcategory: ${error.message}`);
+    }
+
+    console.log("Delete successful, data:", data);
+  } catch (err) {
+    console.error("Unexpected error in deleteSubcategory:", err);
+    throw err;
   }
 }
