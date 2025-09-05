@@ -94,7 +94,7 @@ export default function TrickNewPage() {
       router.push(`/${category}/${subcategorySlug}/${data.slug}`);
     } catch (error) {
       console.error("Failed to create trick:", error);
-      toast.error("Failed to create trick");
+      toast.error("Failed to create trick. You must be logged in");
     } finally {
       setLoading(false);
     }

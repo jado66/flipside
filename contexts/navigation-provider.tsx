@@ -7,11 +7,7 @@ import {
   useEffect,
   ReactNode,
 } from "react";
-import {
-  fetchMasterCategories,
-  fetchSubcategoriesByCategory,
-  fetchTricksBySubcategory,
-} from "@/lib/fetch-tricks";
+// import removed fetch functions, now using /api/navigation route
 import type {
   NavigationCategory,
   NavigationSubcategory,
@@ -38,170 +34,68 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
-  // Load initial categories on mount
+  // Load all navigation data from /api/navigation on mount
   useEffect(() => {
-    async function initializeCategories() {
+    async function fetchNavigation() {
+      setIsLoading(true);
       try {
-        setIsLoading(true);
-        const result = await fetchMasterCategories();
-
-        if (result.success) {
-          const transformedCategories: NavigationCategory[] = result.data.map(
-            (category) => ({
+        const res = await fetch("/api/navigation");
+        const data = await res.json();
+        if (res.ok && Array.isArray(data)) {
+          // Transform API data to NavigationCategory[]
+          const transformedCategories: NavigationCategory[] = data.map(
+            (category: any) => ({
               id: category.id,
               name: category.name,
               slug: category.slug,
               icon_name: category.icon_name,
               color: category.color,
               sort_order: category.sort_order,
-              subcategories: [],
-              subcategoriesLoaded: false,
+              subcategories: (category.subcategories || []).map((sub: any) => ({
+                id: sub.id,
+                name: sub.name,
+                slug: sub.slug,
+                sort_order: sub.sort_order,
+                tricks: (sub.tricks || []).map((trick: any) => ({
+                  id: trick.id,
+                  name: trick.name,
+                  slug: trick.slug,
+                })),
+                tricksLoaded: true,
+                tricksLoading: false,
+              })),
+              subcategoriesLoaded: true,
               subcategoriesLoading: false,
             })
           );
-
           setCategories(transformedCategories);
           setError(null);
         } else {
-          setError(result.error || "Failed to load categories");
+          setError(data?.error || "Failed to load navigation data");
         }
       } catch (err) {
-        console.error("Failed to fetch categories:", err);
+        console.error("Failed to fetch navigation data:", err);
         setError("Failed to load navigation data");
       } finally {
         setIsLoading(false);
       }
     }
-
-    initializeCategories();
+    fetchNavigation();
   }, []);
 
-  const loadSubcategories = async (categorySlug: string) => {
-    const categoryIndex = categories.findIndex((c) => c.slug === categorySlug);
-    if (categoryIndex === -1) return;
-
-    const category = categories[categoryIndex];
-
-    // Don't reload if already loaded or loading
-    if (category.subcategoriesLoaded || category.subcategoriesLoading) {
-      return;
-    }
-
-    // Mark as loading
-    setCategories((prev) => {
-      const updated = [...prev];
-      updated[categoryIndex] = {
-        ...updated[categoryIndex],
-        subcategoriesLoading: true,
-      };
-      return updated;
-    });
-
-    try {
-      const result = await fetchSubcategoriesByCategory(categorySlug);
-
-      if (result.success) {
-        const subcategories: NavigationSubcategory[] = result.data.map(
-          (sub) => ({
-            id: sub.id,
-            name: sub.name,
-            slug: sub.slug,
-            sort_order: sub.sort_order,
-            tricks: [],
-            tricksLoaded: false,
-            tricksLoading: false,
-          })
-        );
-
-        setCategories((prev) => {
-          const updated = [...prev];
-          updated[categoryIndex] = {
-            ...updated[categoryIndex],
-            subcategories,
-            subcategoriesLoaded: true,
-            subcategoriesLoading: false,
-          };
-          return updated;
-        });
-      }
-    } catch (error) {
-      console.error("Failed to load subcategories:", error);
-
-      // Reset loading state on error
-      setCategories((prev) => {
-        const updated = [...prev];
-        updated[categoryIndex] = {
-          ...updated[categoryIndex],
-          subcategoriesLoading: false,
-        };
-        return updated;
-      });
-    }
+  // No-op: subcategories are loaded with initial fetch
+  const loadSubcategories = async (_categorySlug: string) => {
+    // Already loaded in initial fetch
+    return;
   };
 
-  const loadTricks = async (categorySlug: string, subcategorySlug: string) => {
-    const categoryIndex = categories.findIndex((c) => c.slug === categorySlug);
-    if (categoryIndex === -1) return;
-
-    const subcategoryIndex = categories[categoryIndex].subcategories?.findIndex(
-      (s) => s.slug === subcategorySlug
-    );
-    if (subcategoryIndex === -1 || subcategoryIndex === undefined) return;
-
-    const subcategory =
-      categories[categoryIndex].subcategories![subcategoryIndex];
-
-    // Don't reload if already loaded or loading
-    if (subcategory.tricksLoaded || subcategory.tricksLoading) {
-      return;
-    }
-
-    // Mark as loading
-    setCategories((prev) => {
-      const updated = [...prev];
-      updated[categoryIndex].subcategories![subcategoryIndex] = {
-        ...updated[categoryIndex].subcategories![subcategoryIndex],
-        tricksLoading: true,
-      };
-      return updated;
-    });
-
-    try {
-      const result = await fetchTricksBySubcategory(subcategorySlug, {
-        pageSize: 100,
-      });
-
-      if (result.success) {
-        const tricks: NavigationTrick[] = result.data.map((trick) => ({
-          id: trick.id,
-          name: trick.name,
-          slug: trick.slug,
-        }));
-
-        setCategories((prev) => {
-          const updated = [...prev];
-          updated[categoryIndex].subcategories![subcategoryIndex] = {
-            ...updated[categoryIndex].subcategories![subcategoryIndex],
-            tricks,
-            tricksLoaded: true,
-            tricksLoading: false,
-          };
-          return updated;
-        });
-      }
-    } catch (error) {
-      console.error("Failed to load tricks:", error);
-
-      // Reset loading state on error
-      setCategories((prev) => {
-        const updated = [...prev];
-        updated[categoryIndex].subcategories![subcategoryIndex] = {
-          ...updated[categoryIndex].subcategories![subcategoryIndex],
-          tricksLoading: false,
-        };
-        return updated;
-      });
-    }
+  // No-op: tricks are loaded with initial fetch
+  const loadTricks = async (
+    _categorySlug: string,
+    _subcategorySlug: string
+  ) => {
+    // Already loaded in initial fetch
+    return;
   };
 
   const contextValue: NavigationContextType = {
