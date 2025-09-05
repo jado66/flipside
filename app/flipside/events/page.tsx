@@ -16,7 +16,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Plus, Search, X } from "lucide-react";
 import Link from "next/link";
-import { supabase } from "@/lib/supbase";
+import { supabase } from "@/lib/supabase/supabase-client";
 
 interface Event {
   id: string;

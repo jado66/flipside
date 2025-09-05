@@ -1,9 +1,6 @@
 "use client";
+import { supabase } from "@/lib/supabase/supabase-client";
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { ArrowRight, Play, Loader2 } from "lucide-react";
-import { supabase } from "@/lib/supbase";
 // Adjust import path as needed
 
 interface HeroStats {

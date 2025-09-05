@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Calendar, MapPin, Clock, Plus, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { format } from "date-fns";
-import { supabase } from "@/lib/supbase";
+import { supabase } from "@/lib/supabase/supabase-client";
 
 interface DashboardData {
   upcomingEvents: any[];

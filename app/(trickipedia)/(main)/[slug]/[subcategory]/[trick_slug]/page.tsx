@@ -1,7 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,10 +9,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  getTrickBySlug,
   getTrickBySlugWithLinks,
   type Trick,
-} from "@/lib/tricks-data";
+} from "@/lib/server/tricks-data-server";
 import {
   ArrowLeft,
   Eye,
@@ -33,26 +28,12 @@ import {
   Target,
   Shield,
 } from "lucide-react";
-import { useAuth } from "@/contexts/auth-provider";
 import { PermissionGate } from "@/components/permission-gate";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
 import { Separator } from "@/components/ui/separator";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { PrerequisitesDisplay } from "@/components/prerequisites-display";
-import { supabase } from "@/lib/supbase";
-import { incrementTrickViews, toggleTrickLike } from "@/lib/tricks-client";
+import { notFound } from "next/navigation";
+import { ClientInteractions } from "@/components/tricks/client-interactions";
 
 const DIFFICULTY_LABELS = {
   1: "Beginner",
@@ -80,130 +61,29 @@ const DIFFICULTY_COLORS = {
   10: "bg-red-600",
 };
 
-export default function TrickDetailPage() {
-  const params = useParams();
-  const router = useRouter();
-  const trickslug = params.trick_slug as string;
-  const { user, hasModeratorAccess } = useAuth();
-  const [trick, setTrick] = useState<TrickWithLinkedPrerequisites | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [liked, setLiked] = useState(false);
-  const [likeCount, setLikeCount] = useState(0);
-
-  const handleShare = async () => {
-    try {
-      const currentUrl = window.location.href;
-      await navigator.clipboard.writeText(currentUrl);
-      toast.success("Link copied to clipboard!");
-    } catch (error) {
-      console.error("Failed to copy link:", error);
-      toast.error("Failed to copy link to clipboard");
-    }
+interface TrickDetailPageProps {
+  params: {
+    trick_slug: string;
   };
+}
 
-  useEffect(() => {
-    const loadTrick = async () => {
-      try {
-        // Use the enhanced function that fetches linked prerequisites
-        const data = await getTrickBySlugWithLinks(trickslug);
-        setTrick(data);
-        if (data) {
-          setLikeCount(data.like_count);
-          // Increment view count
-          await incrementTrickViews(data.id);
+export default async function TrickDetailPage({
+  params,
+}: TrickDetailPageProps) {
+  const resolvedParams = await params;
+  const trickslug = resolvedParams.trick_slug;
 
-          // // Check if user has liked this trick
-          // if (user) {
-          //   const { data: likeData } = await supabase
-          //     .from("trick_likes")
-          //     .select("id")
-          //     .eq("trick_id", data.id)
-          //     .eq("user_id", user.id)
-          //     .single();
+  let trick: TrickWithLinkedPrerequisites | null = null;
 
-          //   setLiked(!!likeData);
-          // }
-        }
-      } catch (error) {
-        console.error("Failed to load trick:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadTrick();
-  }, [trickslug, user]);
-  const handleLike = async () => {
-    if (!trick || !user) {
-      toast.error("Please login to like tricks");
-
-      return;
-    }
-
-    try {
-      const result = await toggleTrickLike(trick.id, user.id);
-      setLiked(result.liked);
-      setLikeCount(result.likeCount);
-    } catch (error) {
-      console.error("Failed to toggle like:", error);
-      toast.error("Failed to update like");
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!trick) return;
-
-    try {
-      const { error } = await supabase
-        .from("tricks")
-        .delete()
-        .eq("id", trick.id);
-
-      if (error) throw error;
-
-      toast.success("Trick deleted successfully");
-      router.push(
-        `/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}`
-      );
-    } catch (error) {
-      console.error("Failed to delete trick:", error);
-      toast.error("Failed to delete trick");
-    }
-  };
-
-  const canEdit = user;
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </div>
-      </div>
-    );
+  try {
+    trick = await getTrickBySlugWithLinks(trickslug);
+  } catch (error) {
+    console.error("Failed to load trick:", error);
+    notFound();
   }
 
   if (!trick) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold mb-4">Trick Not Found</h1>
-            <p className="text-muted-foreground mb-6">
-              The trick you&apos;re looking for doesn&apos;t exist.
-            </p>
-            <Button asChild>
-              <Link href="/tricks">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Tricks
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
+    notFound();
   }
 
   return (
@@ -264,86 +144,8 @@ export default function TrickDetailPage() {
                 </div>
               )}
 
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 bg-muted/30 rounded-lg">
-                <div className="flex items-center gap-6 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Eye className="h-4 w-4" />
-                    <span className="font-medium">
-                      {trick.view_count.toLocaleString()}
-                    </span>
-                    <span>views</span>
-                  </div>
-                  {/* <div className="flex items-center gap-2 text-muted-foreground">
-                    <Heart className="h-4 w-4" />
-                    <span className="font-medium">{likeCount}</span>
-                    <span>likes</span>
-                  </div> */}
-                </div>
-
-                <div className="flex items-center gap-2 flex-wrap">
-                  {/* <Button
-                    variant={liked ? "default" : "outline"}
-                    size="sm"
-                    onClick={handleLike}
-                    className={
-                      liked ? "bg-red-500 hover:bg-red-600 border-red-500" : ""
-                    }
-                  >
-                    <Heart
-                      className={`h-4 w-4 mr-2 ${liked ? "fill-current" : ""}`}
-                    />
-                    {liked ? "Liked" : "Like"}
-                  </Button> */}
-                  <Button variant="outline" size="sm" onClick={handleShare}>
-                    <Share2 className="h-4 w-4 mr-2" />
-                    Share
-                  </Button>
-
-                  {canEdit && (
-                    <>
-                      <Button variant="outline" size="sm" asChild>
-                        <Link
-                          href={`/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}/${trick.slug}/edit`}
-                        >
-                          <Edit className="h-4 w-4 mr-2" />
-                          Edit
-                        </Link>
-                      </Button>
-
-                      <PermissionGate requireModerator>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="text-destructive hover:text-destructive bg-transparent"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" />
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete Trick</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete &quot;
-                                {trick.name}&quot;? This action cannot be
-                                undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction onClick={handleDelete}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </PermissionGate>
-                    </>
-                  )}
-                </div>
-              </div>
+              {/* Client-side interactions component */}
+              <ClientInteractions trick={trick} />
             </div>
 
             {Array.isArray(trick.step_by_step_guide) &&
@@ -361,14 +163,12 @@ export default function TrickDetailPage() {
                   <CardContent>
                     <div className="space-y-6">
                       {trick.step_by_step_guide.map((step, index) => {
-                        // Defensive: ensure step number, title, description, tips[]
                         const stepNum =
                           typeof step.step === "number" ? step.step : index + 1;
                         const title = step.title || `Step ${stepNum}`;
                         const description = step.description || "";
                         let tips = step.tips;
                         if (!Array.isArray(tips)) {
-                          // @ts-expect-error #TODO fix me
                           if (typeof tips === "string" && tips.trim()) {
                             tips = [tips];
                           } else {
@@ -515,7 +315,6 @@ export default function TrickDetailPage() {
                 <CardContent>
                   <div className="grid gap-6">
                     {trick.video_urls.map((url, index) => {
-                      // Function to extract YouTube video ID
                       const getYouTubeVideoId = (url: string) => {
                         const regex =
                           /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/;
@@ -526,7 +325,6 @@ export default function TrickDetailPage() {
                       const youtubeId = getYouTubeVideoId(url);
 
                       if (youtubeId) {
-                        // Render YouTube embed
                         return (
                           <div key={index} className="space-y-3">
                             <h4 className="font-medium text-lg">
@@ -550,7 +348,6 @@ export default function TrickDetailPage() {
                           </div>
                         );
                       } else {
-                        // Render regular link for non-YouTube videos
                         return (
                           <a
                             key={index}
@@ -580,7 +377,6 @@ export default function TrickDetailPage() {
               </Card>
             )}
 
-            {/* last edited */}
             <p className="text-sm text-muted-foreground">
               Last edited on{" "}
               {new Date(trick.updated_at).toLocaleDateString("en-US", {
@@ -639,48 +435,29 @@ export default function TrickDetailPage() {
               </CardContent>
             </Card>
 
-            {/* <Card>
+            {/* Suggestion card - this will need user context from ClientInteractions */}
+            <Card>
               <CardHeader>
-                <CardTitle>Related Tricks</CardTitle>
-                <CardDescription>More tricks you might like</CardDescription>
+                <CardTitle className="flex items-center gap-2">
+                  <Edit className="h-5 w-5 text-muted-foreground" />
+                  Suggest Changes
+                </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground text-center py-4">
-                  Related tricks coming soon...
+              <CardContent className="space-y-4">
+                <p>
+                  Is there anything you would like to change? Is there anything
+                  missing?
                 </p>
+                <Button asChild className="w-full">
+                  <Link
+                    href={`/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}/${trick.slug}/edit`}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Edit this trick
+                  </Link>
+                </Button>
               </CardContent>
-            </Card> */}
-
-            {user ? (
-              <Link
-                href={`/${trick.subcategory?.master_category.slug}/${trick.subcategory?.slug}/${trick.slug}/edit`}
-              >
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Edit className="h-5 w-5 text-muted-foreground" />
-                      Suggest Changes
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    Is there anything you would like to change? Is there
-                    anything missing? Click here to edit.
-                  </CardContent>
-                </Card>
-              </Link>
-            ) : (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Edit className="h-5 w-5 text-muted-foreground" />
-                    Suggest Changes
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  Login to make changes.
-                </CardContent>
-              </Card>
-            )}
+            </Card>
 
             <Card className="mt-6">
               <CardContent className="flex flex-row align-center">

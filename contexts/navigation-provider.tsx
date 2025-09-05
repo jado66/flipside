@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
-// import removed fetch functions, now using /api/navigation route
+import { createContext, useContext, useState, ReactNode } from "react";
 import type {
   NavigationCategory,
   NavigationSubcategory,
@@ -28,73 +21,29 @@ const NavigationContext = createContext<NavigationContextType | undefined>(
   undefined
 );
 
-export function NavigationProvider({ children }: { children: ReactNode }) {
-  const [categories, setCategories] = useState<NavigationCategory[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function NavigationProvider({
+  children,
+  initialData = [],
+}: {
+  children: ReactNode;
+  initialData?: NavigationCategory[];
+}) {
+  // Use initialData directly, no need to fetch
+  const [categories] = useState<NavigationCategory[]>(initialData);
+  const [isLoading] = useState(false);
+  const [error] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());
 
-  // Load all navigation data from /api/navigation on mount
-  useEffect(() => {
-    async function fetchNavigation() {
-      setIsLoading(true);
-      try {
-        const res = await fetch("/api/navigation");
-        const data = await res.json();
-        if (res.ok && Array.isArray(data)) {
-          // Transform API data to NavigationCategory[]
-          const transformedCategories: NavigationCategory[] = data.map(
-            (category: any) => ({
-              id: category.id,
-              name: category.name,
-              slug: category.slug,
-              icon_name: category.icon_name,
-              color: category.color,
-              sort_order: category.sort_order,
-              subcategories: (category.subcategories || []).map((sub: any) => ({
-                id: sub.id,
-                name: sub.name,
-                slug: sub.slug,
-                sort_order: sub.sort_order,
-                tricks: (sub.tricks || []).map((trick: any) => ({
-                  id: trick.id,
-                  name: trick.name,
-                  slug: trick.slug,
-                })),
-                tricksLoaded: true,
-                tricksLoading: false,
-              })),
-              subcategoriesLoaded: true,
-              subcategoriesLoading: false,
-            })
-          );
-          setCategories(transformedCategories);
-          setError(null);
-        } else {
-          setError(data?.error || "Failed to load navigation data");
-        }
-      } catch (err) {
-        console.error("Failed to fetch navigation data:", err);
-        setError("Failed to load navigation data");
-      } finally {
-        setIsLoading(false);
-      }
-    }
-    fetchNavigation();
-  }, []);
-
-  // No-op: subcategories are loaded with initial fetch
+  // No-op: data is already loaded server-side
   const loadSubcategories = async (_categorySlug: string) => {
-    // Already loaded in initial fetch
     return;
   };
 
-  // No-op: tricks are loaded with initial fetch
+  // No-op: data is already loaded server-side
   const loadTricks = async (
     _categorySlug: string,
     _subcategorySlug: string
   ) => {
-    // Already loaded in initial fetch
     return;
   };
 

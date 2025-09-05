@@ -1,6 +1,3 @@
-"use client";
-
-import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -12,7 +9,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Heart, Clock, ArrowRight } from "lucide-react";
-import { getTricks, type Trick } from "@/lib/tricks-data";
+import { getTricks } from "@/lib/server/tricks-data-server";
+import { Trick } from "@/lib/client/tricks-data-client";
 import { TrickImage } from "@/components/trick-image";
 
 const DIFFICULTY_COLORS = {
@@ -41,24 +39,16 @@ const DIFFICULTY_LABELS = {
   10: "Expert",
 };
 
-export function RecentTricks() {
-  const [tricks, setTricks] = useState<Trick[]>([]);
-  const [loading, setLoading] = useState(true);
+export async function RecentTricks() {
+  let tricks: Trick[] = [];
 
-  useEffect(() => {
-    const loadRecentTricks = async () => {
-      try {
-        const { tricks: tricksData } = await getTricks({ limit: 4 });
-        setTricks(tricksData);
-      } catch (error) {
-        console.error("Failed to load recent tricks:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadRecentTricks();
-  }, []);
+  try {
+    const { tricks: tricksData } = await getTricks({ limit: 4 });
+    tricks = tricksData;
+  } catch (error) {
+    console.error("Failed to load recent tricks:", error);
+    // For SSR, we'll return empty array on error instead of showing loading state
+  }
 
   const formatTimeAgo = (dateString: string) => {
     const date = new Date(dateString);
@@ -85,18 +75,6 @@ export function RecentTricks() {
     // For now, I'm using a generic path - you may need to adjust this based on your routing structure
     return "/browse-tricks"; // or whatever your general tricks listing page is
   };
-
-  if (loading) {
-    return (
-      <section className="py-16 bg-muted/30">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-center min-h-[200px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section className="py-16 bg-muted/30">

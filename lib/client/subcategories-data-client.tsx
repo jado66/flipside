@@ -1,5 +1,4 @@
-import { createClient } from "./client";
-import { supabase } from "./supbase";
+import { supabase } from "../supabase/supabase-client";
 
 export interface Subcategory {
   id: string;

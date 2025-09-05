@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Calendar, Filter } from "lucide-react";
-import { supabase } from "@/lib/supbase";
+import { supabase } from "@/lib/supabase/supabase-client";
 
 interface Schedule {
   id: string;

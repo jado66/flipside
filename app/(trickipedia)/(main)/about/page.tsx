@@ -183,7 +183,7 @@ export default function AboutPage() {
                   start sharing your expertise with the world.
                 </p>
                 <p>
-                  Questions or suggestions? Reach out to us at:
+                  Questions or suggestions? Reach out to our founder, JD, at:
                   <a
                     href="mailto:jd@platinumprogramming.com"
                     className="text-primary hover:underline ml-1"

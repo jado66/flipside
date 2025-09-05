@@ -1,4 +1,4 @@
-import { incrementTrickViews } from "@/lib/tricks-client";
+import { incrementTrickViews } from "@/lib/server/tricks-data-server";
 import { useEffect, useRef, useState } from "react";
 
 /**

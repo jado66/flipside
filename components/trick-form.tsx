@@ -46,7 +46,7 @@ interface StepGuide {
 export interface TrickFormProps {
   mode: "view" | "edit" | "create";
   trick: TrickData;
-  onSubmit?: (data: TrickData) => void;
+  onSubmit?: (data: TrickData, shouldNavigateAway?: boolean) => void;
   loading?: boolean;
   users?: {
     id: string;
@@ -77,6 +77,7 @@ export function TrickForm({
   onCancel,
 }: TrickFormProps) {
   const [formData, setFormData] = useState<TrickData>(trick);
+  const [createMultiple, setCreateMultiple] = useState(false);
 
   // Always set published to true for now
   useEffect(() => {
@@ -271,7 +272,13 @@ export function TrickForm({
             ? formData.inventor_name?.trim() || null
             : null,
       };
-      onSubmit(cleanData);
+      onSubmit(cleanData, !createMultiple);
+      if (mode === "create" && createMultiple) {
+        // Reset form for another entry
+        setFormData({ ...trick });
+      } else if (onCancel) {
+        onCancel();
+      }
     }
   };
 
@@ -781,7 +788,25 @@ export function TrickForm({
 
         {(mode === "edit" || mode === "create") && (
           <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t p-6 -mx-6 mt-8">
-            <div className="flex gap-3 justify-end">
+            <div className="flex gap-3 justify-end items-center">
+              {/* Create Multiple Checkbox */}
+              {mode === "create" && (
+                <div className="flex items-center mr-auto">
+                  <input
+                    type="checkbox"
+                    id="create-multiple"
+                    className="form-checkbox h-4 w-4 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary"
+                    checked={createMultiple}
+                    onChange={(e) => setCreateMultiple(e.target.checked)}
+                  />
+                  <Label
+                    htmlFor="create-multiple"
+                    className="ml-2 text-sm cursor-pointer"
+                  >
+                    Create Multiple
+                  </Label>
+                </div>
+              )}
               <Button type="button" variant="outline" onClick={onCancel}>
                 Cancel
               </Button>

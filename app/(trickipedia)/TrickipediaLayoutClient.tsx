@@ -11,15 +11,16 @@ import {
 } from "@/components/ui/sidebar";
 import { MasterSideNav } from "@/components/side-nav";
 import { NavigationProvider } from "@/contexts/navigation-provider";
+import type { NavigationCategory } from "@/components/side-nav/types";
 
 export function TrickipediaLayoutClient({
   children,
-  geistSans,
-  geistMono,
+
+  initialNavigationData,
 }: {
   children: React.ReactNode;
-  geistSans: string;
-  geistMono: string;
+
+  initialNavigationData: NavigationCategory[];
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -29,7 +30,7 @@ export function TrickipediaLayoutClient({
       defaultTheme="trickipedia"
       themes={["trickipedia"]}
     >
-      <NavigationProvider>
+      <NavigationProvider initialData={initialNavigationData}>
         <TrickipediaHeader
           onMobileMenuClick={() => setMobileSidebarOpen(true)}
         />

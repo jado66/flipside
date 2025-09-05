@@ -3,7 +3,7 @@ import { RecentTricks } from "@/components/recent-tricks";
 import { CommunityStats } from "@/components/community-stats";
 import { HeroSection } from "@/components/hero-section";
 
-export default function HomePage() {
+export default async function HomePage() {
   return (
     <div className="min-h-screen bg-background">
       <main>

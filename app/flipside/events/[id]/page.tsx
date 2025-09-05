@@ -10,7 +10,7 @@ import { Calendar, Clock, MapPin, Users, DollarSign, User } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { supabase } from "@/lib/supbase";
+import { supabase } from "@/lib/supabase/supabase-client";
 
 interface Event {
   id: string;

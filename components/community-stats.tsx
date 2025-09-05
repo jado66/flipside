@@ -1,22 +1,9 @@
-"use client";
-import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Users, BookOpen, MessageSquare, TrendingUp } from "lucide-react";
 import {
-  Users,
-  BookOpen,
-  MessageSquare,
-  TrendingUp,
-  Loader2,
-} from "lucide-react";
-import { supabase } from "@/lib/supbase";
-// Adjust import path as needed
-
-interface Stats {
-  totalUsers: number;
-  totalTricks: number;
-  totalViews: number;
-  publishedTricks: number;
-}
+  getCommunityStats,
+  type CommunityStats,
+} from "@/lib/server/community-stats-server";
 
 interface StatItem {
   title: string;
@@ -27,141 +14,71 @@ interface StatItem {
   description: string;
 }
 
-export function CommunityStats() {
-  const [stats, setStats] = useState<Stats | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        setLoading(true);
-
-        // Fetch all stats in parallel
-        const [
-          { count: totalUsers },
-          { count: totalTricks },
-          { count: publishedTricks },
-          { data: viewsData },
-        ] = await Promise.all([
-          // Total users count
-          supabase.from("users").select("*", { count: "exact", head: true }),
-
-          // Total tricks count
-          supabase.from("tricks").select("*", { count: "exact", head: true }),
-
-          // Published tricks count
-          supabase
-            .from("tricks")
-            .select("*", { count: "exact", head: true })
-            .eq("is_published", true),
-
-          // Sum of all view counts
-          supabase.from("tricks").select("view_count").eq("is_published", true),
-        ]);
-
-        // Calculate total views
-        const totalViews =
-          viewsData?.reduce((sum, trick) => sum + (trick.view_count || 0), 0) ||
-          0;
-
-        setStats({
-          totalUsers: totalUsers || 0,
-          totalTricks: totalTricks || 0,
-          totalViews,
-          publishedTricks: publishedTricks || 0,
-        });
-      } catch (err) {
-        console.error("Error fetching stats:", err);
-        setError("Failed to load community stats");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchStats();
-  }, []);
-
-  // Format numbers for display
-  const formatNumber = (num: number): string => {
-    if (num >= 1000000) {
-      return (num / 1000000).toFixed(1) + "M";
-    } else if (num >= 1000) {
-      return (num / 1000).toFixed(1) + "k";
-    }
-    return num.toLocaleString();
-  };
-
-  // Generate stats array based on real data
-  const getStatsArray = (stats: Stats): StatItem[] => [
-    // {
-    //   title: "Active Members",
-    //   value: formatNumber(stats.totalUsers),
-    //   change: stats.totalUsers > 0 ? "+12%" : "0%", // You could calculate real growth if you have historical data
-    //   changeType: "positive" as const,
-    //   icon: Users,
-    //   description: "Registered community members",
-    // },
-    {
-      title: "Published Tricks",
-      value: formatNumber(stats.publishedTricks),
-      change: stats.publishedTricks > 0 ? "+8%" : "0%", // You could calculate real growth if you have historical data
-      changeType: "positive" as const,
-      icon: BookOpen,
-      description: "Available trick tutorials",
-    },
-    {
-      title: "Total Views",
-      value: formatNumber(stats.totalViews),
-      change: stats.totalViews > 0 ? "+23%" : "0%", // You could calculate real growth if you have historical data
-      changeType: "positive" as const,
-      icon: TrendingUp,
-      description: "Community engagement",
-    },
-    {
-      title: "Total Content",
-      value: formatNumber(stats.totalTricks),
-      change: stats.totalTricks > 0 ? "+15%" : "0%", // You could calculate real growth if you have historical data
-      changeType: "positive" as const,
-      icon: MessageSquare,
-      description: "Including drafts and published",
-    },
-  ];
-
-  if (loading) {
-    return (
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-balance mb-4">
-              Growing Community
-            </h2>
-            <p className="text-lg text-muted-foreground text-pretty max-w-2xl mx-auto">
-              Join thousands of athletes sharing knowledge and pushing the
-              boundaries of movement.
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </section>
-    );
+// Format numbers for display
+const formatNumber = (num: number): string => {
+  if (num >= 1000000) {
+    return (num / 1000000).toFixed(1) + "M";
+  } else if (num >= 1000) {
+    return (num / 1000).toFixed(1) + "k";
   }
+  return num.toLocaleString();
+};
 
-  if (error) {
+// Generate stats array based on real data
+const getStatsArray = (stats: CommunityStats): StatItem[] => [
+  // {
+  //   title: "Active Members",
+  //   value: formatNumber(stats.totalUsers),
+  //   change: stats.totalUsers > 0 ? "+12%" : "0%", // You could calculate real growth if you have historical data
+  //   changeType: "positive" as const,
+  //   icon: Users,
+  //   description: "Registered community members",
+  // },
+  {
+    title: "Published Tricks",
+    value: formatNumber(stats.publishedTricks),
+    change: stats.publishedTricks > 0 ? "+8%" : "0%", // You could calculate real growth if you have historical data
+    changeType: "positive" as const,
+    icon: BookOpen,
+    description: "Available trick tutorials",
+  },
+  {
+    title: "Total Views",
+    value: formatNumber(stats.totalViews),
+    change: stats.totalViews > 0 ? "+23%" : "0%", // You could calculate real growth if you have historical data
+    changeType: "positive" as const,
+    icon: TrendingUp,
+    description: "Community engagement",
+  },
+  {
+    title: "Total Content",
+    value: formatNumber(stats.totalTricks),
+    change: stats.totalTricks > 0 ? "+15%" : "0%", // You could calculate real growth if you have historical data
+    changeType: "positive" as const,
+    icon: MessageSquare,
+    description: "Including drafts and published",
+  },
+];
+
+export async function CommunityStats() {
+  let stats: CommunityStats;
+
+  try {
+    stats = await getCommunityStats();
+  } catch (error) {
+    console.error("Error fetching community stats:", error);
     return (
       <section className="py-16 bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <p className="text-lg text-destructive">{error}</p>
+            <p className="text-lg text-destructive">
+              Failed to load community stats
+            </p>
           </div>
         </div>
       </section>
     );
   }
-
-  if (!stats) return null;
 
   const statsArray = getStatsArray(stats);
 

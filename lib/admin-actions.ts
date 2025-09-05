@@ -1,5 +1,5 @@
 import type { DatabaseUser, UserRole } from "@/lib/types/database";
-import { supabase } from "./supbase";
+import { supabase } from "./supabase/supabase-client";
 
 export type User = DatabaseUser;
 export type { UserRole };

@@ -16,7 +16,7 @@ import {
   getSubcategoriesByMasterCategory,
   deleteSubcategory,
   type Subcategory,
-} from "@/lib/subcategories-data";
+} from "@/lib/server/subcategories-data-server";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import {
   AlertDialog,

@@ -21,7 +21,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Plus, Trash2, Search, Check } from "lucide-react";
-import { searchPotentialPrerequisites } from "@/lib/tricks-data";
+import { searchPotentialPrerequisites } from "@/lib/client/tricks-data-client";
 
 interface PrerequisitesFormFieldProps {
   prerequisites: string[];

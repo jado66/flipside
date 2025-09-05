@@ -1,7 +1,4 @@
-"use client";
-
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import {
   Card,
   CardContent,
@@ -10,9 +7,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-import { Loader2 } from "lucide-react";
-import { getNavigationData } from "@/lib/tricks-data";
+import { getNavigationData } from "@/lib/server/tricks-data-server";
 import { iconMap } from "./side-nav/icon-map";
 
 // Color mapping based on your database color values
@@ -45,70 +40,23 @@ interface Category {
   trickCount: number; // Add trickCount property to the interface
 }
 
-export function FeaturedCategories() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export async function FeaturedCategories() {
+  let categories: Category[] = [];
 
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        setLoading(true);
-        const navigationData = await getNavigationData();
+  try {
+    const navigationData = await getNavigationData();
 
-        // Transform the data to include trick counts
-        const categoriesWithCounts = navigationData.map((category: any) => ({
-          ...category,
-          trickCount: category.subcategories.reduce(
-            (total: number, subcategory: any) =>
-              total + subcategory.tricks.length,
-            0
-          ),
-        }));
-
-        setCategories(categoriesWithCounts);
-      } catch (err) {
-        console.error("Error fetching categories:", err);
-        setError("Failed to load categories");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategories();
-  }, []);
-
-  if (loading) {
-    return (
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold text-balance mb-4">
-              Explore by Discipline
-            </h2>
-            <p className="text-lg text-muted-foreground text-pretty max-w-2xl mx-auto">
-              Dive deep into your favorite movement discipline and discover new
-              techniques to master.
-            </p>
-          </div>
-          <div className="flex justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        </div>
-      </section>
-    );
-  }
-
-  if (error) {
-    return (
-      <section className="py-16 bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <p className="text-lg text-destructive">{error}</p>
-          </div>
-        </div>
-      </section>
-    );
+    // Transform the data to include trick counts
+    categories = navigationData.map((category: any) => ({
+      ...category,
+      trickCount: category.subcategories.reduce(
+        (total: number, subcategory: any) => total + subcategory.tricks.length,
+        0
+      ),
+    }));
+  } catch (error) {
+    console.error("Failed to load categories:", error);
+    // For SSR, we'll return empty array on error instead of showing loading state
   }
 
   return (
@@ -159,7 +107,7 @@ export function FeaturedCategories() {
           })}
         </div>
 
-        {categories.length === 0 && !loading && (
+        {categories.length === 0 && (
           <div className="text-center py-12">
             <p className="text-lg text-muted-foreground">
               No categories available at the moment.

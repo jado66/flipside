@@ -155,25 +155,23 @@ export function MasterSideNav({
                         {isCategoryExpanded && (
                           <SidebarMenuSub>
                             {/* Add "All Categories" link if there are more than 3 subcategories */}
-                            {!category.subcategoriesLoading &&
-                              (category.subcategories?.length ?? 0) > 3 && (
-                                <SidebarMenuSubItem>
-                                  <SidebarMenuSubButton
-                                    asChild
-                                    onClick={() => {
-                                      if (onItemClick) onItemClick();
-                                    }}
-                                    className="text-md md:text-sm"
-                                  >
-                                    <Link
-                                      href={`/${category.slug}`}
-                                      className=" py-1 block font-medium text-primary hover:underline"
-                                    >
-                                      All Categories
-                                    </Link>
-                                  </SidebarMenuSubButton>
-                                </SidebarMenuSubItem>
-                              )}
+
+                            <SidebarMenuSubItem>
+                              <SidebarMenuSubButton
+                                asChild
+                                onClick={() => {
+                                  if (onItemClick) onItemClick();
+                                }}
+                                className="text-md md:text-sm"
+                              >
+                                <Link
+                                  href={`/${category.slug}`}
+                                  className=" py-1 block font-medium text-primary hover:underline"
+                                >
+                                  All Categories
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
 
                             {category.subcategoriesLoading ? (
                               <SidebarMenuSubItem>

@@ -5,15 +5,16 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { createTrick, type Trick } from "@/lib/tricks-data"; // Assuming createTrick function exists in tricks-data
-import {
-  getSubcategoryBySlug,
-  type Subcategory,
-} from "@/lib/subcategories-data"; // To get subcategory_id from slug
+import { createTrick, type Trick } from "@/lib/client/tricks-data-client"; // Assuming createTrick function exists in tricks-data
+
 import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
 import { TrickForm } from "@/components/trick-form";
 import { TrickData } from "@/types/trick";
+import {
+  getSubcategoryBySlug,
+  Subcategory,
+} from "@/lib/client/subcategories-data-client";
 
 export default function TrickNewPage() {
   const router = useRouter();
@@ -82,7 +83,10 @@ export default function TrickNewPage() {
     router.push(`/${category}/${subcategorySlug}`);
   };
 
-  const handleSubmit = async (data: TrickData) => {
+  const handleSubmit = async (
+    data: TrickData,
+    shouldNavigateAway: boolean = true
+  ) => {
     setLoading(true);
     try {
       if (!data.slug) {
@@ -91,7 +95,9 @@ export default function TrickNewPage() {
       // @ts-expect-error TODO come back
       await createTrick(data); // Assuming createTrick function that takes TrickData and creates a new trick
       toast.success("Trick created successfully!");
-      router.push(`/${category}/${subcategorySlug}/${data.slug}`);
+      if (shouldNavigateAway) {
+        router.push(`/${category}/${subcategorySlug}/${data.slug}`);
+      }
     } catch (error) {
       console.error("Failed to create trick:", error);
       toast.error("Failed to create trick. You must be logged in");

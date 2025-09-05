@@ -1,9 +1,4 @@
-"use client";
-
-import type React from "react";
-
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { notFound } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import {
@@ -14,46 +9,29 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  getMasterCategoryBySlug,
-  type MasterCategory,
-} from "@/lib/categories-data";
-import {
-  getSubcategoriesByMasterCategory,
-  type Subcategory,
-} from "@/lib/subcategories-data";
+import { getMasterCategoryBySlug } from "@/lib/categories-data";
+import { getSubcategoriesByMasterCategory } from "@/lib/server/subcategories-data-server";
 import { ArrowLeft, ArrowRight, Settings } from "lucide-react";
 import * as Icons from "lucide-react";
 import { PermissionGate } from "@/components/permission-gate";
 
-export default function CategoryPage() {
-  const params = useParams();
-  const slug = params.slug as string;
-  const [category, setCategory] = useState<MasterCategory | null>(null);
-  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
-  const [loading, setLoading] = useState(true);
+interface PageProps {
+  params: {
+    slug: string;
+  };
+}
 
-  useEffect(() => {
-    const loadData = async () => {
-      try {
-        const categoryData = await getMasterCategoryBySlug(slug);
-        setCategory(categoryData);
+export default async function CategoryPage({ params }: PageProps) {
+  const { slug } = params;
 
-        if (categoryData) {
-          const subcategoriesData = await getSubcategoriesByMasterCategory(
-            categoryData.id
-          );
-          setSubcategories(subcategoriesData);
-        }
-      } catch (error) {
-        console.error("Failed to load category data:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  // Fetch data server-side
+  const category = await getMasterCategoryBySlug(slug);
 
-    loadData();
-  }, [slug]);
+  if (!category) {
+    notFound();
+  }
+
+  const subcategories = await getSubcategoriesByMasterCategory(category.id);
 
   const getIconComponent = (iconName: string) => {
     const iconMap: Record<string, React.ComponentType<any>> = {
@@ -64,39 +42,6 @@ export default function CategoryPage() {
     };
     return iconMap[iconName] || Icons.Circle;
   };
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!category) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center py-12">
-            <h1 className="text-2xl font-bold mb-4">Category Not Found</h1>
-            <p className="text-muted-foreground mb-6">
-              The category you&apos;re looking for doesn&apos;t exist.
-            </p>
-            <Button asChild>
-              <Link href="/sports-and-disciplines">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Sports &amp; Disciplines
-              </Link>
-            </Button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   const IconComponent = getIconComponent(category.icon_name || "circle");
 
@@ -200,7 +145,7 @@ export default function CategoryPage() {
                 </p>
               </div>
 
-              {/* Management Card for empty state - Only visible to moderators/admins */}
+              {/* Management Card for empty state */}
               <PermissionGate requireModerator>
                 <Link href={`/${category.slug}/manage-categories`}>
                   <Card className="w-full max-w-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer group">

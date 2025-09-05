@@ -1,10 +1,9 @@
+// app/(trickipedia)/layout.tsx
 import type React from "react";
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "../globals.css";
-import { DonorBanner } from "@/components/donor-banner";
-import { TrickipediaLayoutClient } from "./TrickipediaLayoutClient";
-import { Menu, X } from "lucide-react";
+import { TrickipediaLayoutServer } from "./layout-server";
 import { TrickipediaFooter } from "@/components/trickipdedia-footer";
 
 const geistSans = Geist({
@@ -32,17 +31,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body
-        className={`font-sans trickipedia-theme ${geistSans.variable} ${geistMono.variable}`}
-      >
-        <TrickipediaLayoutClient
-          geistSans={geistSans.variable}
-          geistMono={geistMono.variable}
-        >
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="font-sans trickipedia-theme">
+        <TrickipediaLayoutServer>
           {children}
           <TrickipediaFooter />
-        </TrickipediaLayoutClient>
+        </TrickipediaLayoutServer>
       </body>
     </html>
   );

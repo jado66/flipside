@@ -1,6 +1,6 @@
 // lib/chat-service.ts
 
-import { supabase } from "./supbase";
+import { supabase } from "./supabase/supabase-client";
 
 // Types
 export interface Channel {

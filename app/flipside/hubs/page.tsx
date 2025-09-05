@@ -8,7 +8,7 @@ import { HubSearch } from "@/components/hub-search";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import Link from "next/link";
-import { supabase } from "@/lib/supbase";
+import { supabase } from "@/lib/supabase/supabase-client";
 
 interface Hub {
   id: string;

@@ -1,4 +1,4 @@
-import { supabase } from "./supbase";
+import { supabase } from "../supabase/supabase-client";
 
 export interface Trick {
   id: string;
@@ -47,141 +47,6 @@ export interface Trick {
     username?: string | null;
     profile_image_url?: string | null;
   };
-}
-
-// Get tricks with filters
-export async function getTricks(filters?: {
-  category?: string;
-  subcategory?: string;
-  difficulty?: number;
-  search?: string;
-  inventor_user_id?: string;
-  inventor_name?: string;
-  limit?: number;
-  offset?: number;
-}): Promise<{ tricks: Trick[]; total: number }> {
-  let query = supabase
-    .from("tricks")
-    .select(
-      `
-      *,
-      subcategory:subcategories!inner(
-        name,
-        slug,
-        master_category:master_categories!inner(name, slug, color)
-      ),
-      inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
-    `,
-      { count: "exact" }
-    )
-    .eq("is_published", true);
-
-  // Apply filters - first get subcategory_id if filtering by subcategory slug
-  if (filters?.subcategory) {
-    // First, get the subcategory by slug to get its ID
-    const { data: subcategoryData } = await supabase
-      .from("subcategories")
-      .select("id")
-      .eq("slug", filters.subcategory)
-      .single();
-
-    if (subcategoryData) {
-      query = query.eq("subcategory_id", subcategoryData.id);
-    }
-  }
-
-  // For category filter, we need to join through subcategories
-  if (filters?.category && !filters?.subcategory) {
-    // Get all subcategories for this category
-    const { data: categoryData } = await supabase
-      .from("master_categories")
-      .select("id")
-      .eq("slug", filters.category)
-      .single();
-
-    if (categoryData) {
-      const { data: subcategoriesData } = await supabase
-        .from("subcategories")
-        .select("id")
-        .eq("master_category_id", categoryData.id);
-
-      if (subcategoriesData && subcategoriesData.length > 0) {
-        const subcategoryIds = subcategoriesData.map((s) => s.id);
-        query = query.in("subcategory_id", subcategoryIds);
-      }
-    }
-  }
-
-  if (filters?.difficulty) {
-    query = query.eq("difficulty_level", filters.difficulty);
-  }
-
-  if (filters?.search) {
-    query = query.textSearch("search_text", filters.search);
-  }
-
-  // Filter by inventor
-  if (filters?.inventor_user_id) {
-    query = query.eq("inventor_user_id", filters.inventor_user_id);
-  }
-
-  if (filters?.inventor_name) {
-    query = query.eq("inventor_name", filters.inventor_name);
-  }
-
-  // Apply pagination
-  if (filters?.offset) {
-    query = query.range(
-      filters.offset,
-      filters.offset + (filters?.limit || 20) - 1
-    );
-  } else if (filters?.limit) {
-    query = query.limit(filters.limit);
-  }
-
-  const { data, error, count } = await query.order("updated_at", {
-    ascending: false,
-  });
-
-  if (error) {
-    console.error("Error fetching tricks:", error);
-    throw new Error("Failed to fetch tricks");
-  }
-
-  return {
-    tricks: data || [],
-    total: count || 0,
-  };
-}
-
-// Get trick by slug
-export async function getTrickBySlug(slug: string): Promise<Trick | null> {
-  const { data, error } = await supabase
-    .from("tricks")
-    .select(
-      `
-      *,
-      subcategory:subcategories(
-        name,
-        slug,
-        master_category:master_categories(name, slug, color)
-      ),
-      inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
-    `
-    )
-    .eq("slug", slug)
-    .eq("is_published", true)
-    .single();
-
-  if (error) {
-    if (error.code === "PGRST116") {
-      return null; // No rows returned
-    }
-    console.error("Error fetching trick by slug:", error);
-    throw new Error("Failed to fetch trick");
-  }
-
-  return data;
 }
 
 // Create new trick
@@ -541,6 +406,35 @@ export async function fetchPrerequisiteTricks(
 
   return prerequisiteMap;
 }
+// Get trick by slug
+export async function getTrickBySlug(slug: string): Promise<Trick | null> {
+  const { data, error } = await supabase
+    .from("tricks")
+    .select(
+      `
+      *,
+      subcategory:subcategories(
+        name,
+        slug,
+        master_category:master_categories(name, slug, color)
+      ),
+      inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
+    `
+    )
+    .eq("slug", slug)
+    .eq("is_published", true)
+    .single();
+
+  if (error) {
+    if (error.code === "PGRST116") {
+      return null; // No rows returned
+    }
+    console.error("Error fetching trick by slug:", error);
+    throw new Error("Failed to fetch trick");
+  }
+
+  return data;
+}
 
 /**
  * Enhanced getTrickBySlug that includes linked prerequisite tricks
@@ -630,4 +524,148 @@ export async function searchPotentialPrerequisites(
   }
 
   return results;
+}
+
+// Increment trick view count
+export async function incrementTrickViews(
+  trickId: string
+): Promise<{ success: boolean; view_count?: number }> {
+  try {
+    // First, check if the trick exists and is published
+    const { data: trick, error: fetchError } = await supabase
+      .from("tricks")
+      .select("id, view_count")
+      .eq("id", trickId)
+      .eq("is_published", true)
+      .single();
+
+    if (fetchError || !trick) {
+      throw new Error("Trick not found");
+    }
+
+    // Update the view count
+    const { error: updateError } = await supabase
+      .from("tricks")
+      .update({
+        view_count: (trick.view_count || 0) + 1,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", trickId);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    // Get the updated view count
+    const { data: updatedTrick, error: getError } = await supabase
+      .from("tricks")
+      .select("view_count")
+      .eq("id", trickId)
+      .single();
+
+    if (getError) {
+      throw getError;
+    }
+
+    return {
+      success: true,
+      view_count: updatedTrick.view_count,
+    };
+  } catch (error) {
+    console.error("Error incrementing trick views:", error);
+    return { success: false };
+  }
+}
+
+// Toggle trick like status
+export async function toggleTrickLike(
+  trickId: string,
+  userId: string
+): Promise<{ success: boolean; liked?: boolean; likeCount?: number }> {
+  try {
+    if (!trickId || !userId) {
+      throw new Error("Trick ID and User ID are required");
+    }
+
+    // First, check if the trick exists and is published
+    const { data: trick, error: trickError } = await supabase
+      .from("tricks")
+      .select("id, like_count")
+      .eq("id", trickId)
+      .eq("is_published", true)
+      .single();
+
+    if (trickError || !trick) {
+      throw new Error("Trick not found");
+    }
+
+    // Check if user already liked this trick
+    const { data: existingLike, error: likeCheckError } = await supabase
+      .from("trick_likes")
+      .select("id")
+      .eq("trick_id", trickId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (likeCheckError) {
+      throw likeCheckError;
+    }
+
+    let liked: boolean;
+    let newLikeCount: number;
+
+    if (existingLike) {
+      // Remove like
+      const { error: deleteError } = await supabase
+        .from("trick_likes")
+        .delete()
+        .eq("trick_id", trickId)
+        .eq("user_id", userId);
+
+      if (deleteError) {
+        throw deleteError;
+      }
+
+      liked = false;
+      newLikeCount = Math.max((trick.like_count || 0) - 1, 0);
+    } else {
+      // Add like
+      const { error: insertError } = await supabase.from("trick_likes").insert([
+        {
+          trick_id: trickId,
+          user_id: userId,
+          created_at: new Date().toISOString(),
+        },
+      ]);
+
+      if (insertError) {
+        throw insertError;
+      }
+
+      liked = true;
+      newLikeCount = (trick.like_count || 0) + 1;
+    }
+
+    // Update trick like count
+    const { error: updateError } = await supabase
+      .from("tricks")
+      .update({
+        like_count: newLikeCount,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", trickId);
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    return {
+      success: true,
+      liked,
+      likeCount: newLikeCount,
+    };
+  } catch (error) {
+    console.error("Error toggling trick like:", error);
+    return { success: false };
+  }
 }

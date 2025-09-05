@@ -1,7 +1,7 @@
 // lib/auth-helpers.ts
 
 import { redirect } from "next/navigation";
-import { supabase } from "./supbase";
+import { supabase } from "./supabase/supabase-client";
 
 export async function checkAuth() {
   const {

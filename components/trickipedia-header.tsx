@@ -18,7 +18,7 @@ import { UserNav } from "@/components/user-nav";
 import { TrickipediaLogo } from "@/components/trickipedia-logo";
 
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supbase";
+import { supabase } from "@/lib/supabase/supabase-client";
 
 export function TrickipediaHeader({
   onMobileMenuClick,
@@ -55,7 +55,7 @@ export function TrickipediaHeader({
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
-              href="/contribute"
+              href="/about"
               className="text-foreground hover:text-primary transition-colors"
             >
               About

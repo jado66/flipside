@@ -1,6 +1,6 @@
 // app/api/tricks/[id]/like-status/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseService } from "@/lib/supabase-service";
+import { supabaseService } from "@/lib/supabase/supabase-service";
 
 export async function GET(
   request: NextRequest,

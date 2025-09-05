@@ -1,7 +1,7 @@
 import { redirect, notFound } from "next/navigation";
 
 import { CreateHubForm } from "@/components/create-hub-form";
-import { supabase } from "@/lib/supbase";
+import { supabase } from "@/lib/supabase/supabase-client";
 
 interface EditHubPageProps {
   params: { id: string };

@@ -1,3 +1,4 @@
+//app\(trickipedia)\(main)\[slug]\[subcategory]\[trick_slug]\edit\page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,7 +6,11 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { getTrickBySlug, updateTrick, type Trick } from "@/lib/tricks-data";
+import {
+  getTrickBySlug,
+  updateTrick,
+  type Trick,
+} from "@/lib/client/tricks-data-client";
 import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
 import { TrickForm } from "@/components/trick-form";

@@ -1,6 +1,6 @@
 // app/api/tricks/[id]/increment-views/route.ts
+import { supabaseServer } from "@/lib/supabase/supabase-server";
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseService } from "@/lib/supabase-service";
 
 export async function POST(
   request: NextRequest,
@@ -17,7 +17,7 @@ export async function POST(
     }
 
     // First, check if the trick exists and is published
-    const { data: trick, error: fetchError } = await supabaseService
+    const { data: trick, error: fetchError } = await supabaseServer
       .from("tricks")
       .select("id, view_count")
       .eq("id", id)
@@ -30,7 +30,7 @@ export async function POST(
 
     // Increment the view count using the RPC function or direct update
     // Option 1: Using RPC (if you have the function)
-    const { error: rpcError } = await supabaseService.rpc(
+    const { error: rpcError } = await supabaseServer.rpc(
       "increment_trick_views",
       {
         trick_id: id,
@@ -41,7 +41,7 @@ export async function POST(
       // Option 2: Fallback to direct update
       console.log("RPC failed, using direct update:", rpcError);
 
-      const { error: updateError } = await supabaseService
+      const { error: updateError } = await supabaseServer
         .from("tricks")
         .update({
           view_count: (trick.view_count || 0) + 1,
@@ -55,7 +55,7 @@ export async function POST(
     }
 
     // Get the updated view count
-    const { data: updatedTrick, error: getError } = await supabaseService
+    const { data: updatedTrick, error: getError } = await supabaseServer
       .from("tricks")
       .select("view_count")
       .eq("id", id)

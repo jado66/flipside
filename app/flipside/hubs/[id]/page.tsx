@@ -25,7 +25,7 @@ import { MapPin, Phone, Globe, Mail, Heart, Calendar } from "lucide-react";
 // Removed next/image usage
 import Link from "next/link";
 import { HubScheduleView } from "@/components/hub-schedule-view";
-import { supabase } from "@/lib/supbase";
+import { supabase } from "@/lib/supabase/supabase-client";
 
 interface HubPageProps {
   params: Promise<{ id: string }>;
