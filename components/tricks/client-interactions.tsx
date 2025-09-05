@@ -25,6 +25,7 @@ import {
   toggleTrickLike,
 } from "@/lib/client/tricks-data-client";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
+import { MoveTrickDialog } from "./move-trick-dialog";
 
 interface ClientInteractionsProps {
   trick: TrickWithLinkedPrerequisites;
@@ -147,6 +148,8 @@ export function ClientInteractions({ trick }: ClientInteractionsProps) {
                 Edit
               </Link>
             </Button>
+
+            <MoveTrickDialog trick={trick} />
 
             {/* <PermissionGate requireModerator> */}
             <AlertDialog>

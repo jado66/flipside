@@ -46,12 +46,14 @@ export async function GET(request: NextRequest) {
     }
 
     // Filter tricks to only show published ones
-    const filteredData = data?.map(category => ({
+    const filteredData = data?.map((category) => ({
       ...category,
-      subcategories: (category.subcategories || []).map(subcategory => ({
+      subcategories: (category.subcategories || []).map((subcategory) => ({
         ...subcategory,
-        tricks: (subcategory.tricks || []).filter(trick => trick.is_published)
-      }))
+        tricks: (subcategory.tricks || []).filter(
+          (trick) => trick.is_published
+        ),
+      })),
     }));
 
     return NextResponse.json(filteredData);
