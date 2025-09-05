@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import { createTrick, type Trick } from "@/lib/client/tricks-data-client"; // Assuming createTrick function exists in tricks-data
+import { createTrick } from "@/lib/client/tricks-data-client";
 
 import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
@@ -21,31 +21,76 @@ export default function TrickNewPage() {
   const params = useParams();
   const category = params.slug as string;
   const subcategorySlug = params.subcategory as string;
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
 
   const [subcategory, setSubcategory] = useState<Subcategory | null>(null);
   const [initialTrick, setInitialTrick] = useState<TrickData | null>(null);
   const [loading, setLoading] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [loadingError, setLoadingError] = useState(false);
+
+  // Track if we've already tried to load to prevent duplicate attempts
+  const loadAttempted = useRef(false);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    // Cleanup timeout on unmount
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const loadSubcategory = async () => {
-      if (!subcategorySlug || user === undefined) return;
+      // Wait for auth to finish loading before proceeding
+      if (authLoading) {
+        console.log("Waiting for auth to complete...");
+        return;
+      }
+
+      // Prevent duplicate load attempts
+      if (loadAttempted.current) {
+        return;
+      }
+
+      if (!subcategorySlug) {
+        console.log("No subcategory slug provided");
+        setLoadingData(false);
+        setLoadingError(true);
+        return;
+      }
+
+      loadAttempted.current = true;
+      console.log("Loading subcategory:", subcategorySlug);
+
+      // Set a timeout to handle cases where the request hangs
+      timeoutRef.current = setTimeout(() => {
+        console.error("Loading timeout - taking too long");
+        setLoadingError(true);
+        setLoadingData(false);
+        toast.error(
+          "Loading is taking longer than expected. Please refresh the page."
+        );
+      }, 10000); // 10 second timeout
 
       try {
         const data = await getSubcategoryBySlug(category, subcategorySlug);
+
+        // Clear timeout if successful
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+
         if (!data) {
+          console.error("Subcategory not found");
           toast.error("Subcategory not found");
           router.push(`/${category}`);
           return;
         }
 
-        // // Check if user can create
-        // if (!user) {
-        //   toast.error("You must be logged in to create a trick");
-        //   router.push(`/login`);
-        //   return;
-        // }
+        console.log("Subcategory loaded successfully:", data.name);
 
         setSubcategory(data);
         // Set initial form data with subcategory_id pre-filled
@@ -67,17 +112,36 @@ export default function TrickNewPage() {
           tags: [""],
           is_published: false,
         });
+
+        setLoadingError(false);
       } catch (error) {
+        // Clear timeout on error
+        if (timeoutRef.current) {
+          clearTimeout(timeoutRef.current);
+        }
+
         console.error("Failed to load subcategory:", error);
-        toast.error("Failed to load subcategory");
-        router.push(`/${category}`);
+        toast.error("Failed to load subcategory. Please try again.");
+        setLoadingError(true);
+
+        // Give user option to retry or go back
+        setTimeout(() => {
+          if (
+            window.confirm(
+              "Failed to load. Would you like to go back to the category page?"
+            )
+          ) {
+            router.push(`/${category}`);
+          }
+        }, 1000);
       } finally {
         setLoadingData(false);
+        console.log("Loading complete");
       }
     };
 
     loadSubcategory();
-  }, [subcategorySlug, user, router, category]);
+  }, [subcategorySlug, authLoading, category, router]);
 
   const handleCancel = () => {
     router.push(`/${category}/${subcategorySlug}`);
@@ -87,32 +151,72 @@ export default function TrickNewPage() {
     data: TrickData,
     shouldNavigateAway: boolean = true
   ) => {
+    // Check if user is logged in when submitting
+    if (!user) {
+      toast.error("You must be logged in to create a trick");
+      router.push(`/login?redirect=/${category}/${subcategorySlug}/new`);
+      return;
+    }
+
     setLoading(true);
     try {
       if (!data.slug) {
         throw new Error("Slug is required to create a trick");
       }
       // @ts-expect-error TODO come back
-      await createTrick(data); // Assuming createTrick function that takes TrickData and creates a new trick
+      await createTrick(data);
       toast.success("Trick created successfully!");
       if (shouldNavigateAway) {
         router.push(`/${category}/${subcategorySlug}/${data.slug}`);
       }
     } catch (error) {
       console.error("Failed to create trick:", error);
-      toast.error("Failed to create trick. You must be logged in");
+      toast.error("Failed to create trick. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  if (loadingData || !initialTrick) {
+  // Show loading state while auth or data is loading
+  if (authLoading || (loadingData && !loadingError)) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="flex items-center justify-center min-h-[400px]">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary">
-              <span className="sr-only"></span>
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4">
+              <span className="sr-only">Loading...</span>
+            </div>
+            <p className="text-muted-foreground text-sm">
+              {authLoading
+                ? "Checking authentication..."
+                : "Loading subcategory..."}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if loading failed
+  if (loadingError || !initialTrick) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <p className="text-destructive mb-4">Failed to load the page</p>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => router.push(`/${category}`)}
+              >
+                Go Back
+              </Button>
             </div>
           </div>
         </div>
@@ -140,7 +244,7 @@ export default function TrickNewPage() {
 
         <div className="max-w-4xl">
           <TrickForm
-            mode="create" // Updated to support "create" mode
+            mode="create"
             trick={initialTrick}
             onSubmit={handleSubmit}
             loading={loading}

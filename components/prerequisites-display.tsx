@@ -3,7 +3,7 @@
 
 import Link from "next/link";
 import { CheckCircle, ExternalLink } from "lucide-react";
-import type { PrerequisiteTrick } from "@/lib/tricks-data";
+import { PrerequisiteTrick } from "@/types/trick";
 
 interface PrerequisitesDisplayProps {
   prerequisites: string[];

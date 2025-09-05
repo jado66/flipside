@@ -1,6 +1,6 @@
 // app/api/tricks/[id]/toggle-like/route.ts
+import { supabaseServer } from "@/lib/supabase/supabase-server";
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseService } from "@/lib/supabase/supabase-service";
 
 export async function POST(
   request: NextRequest,
@@ -27,7 +27,7 @@ export async function POST(
     }
 
     // First, check if the trick exists and is published
-    const { data: trick, error: trickError } = await supabaseService
+    const { data: trick, error: trickError } = await supabaseServer
       .from("tricks")
       .select("id, like_count")
       .eq("id", trickId)
@@ -39,7 +39,7 @@ export async function POST(
     }
 
     // Check if user already liked this trick
-    const { data: existingLike, error: likeCheckError } = await supabaseService
+    const { data: existingLike, error: likeCheckError } = await supabaseServer
       .from("trick_likes")
       .select("id")
       .eq("trick_id", trickId)
@@ -55,7 +55,7 @@ export async function POST(
 
     if (existingLike) {
       // Remove like
-      const { error: deleteError } = await supabaseService
+      const { error: deleteError } = await supabaseServer
         .from("trick_likes")
         .delete()
         .eq("trick_id", trickId)
@@ -69,7 +69,7 @@ export async function POST(
       newLikeCount = Math.max((trick.like_count || 0) - 1, 0);
     } else {
       // Add like
-      const { error: insertError } = await supabaseService
+      const { error: insertError } = await supabaseServer
         .from("trick_likes")
         .insert([
           {
@@ -88,7 +88,7 @@ export async function POST(
     }
 
     // Update trick like count
-    const { error: updateError } = await supabaseService
+    const { error: updateError } = await supabaseServer
       .from("tricks")
       .update({
         like_count: newLikeCount,

@@ -76,8 +76,8 @@ export function ClientInteractions({ trick }: ClientInteractionsProps) {
 
     try {
       const result = await toggleTrickLike(trick.id, user.id);
-      setLiked(result.liked);
-      setLikeCount(result.likeCount);
+      setLiked(result.liked ?? false);
+      setLikeCount(result.likeCount ?? likeCount);
     } catch (error) {
       console.error("Failed to toggle like:", error);
       toast.error("Failed to update like");

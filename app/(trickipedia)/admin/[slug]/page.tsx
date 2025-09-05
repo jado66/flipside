@@ -14,7 +14,6 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   getSubcategoriesByMasterCategory,
-  deleteSubcategory,
   type Subcategory,
 } from "@/lib/server/subcategories-data-server";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff } from "lucide-react";
@@ -32,6 +31,7 @@ import {
 import { SubcategoryFormDialog } from "@/components/subcategory-form-dialog";
 import { getMasterCategoryBySlug } from "@/lib/categories-data";
 import Link from "next/link";
+import { deleteSubcategory } from "@/lib/client/subcategories-data-client";
 
 interface MasterCategory {
   id: string;

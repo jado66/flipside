@@ -21,7 +21,7 @@ import {
   createSubcategory,
   updateSubcategory,
   type Subcategory,
-} from "@/lib/server/subcategories-data-server";
+} from "@/lib/client/subcategories-data-client";
 
 interface SubcategoryFormDialogProps {
   subcategory: Subcategory | null;

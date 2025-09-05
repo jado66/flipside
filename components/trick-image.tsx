@@ -1,6 +1,6 @@
 "use client";
 
-import { type Trick } from "@/lib/tricks-data";
+import { Trick } from "@/types/trick";
 
 interface TrickImageProps {
   trick: Trick;

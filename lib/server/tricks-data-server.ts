@@ -1,10 +1,10 @@
 import {
   PrerequisiteTrick,
+  Trick,
   TrickData,
   TrickWithLinkedPrerequisites,
 } from "@/types/trick";
 import { supabaseServer } from "../supabase/supabase-server";
-import { Trick } from "../client/tricks-data-client";
 
 // Get tricks with filters
 export async function getTricks(filters?: {
@@ -86,23 +86,38 @@ export async function getTricks(filters?: {
 }
 
 // Get trick by slug
-export async function getTrickBySlug(slug: string): Promise<TrickData | null> {
-  const { data, error } = await supabaseServer
+export async function getTrickBySlug(
+  slug: string,
+  categorySlug?: string,
+  subcategorySlug?: string
+): Promise<TrickData | null> {
+  let query = supabaseServer
     .from("tricks")
     .select(
       `
       *,
-      subcategory:subcategories(
+      subcategory:subcategories!inner(
         name,
         slug,
-        master_category:master_categories(name, slug, color)
+        master_category:master_categories!inner(name, slug, color)
       ),
       inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url)
     `
     )
     .eq("slug", slug)
-    .eq("is_published", true)
-    .single();
+    .eq("is_published", true);
+
+  // Apply category filter if provided
+  if (categorySlug) {
+    query = query.eq("subcategories.master_categories.slug", categorySlug);
+  }
+
+  // Apply subcategory filter if provided
+  if (subcategorySlug) {
+    query = query.eq("subcategories.slug", subcategorySlug);
+  }
+
+  const { data, error } = await query.single();
 
   if (error) {
     if (error.code === "PGRST116") {
@@ -119,19 +134,20 @@ export async function getTrickBySlug(slug: string): Promise<TrickData | null> {
  * Enhanced getTrickBySlug that includes linked prerequisite tricks
  */
 export async function getTrickBySlugWithLinks(
-  slug: string
+  slug: string,
+  categorySlug?: string,
+  subcategorySlug?: string
 ): Promise<TrickWithLinkedPrerequisites | null> {
-  const trick = await getTrickBySlug(slug);
+  const trick = await getTrickBySlug(slug, categorySlug, subcategorySlug);
 
   if (!trick || !trick.prerequisites || trick.prerequisites.length === 0) {
-    return trick;
+    return trick as TrickWithLinkedPrerequisites | null;
   }
 
-  // Fetch linked tricks for prerequisites
+  // Fetch linked tricks for prerequisites within the same category context
   const prerequisiteMap = await fetchPrerequisiteTricks(
     trick.prerequisites,
-    // @ts-expect-error TODO fix me
-    trick.subcategory_id
+    categorySlug // Pass category context to limit prerequisite search
   );
 
   // Add the linked tricks to the response, maintaining the original order
@@ -146,7 +162,7 @@ export async function getTrickBySlugWithLinks(
   return {
     ...trick,
     prerequisite_tricks: prerequisiteTricks,
-  };
+  } as TrickWithLinkedPrerequisites;
 }
 
 /**
@@ -155,7 +171,8 @@ export async function getTrickBySlugWithLinks(
  * @returns Map of prerequisite text to trick data
  */
 export async function fetchPrerequisiteTricks(
-  prerequisites: string[]
+  prerequisites: string[],
+  categorySlug?: string
 ): Promise<Map<string, PrerequisiteTrick>> {
   const prerequisiteMap = new Map<string, PrerequisiteTrick>();
 
@@ -166,7 +183,7 @@ export async function fetchPrerequisiteTricks(
   // Clean up prerequisites for matching (case-insensitive)
   const cleanedPrerequisites = prerequisites.map((p) => p.trim());
 
-  // Build query to find matching tricks across all subcategories
+  // Build query to find matching tricks
   let query = supabaseServer
     .from("tricks")
     .select(
@@ -184,8 +201,12 @@ export async function fetchPrerequisiteTricks(
     )
     .eq("is_published", true);
 
+  // Limit search to specific category if provided
+  if (categorySlug) {
+    query = query.eq("subcategories.master_categories.slug", categorySlug);
+  }
+
   // Use case-insensitive matching for each prerequisite
-  // We'll fetch all potential matches and filter client-side for exact matching
   const orConditions = cleanedPrerequisites
     .map((p) => `name.ilike.%${p}%`)
     .join(",");

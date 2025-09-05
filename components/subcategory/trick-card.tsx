@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/card";
 import { Eye, Clock } from "lucide-react";
 import { TrickImage } from "@/components/trick-image";
-import type { Trick } from "@/lib/tricks-data";
+import { Trick } from "@/types/trick";
 
 interface TrickCardProps {
   trick: Trick;

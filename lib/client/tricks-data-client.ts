@@ -1,53 +1,5 @@
+import { Trick } from "@/types/trick";
 import { supabase } from "../supabase/supabase-client";
-
-export interface Trick {
-  id: string;
-  subcategory_id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  difficulty_level: number | null;
-  prerequisites: string[] | null;
-  step_by_step_guide:
-    | {
-        step: number;
-        title: string;
-        description: string;
-        tips?: string[];
-      }[]
-    | null;
-  tips_and_tricks: string | null;
-  common_mistakes: string | null;
-  safety_notes: string | null;
-  video_urls: string[] | null;
-  image_urls: string[] | null;
-  tags: string[] | null;
-  view_count: number;
-  like_count: number;
-  is_published: boolean;
-  created_at: string;
-  updated_at: string;
-  // New inventor fields
-  inventor_user_id: string | null;
-  inventor_name: string | null;
-  // Joined data
-  subcategory?: {
-    name: string;
-    slug: string;
-    master_category: {
-      name: string;
-      slug: string;
-      color: string | null;
-    };
-  };
-
-  inventor?: {
-    first_name: string;
-    last_name: string;
-    username?: string | null;
-    profile_image_url?: string | null;
-  };
-}
 
 // Create new trick
 export async function createTrick(

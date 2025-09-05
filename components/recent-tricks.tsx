@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Heart, Clock, ArrowRight } from "lucide-react";
 import { getTricks } from "@/lib/server/tricks-data-server";
-import { Trick } from "@/lib/client/tricks-data-client";
 import { TrickImage } from "@/components/trick-image";
+import { Trick } from "@/types/trick";
 
 const DIFFICULTY_COLORS = {
   1: "bg-green-500",

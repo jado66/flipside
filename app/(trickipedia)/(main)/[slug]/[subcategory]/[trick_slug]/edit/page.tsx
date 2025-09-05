@@ -6,15 +6,11 @@ import { useRouter, useParams } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
-import {
-  getTrickBySlug,
-  updateTrick,
-  type Trick,
-} from "@/lib/client/tricks-data-client";
+import { getTrickBySlug, updateTrick } from "@/lib/client/tricks-data-client";
 import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
 import { TrickForm } from "@/components/trick-form";
-import { TrickData } from "@/types/trick";
+import { Trick, TrickData } from "@/types/trick";
 
 export default function TrickEditPage() {
   const router = useRouter();

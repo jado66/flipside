@@ -1,6 +1,6 @@
 // app/api/tricks/[id]/like-status/route.ts
+import { supabaseServer } from "@/lib/supabase/supabase-server";
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseService } from "@/lib/supabase/supabase-service";
 
 export async function GET(
   request: NextRequest,
@@ -19,7 +19,7 @@ export async function GET(
     }
 
     // Get trick like count
-    const { data: trick, error: trickError } = await supabaseService
+    const { data: trick, error: trickError } = await supabaseServer
       .from("tricks")
       .select("like_count")
       .eq("id", trickId)
@@ -34,7 +34,7 @@ export async function GET(
 
     // Check if user has liked this trick (only if userId is provided)
     if (userId) {
-      const { data: existingLike, error: likeError } = await supabaseService
+      const { data: existingLike, error: likeError } = await supabaseServer
         .from("trick_likes")
         .select("id")
         .eq("trick_id", trickId)
@@ -87,7 +87,7 @@ export async function POST(
     }
 
     // Get trick like count
-    const { data: trick, error: trickError } = await supabaseService
+    const { data: trick, error: trickError } = await supabaseServer
       .from("tricks")
       .select("like_count")
       .eq("id", trickId)
@@ -99,7 +99,7 @@ export async function POST(
     }
 
     // Get all likes for this trick from the provided user IDs
-    const { data: likes, error: likesError } = await supabaseService
+    const { data: likes, error: likesError } = await supabaseServer
       .from("trick_likes")
       .select("user_id")
       .eq("trick_id", trickId)

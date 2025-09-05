@@ -8,10 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  getTrickBySlugWithLinks,
-  type Trick,
-} from "@/lib/server/tricks-data-server";
+import { getTrickBySlugWithLinks } from "@/lib/server/tricks-data-server";
 import {
   ArrowLeft,
   Eye,
@@ -64,6 +61,8 @@ const DIFFICULTY_COLORS = {
 interface TrickDetailPageProps {
   params: {
     trick_slug: string;
+    slug: string;
+    subcategory: string;
   };
 }
 
@@ -71,12 +70,20 @@ export default async function TrickDetailPage({
   params,
 }: TrickDetailPageProps) {
   const resolvedParams = await params;
-  const trickslug = resolvedParams.trick_slug;
+  const {
+    slug: categorySlug,
+    subcategory: subcategorySlug,
+    trick_slug: trickSlug,
+  } = resolvedParams;
 
   let trick: TrickWithLinkedPrerequisites | null = null;
 
   try {
-    trick = await getTrickBySlugWithLinks(trickslug);
+    trick = await getTrickBySlugWithLinks(
+      trickSlug,
+      categorySlug,
+      subcategorySlug
+    );
   } catch (error) {
     console.error("Failed to load trick:", error);
     notFound();
@@ -169,7 +176,10 @@ export default async function TrickDetailPage({
                         const description = step.description || "";
                         let tips = step.tips;
                         if (!Array.isArray(tips)) {
-                          if (typeof tips === "string" && tips.trim()) {
+                          if (
+                            typeof tips === "string" &&
+                            (tips as string).trim()
+                          ) {
                             tips = [tips];
                           } else {
                             tips = [];
