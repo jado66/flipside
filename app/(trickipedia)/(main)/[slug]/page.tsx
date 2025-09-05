@@ -22,7 +22,7 @@ interface PageProps {
 }
 
 export default async function CategoryPage({ params }: PageProps) {
-  const { slug } = params;
+  const { slug } = await params;
 
   // Fetch data server-side
   const category = await getMasterCategoryBySlug(slug);

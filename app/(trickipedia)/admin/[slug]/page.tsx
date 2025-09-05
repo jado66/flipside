@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   getSubcategoriesByMasterCategory,
   type Subcategory,
-} from "@/lib/server/subcategories-data-server";
+} from "@/lib/client/subcategories-data-client";
 import { Plus, Search, Edit, Trash2, Eye, EyeOff } from "lucide-react";
 import {
   AlertDialog,
@@ -29,7 +29,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { SubcategoryFormDialog } from "@/components/subcategory-form-dialog";
-import { getMasterCategoryBySlug } from "@/lib/categories-data";
+import { getMasterCategoryBySlug } from "@/lib/categories-data-client";
 import Link from "next/link";
 import { deleteSubcategory } from "@/lib/client/subcategories-data-client";
 
