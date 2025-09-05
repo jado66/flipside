@@ -22,12 +22,12 @@ async function getNavigationData(): Promise<NavigationCategory[]> {
         icon_name,
         color,
         sort_order,
-        subcategories!inner(
+        subcategories(
           id,
           name,
           slug,
           sort_order,
-          tricks!inner(
+          tricks(
             id,
             name,
             slug,
@@ -38,7 +38,6 @@ async function getNavigationData(): Promise<NavigationCategory[]> {
       )
       .eq("is_active", true)
       .eq("subcategories.is_active", true)
-      .eq("subcategories.tricks.is_published", true)
       .order("sort_order")
       .order("sort_order", { foreignTable: "subcategories" })
       .order("name", { foreignTable: "subcategories.tricks" });
@@ -62,11 +61,13 @@ async function getNavigationData(): Promise<NavigationCategory[]> {
           name: sub.name,
           slug: sub.slug,
           sort_order: sub.sort_order,
-          tricks: (sub.tricks || []).map((trick: any) => ({
-            id: trick.id,
-            name: trick.name,
-            slug: trick.slug,
-          })),
+          tricks: (sub.tricks || [])
+            .filter((trick: any) => trick.is_published)
+            .map((trick: any) => ({
+              id: trick.id,
+              name: trick.name,
+              slug: trick.slug,
+            })),
           tricksLoaded: true,
           tricksLoading: false,
         })),

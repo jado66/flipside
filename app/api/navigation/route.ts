@@ -17,12 +17,12 @@ export async function GET(request: NextRequest) {
         icon_name,
         color,
         sort_order,
-        subcategories!inner(
+        subcategories(
           id,
           name,
           slug,
           sort_order,
-          tricks!inner(
+          tricks(
             id,
             name,
             slug,
@@ -33,7 +33,6 @@ export async function GET(request: NextRequest) {
       )
       .eq("is_active", true)
       .eq("subcategories.is_active", true)
-      .eq("subcategories.tricks.is_published", true)
       .order("sort_order")
       .order("sort_order", { foreignTable: "subcategories" })
       .order("name", { foreignTable: "subcategories.tricks" });
@@ -46,7 +45,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    return NextResponse.json(data);
+    // Filter tricks to only show published ones
+    const filteredData = data?.map(category => ({
+      ...category,
+      subcategories: (category.subcategories || []).map(subcategory => ({
+        ...subcategory,
+        tricks: (subcategory.tricks || []).filter(trick => trick.is_published)
+      }))
+    }));
+
+    return NextResponse.json(filteredData);
   } catch (error) {
     console.error("Unexpected error:", error);
     return NextResponse.json(

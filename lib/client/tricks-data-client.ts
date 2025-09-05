@@ -101,12 +101,12 @@ export async function getNavigationData() {
       icon_name,
       color,
       sort_order,
-      subcategories!inner(
+      subcategories(
         id,
         name,
         slug,
         sort_order,
-        tricks!inner(
+        tricks(
           id,
           name,
           slug,
@@ -117,7 +117,6 @@ export async function getNavigationData() {
     )
     .eq("is_active", true)
     .eq("subcategories.is_active", true)
-    .eq("subcategories.tricks.is_published", true)
     .order("sort_order")
     .order("sort_order", { foreignTable: "subcategories" })
     .order("name", { foreignTable: "subcategories.tricks" });
@@ -127,7 +126,16 @@ export async function getNavigationData() {
     throw new Error("Failed to fetch navigation data");
   }
 
-  return data;
+  // Filter tricks to only show published ones
+  const filteredData = (data || []).map(category => ({
+    ...category,
+    subcategories: (category.subcategories || []).map(subcategory => ({
+      ...subcategory,
+      tricks: (subcategory.tricks || []).filter(trick => trick.is_published)
+    }))
+  }));
+
+  return filteredData;
 }
 
 // Get all users for inventor selection in forms
