@@ -301,6 +301,26 @@ export function MasterSideNav({
                                             </SidebarMenuSubItem>
                                           ))
                                         )}
+
+                                        {(subcat.tricks?.length ?? 0) > 0 && (
+                                          <SidebarMenuSubItem>
+                                            <SidebarMenuSubButton
+                                              asChild
+                                              onClick={() => {
+                                                if (onItemClick) onItemClick();
+                                              }}
+                                              className="text-md md:text-xs"
+                                            >
+                                              <Link
+                                                href={`/${category.slug}/${subcat.slug}/new`}
+                                                className=" py-1 block hover:underline truncate"
+                                                title={"Add Trick"}
+                                              >
+                                                Add Trick
+                                              </Link>
+                                            </SidebarMenuSubButton>
+                                          </SidebarMenuSubItem>
+                                        )}
                                       </SidebarMenuSub>
                                     )}
                                   </SidebarMenuSubItem>

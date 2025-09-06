@@ -106,7 +106,7 @@ export function TrickForm({
     mode !== "create" && !!(trick.inventor_user_id || trick.inventor_name)
   );
 
-  const [openSections, setOpenSections] = useState<string[]>(["basic"]);
+  const [openSections, setOpenSections] = useState<string[]>(["basic", "media"]);
   const [inventorType, setInventorType] = useState<"none" | "user" | "name">(
     trick.inventor_user_id ? "user" : trick.inventor_name ? "name" : "none"
   );
@@ -141,7 +141,7 @@ export function TrickForm({
       setShowInventor(hasInventor);
 
       // Auto-expand sections that have content
-      const sectionsToOpen = ["basic"];
+      const sectionsToOpen = ["basic", "media"];
       if (hasPrerequisites) sectionsToOpen.push("prerequisites");
       if (hasStepGuide) sectionsToOpen.push("steps");
       if (hasTipsAndTricks) sectionsToOpen.push("tips-safety");
@@ -222,7 +222,7 @@ export function TrickForm({
   const handleStepChange = (
     index: number,
     field: keyof StepGuide,
-    value: string | number
+    value: string | number | string[]
   ) => {
     setFormData((prev) => ({
       ...prev,
@@ -450,377 +450,644 @@ export function TrickForm({
         </Card>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <Accordion
-          type="multiple"
-          defaultValue={["basic", "details", "media"]}
-          className="space-y-4"
-        >
-          {/* Basic Information - simplified without inventor */}
-          <AccordionItem value="basic" className="border rounded-lg">
-            <AccordionTrigger className="px-6 py-4 hover:no-underline">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Star className="h-5 w-5 text-primary" />
-                </div>
-                <div className="text-left">
-                  <h3 className="font-semibold">Basic Information</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Name, description, difficulty, and route
-                  </p>
-                </div>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="px-6 pb-6">
-              <div className="space-y-6">
-                {/* Name */}
-                <div className="space-y-2">
-                  <Label htmlFor="name">Trick Name *</Label>
-                  {mode === "view" ? (
-                    <div className="text-xl font-semibold">{formData.name}</div>
-                  ) : (
-                    <Input
-                      id="name"
-                      value={formData.name}
-                      onChange={(e) => handleChange("name", e.target.value)}
-                      placeholder="Enter trick name"
-                      required
-                    />
-                  )}
-                </div>
-
-                {/* Slug (Route) */}
-                <div className="space-y-2">
-                  <Label htmlFor="slug">Route *</Label>
-                  {mode === "view" ? (
-                    <div className="p-4 bg-muted/50 rounded-lg font-mono text-sm">
-                      /{formData.slug}
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      <div className="flex">
-                        <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
-                          /
-                        </span>
-                        <Input
-                          id="slug"
-                          value={formData.slug}
-                          onChange={(e) => handleChange("slug", e.target.value)}
-                          placeholder="untitle-trick"
-                          required
-                          className="rounded-l-none"
-                        />
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        This is the URL route for the trick and must be unique.
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Description */}
-                <div className="space-y-2">
-                  <Label htmlFor="description">Description *</Label>
-                  {mode === "view" ? (
-                    <div className="p-4 bg-muted/50 rounded-lg text-pretty">
-                      {formData.description}
-                    </div>
-                  ) : (
-                    <Textarea
-                      id="description"
-                      value={formData.description}
-                      onChange={(e) =>
-                        handleChange("description", e.target.value)
-                      }
-                      placeholder="Describe what this trick involves..."
-                      rows={4}
-                      required
-                    />
-                  )}
-                </div>
-
-                {/* Difficulty */}
-                <div className="space-y-2">
-                  <Label htmlFor="difficulty">Difficulty Level (1-10) *</Label>
-                  {mode === "view" ? (
-                    <Badge
-                      className={getDifficultyColor(formData.difficulty_level)}
-                    >
-                      {getDifficultyLabel(formData.difficulty_level)} (
-                      {formData.difficulty_level}/10)
-                    </Badge>
-                  ) : (
-                    <Select
-                      value={formData.difficulty_level.toString()}
-                      onValueChange={(value) =>
-                        handleChange("difficulty_level", Number.parseInt(value))
-                      }
-                    >
-                      <SelectTrigger id="difficulty">
-                        <SelectValue placeholder="Select difficulty level" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1">1 - Beginner</SelectItem>
-                        <SelectItem value="2">2 - Beginner</SelectItem>
-                        <SelectItem value="3">3 - Beginner</SelectItem>
-                        <SelectItem value="4">4 - Intermediate</SelectItem>
-                        <SelectItem value="5">5 - Intermediate</SelectItem>
-                        <SelectItem value="6">6 - Intermediate</SelectItem>
-                        <SelectItem value="7">7 - Advanced</SelectItem>
-                        <SelectItem value="8">8 - Advanced</SelectItem>
-                        <SelectItem value="9">9 - Advanced</SelectItem>
-                        <SelectItem value="10">10 - Advanced</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  )}
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-
-          {/* Media & Tags - enhanced with preview */}
-          <MediaTagsSection
-            formData={formData}
-            mode={mode}
-            onArrayChange={(field, index, value) =>
-              handleArrayChange(field as keyof TrickData, index, value)
-            }
-            onAddItem={(field) => addArrayItem(field as keyof TrickData)}
-            onRemoveItem={(field, index) =>
-              removeArrayItem(field as keyof TrickData, index)
-            }
-          />
-
-          {/* Prerequisites */}
-          {showPrerequisites && (
-            <AccordionItem value="prerequisites" className="border rounded-lg">
+      <div className="flex-1">
+        <form onSubmit={handleSubmit} className="space-y-6 flex flex-col">
+          <Accordion
+            type="multiple"
+            value={openSections}
+            onValueChange={setOpenSections}
+            className="space-y-4"
+          >
+            {/* Basic Information - simplified without inventor */}
+            <AccordionItem value="basic" className="border rounded-lg">
               <AccordionTrigger className="px-6 py-4 hover:no-underline">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
-                    <GripVertical className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div className="p-2 bg-primary/10 rounded-lg">
+                    <Star className="h-5 w-5 text-primary" />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-semibold">Prerequisites</h3>
+                    <h3 className="font-semibold">Basic Information</h3>
                     <p className="text-sm text-muted-foreground">
-                      Skills needed before attempting this trick
-                    </p>
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                <PrerequisitesFormField
-                  prerequisites={formData.prerequisites}
-                  onChange={(newPrerequisites) =>
-                    handleChange("prerequisites", newPrerequisites)
-                  }
-                  subcategoryId={formData.subcategory_id}
-                />
-              </AccordionContent>
-            </AccordionItem>
-          )}
-
-          {/* Tips & Safety */}
-          {showTipsAndTricks && (
-            <AccordionItem value="tips-safety" className="border rounded-lg">
-              <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
-                    <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold">Tips & Safety</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Important advice and safety considerations
+                      Name, description, difficulty, and route
                     </p>
                   </div>
                 </div>
               </AccordionTrigger>
               <AccordionContent className="px-6 pb-6">
                 <div className="space-y-6">
-                  {["tips_and_tricks", "common_mistakes", "safety_notes"].map(
-                    (field) => {
-                      const fieldValue = formData[
-                        field as keyof TrickData
-                      ] as string;
-                      const icons = {
-                        tips_and_tricks: <Lightbulb className="h-4 w-4" />,
-                        common_mistakes: <AlertTriangle className="h-4 w-4" />,
-                        safety_notes: <AlertTriangle className="h-4 w-4" />,
-                      };
-
-                      if (mode === "view" && !fieldValue?.trim()) return null;
-
-                      return (
-                        <div key={field} className="space-y-2">
-                          <div className="flex items-center gap-2">
-                            {icons[field as keyof typeof icons]}
-                            <Label className="text-sm font-medium">
-                              {field
-                                .split("_")
-                                .map(
-                                  (word) =>
-                                    word.charAt(0).toUpperCase() + word.slice(1)
-                                )
-                                .join(" ")}
-                            </Label>
-                          </div>
-                          {mode === "view" ? (
-                            fieldValue && (
-                              <div className="p-4 bg-muted/50 rounded-lg whitespace-pre-wrap text-pretty">
-                                {fieldValue}
-                              </div>
-                            )
-                          ) : (
-                            <Textarea
-                              value={fieldValue}
-                              onChange={(e) =>
-                                handleChange(
-                                  field as keyof TrickData,
-                                  e.target.value
-                                )
-                              }
-                              placeholder={`Enter ${field.replace(
-                                /_/g,
-                                " "
-                              )}...`}
-                              rows={3}
-                            />
-                          )}
-                        </div>
-                      );
-                    }
-                  )}
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          )}
-
-          {showInventor && (
-            <AccordionItem value="inventor" className="border rounded-lg">
-              <AccordionTrigger className="px-6 py-4 hover:no-underline">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
-                    <UserIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
-                  </div>
-                  <div className="text-left">
-                    <h3 className="font-semibold">Trick Inventor</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Credit the person who created this trick
-                    </p>
-                  </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="px-6 pb-6">
-                {mode === "view" ? (
-                  getInventorDisplayName() && (
-                    <div className="p-4 bg-muted/50 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-sm text-muted-foreground">
-                          Invented by:{" "}
-                        </span>
-                        <span className="font-medium">
-                          {getInventorDisplayName()}
-                        </span>
+                  {/* Name */}
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Trick Name *</Label>
+                    {mode === "view" ? (
+                      <div className="text-xl font-semibold">
+                        {formData.name}
                       </div>
-                    </div>
-                  )
-                ) : (
-                  <div className="space-y-4">
-                    <Select
-                      value={inventorType}
-                      onValueChange={(value: "none" | "user" | "name") =>
-                        handleInventorTypeChange(value)
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">
-                          No inventor specified
-                        </SelectItem>
-                        <SelectItem value="user">
-                          Select registered user
-                        </SelectItem>
-                        <SelectItem value="name">
-                          Enter inventor name
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-
-                    {inventorType === "user" && (
-                      <Select
-                        value={formData.inventor_user_id || ""}
-                        onValueChange={(value) =>
-                          handleChange("inventor_user_id", value || null)
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select a user" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {users.map((user) => (
-                            <SelectItem key={user.id} value={user.id}>
-                              {user.username ||
-                                `${user.first_name} ${user.last_name}`}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    )}
-
-                    {inventorType === "name" && (
+                    ) : (
                       <Input
-                        value={formData.inventor_name || ""}
-                        onChange={(e) =>
-                          handleChange("inventor_name", e.target.value)
-                        }
-                        placeholder="Enter inventor name"
+                        id="name"
+                        value={formData.name}
+                        onChange={(e) => handleChange("name", e.target.value)}
+                        placeholder="Enter trick name"
+                        required
                       />
                     )}
                   </div>
-                )}
+
+                  {/* Slug (Route) */}
+                  <div className="space-y-2">
+                    <Label htmlFor="slug">Route *</Label>
+                    {mode === "view" ? (
+                      <div className="p-4 bg-muted/50 rounded-lg font-mono text-sm">
+                        /{formData.slug}
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        <div className="flex">
+                          <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-muted-foreground text-sm">
+                            /
+                          </span>
+                          <Input
+                            id="slug"
+                            value={formData.slug}
+                            onChange={(e) =>
+                              handleChange("slug", e.target.value)
+                            }
+                            placeholder="untitle-trick"
+                            required
+                            className="rounded-l-none"
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          This is the URL route for the trick and must be
+                          unique.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Description */}
+                  <div className="space-y-2">
+                    <Label htmlFor="description">Description *</Label>
+                    {mode === "view" ? (
+                      <div className="p-4 bg-muted/50 rounded-lg text-pretty">
+                        {formData.description}
+                      </div>
+                    ) : (
+                      <Textarea
+                        id="description"
+                        value={formData.description}
+                        onChange={(e) =>
+                          handleChange("description", e.target.value)
+                        }
+                        placeholder="Describe what this trick involves..."
+                        rows={4}
+                        required
+                      />
+                    )}
+                  </div>
+
+                  {/* Difficulty */}
+                  <div className="space-y-2">
+                    <Label htmlFor="difficulty">
+                      Difficulty Level (1-10) *
+                    </Label>
+                    {mode === "view" ? (
+                      <Badge
+                        className={getDifficultyColor(
+                          formData.difficulty_level
+                        )}
+                      >
+                        {getDifficultyLabel(formData.difficulty_level)} (
+                        {formData.difficulty_level}/10)
+                      </Badge>
+                    ) : (
+                      <Select
+                        value={formData.difficulty_level.toString()}
+                        onValueChange={(value) =>
+                          handleChange(
+                            "difficulty_level",
+                            Number.parseInt(value)
+                          )
+                        }
+                      >
+                        <SelectTrigger id="difficulty">
+                          <SelectValue placeholder="Select difficulty level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="1">1 - Beginner</SelectItem>
+                          <SelectItem value="2">2 - Beginner</SelectItem>
+                          <SelectItem value="3">3 - Beginner</SelectItem>
+                          <SelectItem value="4">4 - Intermediate</SelectItem>
+                          <SelectItem value="5">5 - Intermediate</SelectItem>
+                          <SelectItem value="6">6 - Intermediate</SelectItem>
+                          <SelectItem value="7">7 - Advanced</SelectItem>
+                          <SelectItem value="8">8 - Advanced</SelectItem>
+                          <SelectItem value="9">9 - Advanced</SelectItem>
+                          <SelectItem value="10">10 - Advanced</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                </div>
               </AccordionContent>
             </AccordionItem>
-          )}
-        </Accordion>
 
-        {(mode === "edit" || mode === "create") && (
-          <div className="sticky bottom-0 bg-background/95 backdrop-blur-sm border-t p-6 -mx-6 mt-8">
-            <div className="flex gap-3 justify-end items-center">
-              {/* Create Multiple Checkbox */}
-              {mode === "create" && (
-                <div className="flex items-center mr-auto">
-                  <input
-                    type="checkbox"
-                    id="create-multiple"
-                    className="form-checkbox h-4 w-4 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary"
-                    checked={createMultiple}
-                    onChange={(e) => setCreateMultiple(e.target.checked)}
+            {/* Media & Tags - enhanced with preview */}
+            <MediaTagsSection
+              formData={formData}
+              mode={mode}
+              onArrayChange={(field, index, value) =>
+                handleArrayChange(field as keyof TrickData, index, value)
+              }
+              onAddItem={(field) => addArrayItem(field as keyof TrickData)}
+              onRemoveItem={(field, index) =>
+                removeArrayItem(field as keyof TrickData, index)
+              }
+            />
+
+            {/* Prerequisites */}
+            {showPrerequisites && (
+              <AccordionItem
+                value="prerequisites"
+                className="border rounded-lg"
+              >
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 dark:bg-blue-900 rounded-lg">
+                      <GripVertical className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold">Prerequisites</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Skills needed before attempting this trick
+                      </p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <PrerequisitesFormField
+                    prerequisites={formData.prerequisites}
+                    onChange={(newPrerequisites) =>
+                      handleChange("prerequisites", newPrerequisites)
+                    }
+                    subcategoryId={formData.subcategory_id}
                   />
-                  <Label
-                    htmlFor="create-multiple"
-                    className="ml-2 text-sm cursor-pointer"
-                  >
-                    Create Multiple
-                  </Label>
-                </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {/* Step by Step Guide */}
+            {showStepGuide && (
+              <AccordionItem value="steps" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-purple-100 dark:bg-purple-900 rounded-lg">
+                      <Lightbulb className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold">Step by Step Guide</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Break down the trick into detailed steps
+                      </p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <div className="space-y-4">
+                    {mode === "view" ? (
+                      formData.step_by_step_guide.map((step, index) => (
+                        <div key={index} className="border rounded-lg p-4 bg-muted/30">
+                          <div className="flex items-start gap-3">
+                            <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium text-primary">
+                              {step.step}
+                            </div>
+                            <div className="flex-1 space-y-2">
+                              {step.title && (
+                                <h4 className="font-medium">{step.title}</h4>
+                              )}
+                              {step.description && (
+                                <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                                  {step.description}
+                                </p>
+                              )}
+                              {step.tips && step.tips.length > 0 && step.tips.some(tip => tip.trim()) && (
+                                <div className="mt-2">
+                                  <p className="text-xs font-medium text-muted-foreground mb-1">Tips:</p>
+                                  <ul className="text-xs text-muted-foreground space-y-1">
+                                    {step.tips.filter(tip => tip.trim()).map((tip, tipIndex) => (
+                                      <li key={tipIndex} className="flex items-start gap-1">
+                                        <span className="text-primary mt-0.5">•</span>
+                                        <span>{tip}</span>
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <>
+                        {formData.step_by_step_guide.map((step, index) => (
+                          <div key={index} className="border rounded-lg p-4 space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium text-primary">
+                                  {step.step}
+                                </div>
+                                <Label className="font-medium">Step {step.step}</Label>
+                              </div>
+                              {formData.step_by_step_guide.length > 1 && (
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => removeStep(index)}
+                                  className="text-destructive hover:text-destructive"
+                                >
+                                  Remove
+                                </Button>
+                              )}
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <div>
+                                <Label htmlFor={`step-title-${index}`} className="text-sm">
+                                  Step Title
+                                </Label>
+                                <Input
+                                  id={`step-title-${index}`}
+                                  value={step.title}
+                                  onChange={(e) => handleStepChange(index, "title", e.target.value)}
+                                  placeholder="Enter step title..."
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label htmlFor={`step-description-${index}`} className="text-sm">
+                                  Description
+                                </Label>
+                                <Textarea
+                                  id={`step-description-${index}`}
+                                  value={step.description}
+                                  onChange={(e) => handleStepChange(index, "description", e.target.value)}
+                                  placeholder="Describe what to do in this step..."
+                                  rows={3}
+                                />
+                              </div>
+                              
+                              <div>
+                                <Label className="text-sm">Tips for this step</Label>
+                                <div className="space-y-2 mt-2">
+                                  {step.tips.map((tip, tipIndex) => (
+                                    <div key={tipIndex} className="flex gap-2">
+                                      <Input
+                                        value={tip}
+                                        onChange={(e) => {
+                                          const newTips = [...step.tips];
+                                          newTips[tipIndex] = e.target.value;
+                                          handleStepChange(index, "tips", newTips);
+                                        }}
+                                        placeholder="Enter a tip..."
+                                        className="flex-1"
+                                      />
+                                      {step.tips.length > 1 && (
+                                        <Button
+                                          type="button"
+                                          variant="ghost"
+                                          size="sm"
+                                          onClick={() => {
+                                            const newTips = step.tips.filter((_, i) => i !== tipIndex);
+                                            handleStepChange(index, "tips", newTips);
+                                          }}
+                                          className="text-destructive hover:text-destructive px-3"
+                                        >
+                                          ×
+                                        </Button>
+                                      )}
+                                    </div>
+                                  ))}
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => {
+                                      const newTips = [...step.tips, ""];
+                                      handleStepChange(index, "tips", newTips);
+                                    }}
+                                    className="text-sm"
+                                  >
+                                    + Add Tip
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                        
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={addStep}
+                          className="w-full"
+                        >
+                          + Add Another Step
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {/* Tips & Safety */}
+            {showTipsAndTricks && (
+              <AccordionItem value="tips-safety" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-100 dark:bg-yellow-900 rounded-lg">
+                      <AlertTriangle className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold">Tips & Safety</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Important advice and safety considerations
+                      </p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  <div className="space-y-6">
+                    {["tips_and_tricks", "common_mistakes", "safety_notes"].map(
+                      (field) => {
+                        const fieldValue = formData[
+                          field as keyof TrickData
+                        ] as string;
+                        const icons = {
+                          tips_and_tricks: <Lightbulb className="h-4 w-4" />,
+                          common_mistakes: (
+                            <AlertTriangle className="h-4 w-4" />
+                          ),
+                          safety_notes: <AlertTriangle className="h-4 w-4" />,
+                        };
+
+                        if (mode === "view" && !fieldValue?.trim()) return null;
+
+                        return (
+                          <div key={field} className="space-y-2">
+                            <div className="flex items-center gap-2">
+                              {icons[field as keyof typeof icons]}
+                              <Label className="text-sm font-medium">
+                                {field
+                                  .split("_")
+                                  .map(
+                                    (word) =>
+                                      word.charAt(0).toUpperCase() +
+                                      word.slice(1)
+                                  )
+                                  .join(" ")}
+                              </Label>
+                            </div>
+                            {mode === "view" ? (
+                              fieldValue && (
+                                <div className="p-4 bg-muted/50 rounded-lg whitespace-pre-wrap text-pretty">
+                                  {fieldValue}
+                                </div>
+                              )
+                            ) : (
+                              <Textarea
+                                value={fieldValue}
+                                onChange={(e) =>
+                                  handleChange(
+                                    field as keyof TrickData,
+                                    e.target.value
+                                  )
+                                }
+                                placeholder={`Enter ${field.replace(
+                                  /_/g,
+                                  " "
+                                )}...`}
+                                rows={3}
+                              />
+                            )}
+                          </div>
+                        );
+                      }
+                    )}
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            )}
+
+            {showInventor && (
+              <AccordionItem value="inventor" className="border rounded-lg">
+                <AccordionTrigger className="px-6 py-4 hover:no-underline">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-green-100 dark:bg-green-900 rounded-lg">
+                      <UserIcon className="h-5 w-5 text-green-600 dark:text-green-400" />
+                    </div>
+                    <div className="text-left">
+                      <h3 className="font-semibold">Trick Inventor</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Credit the person who created this trick
+                      </p>
+                    </div>
+                  </div>
+                </AccordionTrigger>
+                <AccordionContent className="px-6 pb-6">
+                  {mode === "view" ? (
+                    getInventorDisplayName() && (
+                      <div className="p-4 bg-muted/50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <UserIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">
+                            Invented by:{" "}
+                          </span>
+                          <span className="font-medium">
+                            {getInventorDisplayName()}
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="space-y-4">
+                      <Select
+                        value={inventorType}
+                        onValueChange={(value: "none" | "user" | "name") =>
+                          handleInventorTypeChange(value)
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">
+                            No inventor specified
+                          </SelectItem>
+                          <SelectItem value="user">
+                            Select registered user
+                          </SelectItem>
+                          <SelectItem value="name">
+                            Enter inventor name
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+
+                      {inventorType === "user" && (
+                        <Select
+                          value={formData.inventor_user_id || ""}
+                          onValueChange={(value) =>
+                            handleChange("inventor_user_id", value || null)
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a user" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {users.map((user) => (
+                              <SelectItem key={user.id} value={user.id}>
+                                {user.username ||
+                                  `${user.first_name} ${user.last_name}`}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+
+                      {inventorType === "name" && (
+                        <Input
+                          value={formData.inventor_name || ""}
+                          onChange={(e) =>
+                            handleChange("inventor_name", e.target.value)
+                          }
+                          placeholder="Enter inventor name"
+                        />
+                      )}
+                    </div>
+                  )}
+                </AccordionContent>
+              </AccordionItem>
+            )}
+          </Accordion>
+
+          {/* Add Optional Sections Buttons */}
+          {(mode === "edit" || mode === "create") && (
+            <div className="flex flex-wrap gap-2 mt-4">
+              {!showPrerequisites && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowPrerequisites(true);
+                    setOpenSections(prev => [...prev, "prerequisites"]);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <GripVertical className="h-4 w-4" />
+                  Add Prerequisites
+                </Button>
               )}
-              <Button type="button" variant="outline" onClick={onCancel}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={loading}>
-                {loading
-                  ? "Saving..."
-                  : mode === "create"
-                  ? "Create Trick"
-                  : "Save Trick"}
-              </Button>
+              
+              {!showStepGuide && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowStepGuide(true);
+                    setOpenSections(prev => [...prev, "steps"]);
+                    // Initialize with one empty step if none exist
+                    if (!formData.step_by_step_guide.length) {
+                      setFormData(prev => ({
+                        ...prev,
+                        step_by_step_guide: [{
+                          step: 1,
+                          title: "",
+                          description: "",
+                          tips: [""]
+                        }]
+                      }));
+                    }
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <Lightbulb className="h-4 w-4" />
+                  Add Step Guide
+                </Button>
+              )}
+              
+              {!showTipsAndTricks && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowTipsAndTricks(true);
+                    setOpenSections(prev => [...prev, "tips-safety"]);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  Add Tips & Safety
+                </Button>
+              )}
+              
+              {!showInventor && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setShowInventor(true);
+                    setOpenSections(prev => [...prev, "inventor"]);
+                  }}
+                  className="flex items-center gap-2"
+                >
+                  <UserIcon className="h-4 w-4" />
+                  Add Inventor
+                </Button>
+              )}
             </div>
-          </div>
-        )}
-      </form>
+          )}
+
+          {(mode === "edit" || mode === "create") && (
+            <div className="border-t py-4">
+              <div className="flex gap-3 justify-end items-center">
+                {/* Create Multiple Checkbox */}
+                {mode === "create" && (
+                  <div className="flex items-center mr-auto">
+                    <input
+                      type="checkbox"
+                      id="create-multiple"
+                      className="form-checkbox h-4 w-4 text-primary border-gray-300 rounded focus:ring-2 focus:ring-primary"
+                      checked={createMultiple}
+                      onChange={(e) => setCreateMultiple(e.target.checked)}
+                    />
+                    <Label
+                      htmlFor="create-multiple"
+                      className="ml-2 text-sm cursor-pointer"
+                    >
+                      Create Multiple
+                    </Label>
+                  </div>
+                )}
+                <Button type="button" variant="outline" onClick={onCancel}>
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={loading}>
+                  {loading
+                    ? "Saving..."
+                    : mode === "create"
+                    ? "Create Trick"
+                    : "Save Trick"}
+                </Button>
+              </div>
+            </div>
+          )}
+        </form>
+      </div>
     </div>
   );
 }
