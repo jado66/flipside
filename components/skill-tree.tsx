@@ -13,6 +13,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import { supabase } from "@/lib/supabase/supabase-client";
+import dagre from "dagre";
 
 // Types
 interface Trick {
@@ -45,6 +46,29 @@ interface TrickNodeData {
   completed: boolean;
   onToggle: (id: string) => void;
   categoryColor: string;
+}
+
+// Levenshtein distance function for fuzzy matching
+function levenshtein(a: string, b: string): number {
+  const matrix = Array(b.length + 1)
+    .fill(null)
+    .map(() => Array(a.length + 1).fill(null));
+
+  for (let i = 0; i <= a.length; i++) matrix[0][i] = i;
+  for (let j = 0; j <= b.length; j++) matrix[j][0] = j;
+
+  for (let j = 1; j <= b.length; j++) {
+    for (let i = 1; i <= a.length; i++) {
+      const subCost = a[i - 1] === b[j - 1] ? 0 : 1;
+      matrix[j][i] = Math.min(
+        matrix[j - 1][i] + 1, // deletion
+        matrix[j][i - 1] + 1, // insertion
+        matrix[j - 1][i - 1] + subCost // substitution
+      );
+    }
+  }
+
+  return matrix[b.length][a.length];
 }
 
 // Custom Node Component
@@ -163,6 +187,7 @@ export function SkillTree() {
         .order("difficulty_level", { ascending: true, nullsFirst: true });
 
       if (error) throw error;
+      // @ts-expect-error fix me
       setTricks(data || []);
     } catch (err) {
       console.error("Error fetching tricks:", err);
@@ -198,117 +223,148 @@ export function SkillTree() {
     const currentCategory = categories.find((c) => c.id === selectedCategory);
     const categoryColor = currentCategory?.color || "#3b82f6";
 
-    // Create a map of trick names to IDs for prerequisite matching
-    const trickNameToId = new Map<string, string>();
-    tricks.forEach((trick) => {
-      trickNameToId.set(trick.name.toLowerCase(), trick.id);
-    });
-
-    // Determine tiers based on prerequisites
-    const trickTiers = new Map<string, number>();
+    // Create maps
+    const lowerNameToId = new Map<string, string>();
     const trickById = new Map<string, Trick>();
 
     tricks.forEach((trick) => {
       trickById.set(trick.id, trick);
+      const normName = trick.name.toLowerCase().replace(/\s+/g, " ").trim();
+      if (!lowerNameToId.has(normName)) {
+        // Avoid duplicates if any
+        lowerNameToId.set(normName, trick.id);
+      }
     });
 
-    // Function to calculate tier recursively
-    const calculateTier = (
-      trickId: string,
-      visited = new Set<string>()
-    ): number => {
-      if (visited.has(trickId)) return 0; // Circular dependency protection
-      visited.add(trickId);
-
-      if (trickTiers.has(trickId)) {
-        return trickTiers.get(trickId)!;
+    // Matching function for prerequisites (handles names, IDs, or fuzzy)
+    const getPrereqId = (prereq: string): string | null => {
+      const normPrereq = prereq.toLowerCase().replace(/\s+/g, " ").trim();
+      let prereqId = lowerNameToId.get(normPrereq);
+      if (prereqId) {
+        return prereqId;
       }
 
-      const trick = trickById.get(trickId);
-      if (!trick || !trick.prerequisites || trick.prerequisites.length === 0) {
-        trickTiers.set(trickId, 0);
-        return 0;
+      // Check if it's a direct ID
+      const trimmedPrereq = prereq.trim();
+      if (trickById.has(trimmedPrereq)) {
+        console.log(`Matched prerequisite as direct ID: "${trimmedPrereq}"`);
+        return trimmedPrereq;
       }
 
-      let maxPrereqTier = -1;
-      trick.prerequisites.forEach((prereqName) => {
-        const prereqId = trickNameToId.get(prereqName.toLowerCase());
-        if (prereqId && trickById.has(prereqId)) {
-          const prereqTier = calculateTier(prereqId, new Set(visited));
-          maxPrereqTier = Math.max(maxPrereqTier, prereqTier);
+      // Fuzzy matching
+      let minDist = Infinity;
+      let bestNorm: string | null = null;
+      for (const norm of lowerNameToId.keys()) {
+        const dist = levenshtein(norm, normPrereq);
+        if (dist < minDist) {
+          minDist = dist;
+          bestNorm = norm;
         }
-      });
+      }
 
-      const tier = maxPrereqTier + 1;
-      trickTiers.set(trickId, tier);
-      return tier;
+      if (
+        bestNorm &&
+        (minDist <= 2 || minDist / (normPrereq.length + 1) < 0.2)
+      ) {
+        prereqId = lowerNameToId.get(bestNorm);
+        console.log(
+          `Fuzzy matched "${prereq}" to "${bestNorm}" with distance ${minDist}`
+        );
+        return prereqId!;
+      }
+
+      console.warn(`Prerequisite "${prereq}" not found`);
+      return null;
     };
 
-    // Calculate tiers for all tricks
-    tricks.forEach((trick) => calculateTier(trick.id));
+    // Create nodes with temporary positions
+    let nodes: Node[] = tricks.map((trick) => ({
+      id: trick.id,
+      type: "trickNode",
+      position: { x: 0, y: 0 },
+      data: {
+        trick,
+        completed: completedTricks.has(trick.id),
+        onToggle: toggleTrick,
+        categoryColor,
+      },
+    }));
 
-    // Group tricks by tier
-    const tierGroups = new Map<number, Trick[]>();
-    tricks.forEach((trick) => {
-      const tier = trickTiers.get(trick.id) || 0;
-      if (!tierGroups.has(tier)) {
-        tierGroups.set(tier, []);
-      }
-      tierGroups.get(tier)!.push(trick);
-    });
-
-    // Create nodes
-    const nodes: Node[] = [];
-    const nodeSpacingX = 250;
-    const nodeSpacingY = 100;
-
-    tierGroups.forEach((tierTricks, tier) => {
-      const x = tier * nodeSpacingX;
-      const startY = (-(tierTricks.length - 1) * nodeSpacingY) / 2;
-
-      tierTricks.forEach((trick, index) => {
-        nodes.push({
-          id: trick.id,
-          type: "trickNode",
-          position: {
-            x,
-            y: startY + index * nodeSpacingY,
-          },
-          data: {
-            trick,
-            completed: completedTricks.has(trick.id),
-            onToggle: toggleTrick,
-            categoryColor,
-          },
-        });
-      });
-    });
-
-    // Create edges based on prerequisites
+    // Create edges
     const edges: Edge[] = [];
+    const edgeSet = new Set<string>();
+
     tricks.forEach((trick) => {
       if (trick.prerequisites && trick.prerequisites.length > 0) {
-        trick.prerequisites.forEach((prereqName) => {
-          const sourceId = trickNameToId.get(prereqName.toLowerCase());
+        trick.prerequisites.forEach((prereq) => {
+          const sourceId = getPrereqId(prereq);
           if (sourceId && trickById.has(sourceId)) {
-            const isCompleted =
-              completedTricks.has(sourceId) && completedTricks.has(trick.id);
-            edges.push({
-              id: `${sourceId}-${trick.id}`,
-              source: sourceId,
-              target: trick.id,
-              type: "smoothstep",
-              animated: isCompleted,
-              style: {
-                stroke: isCompleted ? categoryColor : "#9ca3af",
-                strokeWidth: 2,
-                strokeDasharray: isCompleted ? "0" : "5,5",
-              },
-            });
+            const edgeId = `${sourceId}-${trick.id}`;
+            if (!edgeSet.has(edgeId)) {
+              edgeSet.add(edgeId);
+              const isCompleted =
+                completedTricks.has(sourceId) && completedTricks.has(trick.id);
+              edges.push({
+                id: edgeId,
+                source: sourceId,
+                target: trick.id,
+                type: "smoothstep",
+                animated: isCompleted,
+                style: {
+                  stroke: isCompleted ? categoryColor : "#9ca3af",
+                  strokeWidth: 2,
+                  strokeDasharray: isCompleted ? "0" : "5,5",
+                },
+              });
+              console.log(
+                `Created edge: ${trickById.get(sourceId)?.name} -> ${
+                  trick.name
+                }`
+              );
+            }
+          } else {
+            console.warn(
+              `Could not create edge: prerequisite "${prereq}" not found for trick "${trick.name}"`
+            );
           }
         });
       }
     });
+
+    console.log("Final edges:", edges.length, edges);
+
+    // Apply Dagre layout if there are nodes
+    if (nodes.length > 0) {
+      const dagreGraph = new dagre.graphlib.Graph();
+      dagreGraph.setDefaultEdgeLabel(() => ({}));
+      dagreGraph.setGraph({ rankdir: "LR", nodesep: 50, ranksep: 150 });
+
+      const nodeWidth = 220;
+      const nodeHeight = 80;
+
+      nodes.forEach((node) => {
+        dagreGraph.setNode(node.id, { width: nodeWidth, height: nodeHeight });
+      });
+
+      edges.forEach((edge) => {
+        dagreGraph.setEdge(edge.source, edge.target);
+      });
+
+      dagre.layout(dagreGraph);
+
+      nodes = nodes.map((node) => {
+        const { x, y } = dagreGraph.node(node.id);
+        return {
+          ...node,
+          position: {
+            x: x - nodeWidth / 2,
+            y: y - nodeHeight / 2,
+          },
+        };
+      });
+    }
+
+    console.log("Final nodes:", nodes.length, nodes);
 
     return { nodes, edges };
   }, [tricks, categories, selectedCategory, completedTricks, toggleTrick]);
@@ -401,6 +457,7 @@ export function SkillTree() {
             elementsSelectable={true}
           >
             <Controls />
+            {/* @ts-expect-error from <ReactFlow> */}
             <Background variant="dots" gap={20} size={1} />
           </ReactFlow>
         )}
