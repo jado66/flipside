@@ -348,6 +348,14 @@ export function MasterSideNav({
                   <CloseSideBarLink href="/faqs" className="w-full block">
                     <SidebarHeader className="text-md ">FAQs</SidebarHeader>
                   </CloseSideBarLink>
+                  <CloseSideBarLink
+                    href="/skill-trees"
+                    className="w-full block"
+                  >
+                    <SidebarHeader className="text-md ">
+                      Skill Trees (BETA)
+                    </SidebarHeader>
+                  </CloseSideBarLink>
                   <div className="my-4 border-t border-border" />
                   {user ? (
                     // User navigation for logged-in users

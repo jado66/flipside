@@ -78,6 +78,12 @@ export function TrickipediaHeader({
             >
               FAQs
             </Link>
+            <Link
+              href="/skill-trees"
+              className="text-foreground hover:text-primary transition-colors"
+            >
+              Skill Trees (BETA)
+            </Link>
 
             {/* <Link
               href="/"

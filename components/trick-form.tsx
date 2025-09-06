@@ -106,7 +106,10 @@ export function TrickForm({
     mode !== "create" && !!(trick.inventor_user_id || trick.inventor_name)
   );
 
-  const [openSections, setOpenSections] = useState<string[]>(["basic", "media"]);
+  const [openSections, setOpenSections] = useState<string[]>([
+    "basic",
+    "media",
+  ]);
   const [inventorType, setInventorType] = useState<"none" | "user" | "name">(
     trick.inventor_user_id ? "user" : trick.inventor_name ? "name" : "none"
   );
@@ -656,7 +659,10 @@ export function TrickForm({
                   <div className="space-y-4">
                     {mode === "view" ? (
                       formData.step_by_step_guide.map((step, index) => (
-                        <div key={index} className="border rounded-lg p-4 bg-muted/30">
+                        <div
+                          key={index}
+                          className="border rounded-lg p-4 bg-muted/30"
+                        >
                           <div className="flex items-start gap-3">
                             <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium text-primary">
                               {step.step}
@@ -670,19 +676,30 @@ export function TrickForm({
                                   {step.description}
                                 </p>
                               )}
-                              {step.tips && step.tips.length > 0 && step.tips.some(tip => tip.trim()) && (
-                                <div className="mt-2">
-                                  <p className="text-xs font-medium text-muted-foreground mb-1">Tips:</p>
-                                  <ul className="text-xs text-muted-foreground space-y-1">
-                                    {step.tips.filter(tip => tip.trim()).map((tip, tipIndex) => (
-                                      <li key={tipIndex} className="flex items-start gap-1">
-                                        <span className="text-primary mt-0.5">•</span>
-                                        <span>{tip}</span>
-                                      </li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
+                              {step.tips &&
+                                step.tips.length > 0 &&
+                                step.tips.some((tip) => tip.trim()) && (
+                                  <div className="mt-2">
+                                    <p className="text-xs font-medium text-muted-foreground mb-1">
+                                      Tips:
+                                    </p>
+                                    <ul className="text-xs text-muted-foreground space-y-1">
+                                      {step.tips
+                                        .filter((tip) => tip.trim())
+                                        .map((tip, tipIndex) => (
+                                          <li
+                                            key={tipIndex}
+                                            className="flex items-start gap-1"
+                                          >
+                                            <span className="text-primary mt-0.5">
+                                              •
+                                            </span>
+                                            <span>{tip}</span>
+                                          </li>
+                                        ))}
+                                    </ul>
+                                  </div>
+                                )}
                             </div>
                           </div>
                         </div>
@@ -690,13 +707,18 @@ export function TrickForm({
                     ) : (
                       <>
                         {formData.step_by_step_guide.map((step, index) => (
-                          <div key={index} className="border rounded-lg p-4 space-y-4">
+                          <div
+                            key={index}
+                            className="border rounded-lg p-4 space-y-4"
+                          >
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center text-sm font-medium text-primary">
                                   {step.step}
                                 </div>
-                                <Label className="font-medium">Step {step.step}</Label>
+                                <Label className="font-medium">
+                                  Step {step.step}
+                                </Label>
                               </div>
                               {formData.step_by_step_guide.length > 1 && (
                                 <Button
@@ -710,35 +732,55 @@ export function TrickForm({
                                 </Button>
                               )}
                             </div>
-                            
+
                             <div className="space-y-3">
                               <div>
-                                <Label htmlFor={`step-title-${index}`} className="text-sm">
+                                <Label
+                                  htmlFor={`step-title-${index}`}
+                                  className="text-sm"
+                                >
                                   Step Title
                                 </Label>
                                 <Input
                                   id={`step-title-${index}`}
                                   value={step.title}
-                                  onChange={(e) => handleStepChange(index, "title", e.target.value)}
+                                  onChange={(e) =>
+                                    handleStepChange(
+                                      index,
+                                      "title",
+                                      e.target.value
+                                    )
+                                  }
                                   placeholder="Enter step title..."
                                 />
                               </div>
-                              
+
                               <div>
-                                <Label htmlFor={`step-description-${index}`} className="text-sm">
+                                <Label
+                                  htmlFor={`step-description-${index}`}
+                                  className="text-sm"
+                                >
                                   Description
                                 </Label>
                                 <Textarea
                                   id={`step-description-${index}`}
                                   value={step.description}
-                                  onChange={(e) => handleStepChange(index, "description", e.target.value)}
+                                  onChange={(e) =>
+                                    handleStepChange(
+                                      index,
+                                      "description",
+                                      e.target.value
+                                    )
+                                  }
                                   placeholder="Describe what to do in this step..."
                                   rows={3}
                                 />
                               </div>
-                              
+
                               <div>
-                                <Label className="text-sm">Tips for this step</Label>
+                                <Label className="text-sm">
+                                  Tips for this step
+                                </Label>
                                 <div className="space-y-2 mt-2">
                                   {step.tips.map((tip, tipIndex) => (
                                     <div key={tipIndex} className="flex gap-2">
@@ -747,7 +789,11 @@ export function TrickForm({
                                         onChange={(e) => {
                                           const newTips = [...step.tips];
                                           newTips[tipIndex] = e.target.value;
-                                          handleStepChange(index, "tips", newTips);
+                                          handleStepChange(
+                                            index,
+                                            "tips",
+                                            newTips
+                                          );
                                         }}
                                         placeholder="Enter a tip..."
                                         className="flex-1"
@@ -758,8 +804,14 @@ export function TrickForm({
                                           variant="ghost"
                                           size="sm"
                                           onClick={() => {
-                                            const newTips = step.tips.filter((_, i) => i !== tipIndex);
-                                            handleStepChange(index, "tips", newTips);
+                                            const newTips = step.tips.filter(
+                                              (_, i) => i !== tipIndex
+                                            );
+                                            handleStepChange(
+                                              index,
+                                              "tips",
+                                              newTips
+                                            );
                                           }}
                                           className="text-destructive hover:text-destructive px-3"
                                         >
@@ -785,7 +837,7 @@ export function TrickForm({
                             </div>
                           </div>
                         ))}
-                        
+
                         <Button
                           type="button"
                           variant="outline"
@@ -981,7 +1033,7 @@ export function TrickForm({
                   size="sm"
                   onClick={() => {
                     setShowPrerequisites(true);
-                    setOpenSections(prev => [...prev, "prerequisites"]);
+                    setOpenSections((prev) => [...prev, "prerequisites"]);
                   }}
                   className="flex items-center gap-2"
                 >
@@ -989,7 +1041,7 @@ export function TrickForm({
                   Add Prerequisites
                 </Button>
               )}
-              
+
               {!showStepGuide && (
                 <Button
                   type="button"
@@ -997,17 +1049,19 @@ export function TrickForm({
                   size="sm"
                   onClick={() => {
                     setShowStepGuide(true);
-                    setOpenSections(prev => [...prev, "steps"]);
+                    setOpenSections((prev) => [...prev, "steps"]);
                     // Initialize with one empty step if none exist
                     if (!formData.step_by_step_guide.length) {
-                      setFormData(prev => ({
+                      setFormData((prev) => ({
                         ...prev,
-                        step_by_step_guide: [{
-                          step: 1,
-                          title: "",
-                          description: "",
-                          tips: [""]
-                        }]
+                        step_by_step_guide: [
+                          {
+                            step: 1,
+                            title: "",
+                            description: "",
+                            tips: [""],
+                          },
+                        ],
                       }));
                     }
                   }}
@@ -1017,7 +1071,7 @@ export function TrickForm({
                   Add Step Guide
                 </Button>
               )}
-              
+
               {!showTipsAndTricks && (
                 <Button
                   type="button"
@@ -1025,7 +1079,7 @@ export function TrickForm({
                   size="sm"
                   onClick={() => {
                     setShowTipsAndTricks(true);
-                    setOpenSections(prev => [...prev, "tips-safety"]);
+                    setOpenSections((prev) => [...prev, "tips-safety"]);
                   }}
                   className="flex items-center gap-2"
                 >
@@ -1033,7 +1087,7 @@ export function TrickForm({
                   Add Tips & Safety
                 </Button>
               )}
-              
+
               {!showInventor && (
                 <Button
                   type="button"
@@ -1041,7 +1095,7 @@ export function TrickForm({
                   size="sm"
                   onClick={() => {
                     setShowInventor(true);
-                    setOpenSections(prev => [...prev, "inventor"]);
+                    setOpenSections((prev) => [...prev, "inventor"]);
                   }}
                   className="flex items-center gap-2"
                 >
