@@ -414,7 +414,7 @@ export async function fetchPrerequisiteTricksByIds(
     console.error("Error fetching prerequisite tricks:", error);
     return [];
   }
-  // @ts-ignore FIX ME
+  // @ts-expect-error FIX ME
   return data || [];
 }
 // Get trick by slug
@@ -440,7 +440,7 @@ export async function getTrickBySlug(slug: string): Promise<Trick | null> {
     .eq("slug", slug)
     .eq("is_published", true)
     .single()
-    // @ts-ignore FIX ME
+    // @ts-expect-error FIX ME
     .order("sequence", { foreignTable: "trick_components", ascending: true });
 
   if (error) {

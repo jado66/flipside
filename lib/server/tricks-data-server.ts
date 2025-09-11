@@ -226,7 +226,7 @@ export async function fetchPrerequisiteTricksByIds(
     console.error("Error fetching prerequisite tricks:", error);
     return [];
   }
-  // @ts-ignore FIX ME
+  // @ts-expect-error FIX ME
   return data || [];
 }
 
