@@ -436,7 +436,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
           <div className=" text-yellow-700  px-4 rounded w-full mt-1 ">
             <p className="mb-1 flex items-center justify-center text-sm">
               <Info className="mr-2 h-4 w-4" />
-              Progress won't be saved without being logged into an account.{" "}
+              Progress won&apos;t be saved without being logged into an account.{" "}
             </p>
           </div>
         )}
