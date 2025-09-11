@@ -1,0 +1,31 @@
+import {
+  Zap,
+  Target,
+  Dumbbell,
+  Layers,
+  RotateCcw,
+  Activity,
+  Circle,
+  BrickWall,
+  Diamond,
+  Waypoints,
+} from "lucide-react";
+
+export const iconMap = {
+  zap: Zap,
+  target: Target,
+  dumbbell: Dumbbell,
+  layers: Layers,
+  "rotate-ccw": RotateCcw,
+  activity: Activity,
+  bounce: Zap, // Using Zap as fallback for bounce
+  circle: Circle,
+  wall: BrickWall,
+  diamond: Diamond,
+  waypoints: Waypoints,
+  // Legacy support for old naming convention
+  Zap,
+  Target,
+  Dumbbell,
+  Layers,
+};
