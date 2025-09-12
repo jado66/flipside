@@ -296,8 +296,8 @@ export function TricksBrowser({
     <div className="space-y-6">
       {/* User Progress Stats */}
       <div className="bg-muted/30 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-4 w-full">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-green-600" />
               <span className="text-sm font-medium">
@@ -312,31 +312,39 @@ export function TricksBrowser({
               </span>
             </div>
             {/* View Skill Tree Button */}
-            <Link href={`/${categorySlug}/skill-tree`} passHref legacyBehavior>
-              <Button
-                variant="outline"
-                size="sm"
-                className="ml-4 whitespace-nowrap flex items-center gap-2"
+            <div className="mt-2 sm:mt-0">
+              <Link
+                href={`/${categorySlug}/skill-tree`}
+                passHref
+                legacyBehavior
               >
-                <Network className="h-4 w-4" />
-                View Skill Tree
-              </Button>
-            </Link>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="whitespace-nowrap flex items-center gap-2"
+                >
+                  <Network className="h-4 w-4" />
+                  View Skill Tree
+                </Button>
+              </Link>
+            </div>
           </div>
-          {user && userStats ? (
-            <Badge variant="secondary" className="text-sm">
-              {userStats.percentage}% Complete
-            </Badge>
-          ) : (
-            <Link href="/login">
-              <Badge
-                variant="secondary"
-                className="text-sm cursor-pointer hover:bg-secondary/80 transition-colors"
-              >
-                Sign in to track progress
+          <div className="flex justify-start sm:justify-end w-full">
+            {user && userStats ? (
+              <Badge variant="secondary" className="text-sm">
+                {userStats.percentage}% Complete
               </Badge>
-            </Link>
-          )}
+            ) : (
+              <Link href="/login">
+                <Badge
+                  variant="secondary"
+                  className="text-sm cursor-pointer hover:bg-secondary/80 transition-colors"
+                >
+                  Sign in to track progress
+                </Badge>
+              </Link>
+            )}
+          </div>
         </div>
       </div>
 
