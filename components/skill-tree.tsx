@@ -1,5 +1,6 @@
 "use client";
 import { useState, useCallback, useMemo, useEffect } from "react";
+import confetti from "canvas-confetti";
 import {
   ReactFlow,
   type Node,
@@ -18,10 +19,50 @@ import { useAuth } from "@/contexts/auth-provider";
 import { Trick, MasterCategory, TrickNodeData } from "./skill-tree.types";
 import { levenshtein } from "./levenshtein";
 import TrickNode from "./TrickNode";
-import { toast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { Info } from "lucide-react";
 
 export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
+  // Confetti burst function
+  const triggerConfetti = useCallback(() => {
+    const count = 200;
+    const defaults = { origin: { y: 0.7 } };
+    function fire(particleRatio: number, opts: confetti.Options) {
+      confetti({
+        ...defaults,
+        ...opts,
+        particleCount: Math.floor(count * particleRatio),
+      });
+    }
+    fire(0.25, { spread: 26, startVelocity: 55 });
+    fire(0.2, { spread: 60 });
+    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
+    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
+    fire(0.1, { spread: 120, startVelocity: 45 });
+    setTimeout(() => {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: [
+          "#ff0000",
+          "#00ff00",
+          "#0000ff",
+          "#ffff00",
+          "#ff00ff",
+          "#00ffff",
+        ],
+      });
+    }, 300);
+    setTimeout(() => {
+      confetti({
+        particleCount: 50,
+        spread: 50,
+        origin: { y: 0.8 },
+        colors: ["#ffd700", "#ff6347", "#98fb98", "#87ceeb"],
+      });
+    }, 600);
+  }, []);
   // Format slug for display (capitalize, replace dashes)
   const formattedSlug = useMemo(() => {
     if (!selectedCategory) return "Skill Tree";
@@ -159,19 +200,23 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
   const handleToggleCanDo = useCallback(
     async (trickId: string, currentStatus: boolean) => {
       if (!user) {
-        // For unauthenticated users, just update in memory
+        // For unauthenticated users, just update in memory and show toast only when marking as learned
         setUserCanDoTricks((prev) => {
           const newSet = new Set(prev);
           if (currentStatus) {
             newSet.delete(trickId);
           } else {
             newSet.add(trickId);
+            toast.success(
+              "Awesome! You learned a new trick! Create an account to save your progress."
+            );
+            triggerConfetti();
           }
           return newSet;
         });
         return;
       }
-      // ...existing code for authenticated users...
+      // For authenticated users, only show toast after successful DB update
       setUserCanDoTricks((prev) => {
         const newSet = new Set(prev);
         if (currentStatus) {
@@ -190,10 +235,8 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
             achieved_at: new Date().toISOString(),
           });
           if (error) throw error;
-          toast({
-            description: "Trick marked as learned!",
-            variant: "default",
-          });
+          toast.success("Awesome! You learned a new trick! Keep it up!");
+          triggerConfetti();
         } else {
           const { error } = await supabase
             .from("user_tricks")
@@ -201,17 +244,11 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
             .eq("user_id", user.id)
             .eq("trick_id", trickId);
           if (error) throw error;
-          toast({
-            description: "Trick removed from learned tricks",
-            variant: "default",
-          });
+          toast("Trick removed from learned tricks");
         }
       } catch (error) {
         console.error("Failed to toggle can-do status:", error);
-        toast({
-          description: "Failed to update trick status",
-          variant: "destructive",
-        });
+        toast.error("Failed to update trick status");
         setUserCanDoTricks((prev) => {
           const newSet = new Set(prev);
           if (currentStatus) {
@@ -223,7 +260,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
         });
       }
     },
-    [user]
+    [user, triggerConfetti]
   );
 
   const nodeTypes = useMemo(
@@ -430,8 +467,8 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
         `}</style>
       )}
       {/* Floating Header with alert */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white border rounded-lg p-4 shadow-lg z-20 min-w-[320px] text-center flex flex-col items-center">
-        <h1 className="text-2xl font-bold mb-2">{formattedSlug} Skill Tree</h1>
+      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-lg p-2 shadow-lg z-20 min-w-[320px] text-center flex flex-col items-center">
+        <h1 className="text-2xl font-bold">{formattedSlug} Skill Tree</h1>
         {!user && (
           <div className=" text-yellow-700  px-4 rounded w-full mt-1 ">
             <p className="mb-1 flex items-center justify-center text-sm">
