@@ -30,77 +30,83 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       changeFrequency: "monthly",
       priority: 0.7,
     },
-    {
-      url: `${baseUrl}/skill-trees`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    },
+    // ...existing code...
   ];
 
   try {
-    // Fetch all categories for dynamic routes
-    const categoriesResponse = await fetch(`${baseUrl}/api/categories`, {
-      headers: {
-        "User-Agent": "Sitemap Generator",
-      },
-    });
-
-    if (!categoriesResponse.ok) {
-      console.warn("Failed to fetch categories for sitemap");
+    // Fetch all navigation categories, subcategories, and tricks for dynamic routes
+    let categories: any[] = [];
+    try {
+      const navResponse = await fetch(`${baseUrl}/api/navigation-categories`, {
+        headers: {
+          "User-Agent": "Sitemap Generator",
+        },
+      });
+      if (!navResponse.ok) {
+        const body = await navResponse.text();
+        console.warn(
+          `Failed to fetch navigation categories for sitemap: status=${
+            navResponse.status
+          }, body=${body.slice(0, 200)}`
+        );
+        return staticRoutes;
+      }
+      categories = await navResponse.json();
+    } catch (err) {
+      console.error("Error fetching navigation categories for sitemap:", err);
       return staticRoutes;
     }
-
-    const categories = await categoriesResponse.json();
 
     // Generate category routes
     const categoryRoutes: MetadataRoute.Sitemap = categories.map(
       (category: any) => ({
         url: `${baseUrl}/${category.slug}`,
-        lastModified: new Date(category.updated_at || category.created_at),
+        lastModified: new Date(),
         changeFrequency: "weekly" as const,
         priority: 0.9,
       })
     );
 
-    // Generate subcategory routes
+    // Add dynamic skill-tree route for each category
+    const skillTreeRoutes: MetadataRoute.Sitemap = categories.map(
+      (category: any) => ({
+        url: `${baseUrl}/${category.slug}/skill-tree`,
+        lastModified: new Date(),
+        changeFrequency: "weekly" as const,
+        priority: 0.8,
+      })
+    );
+
+    // Generate subcategory and trick routes
     const subcategoryRoutes: MetadataRoute.Sitemap = [];
+    const trickRoutes: MetadataRoute.Sitemap = [];
     for (const category of categories) {
       if (category.subcategories) {
         for (const subcategory of category.subcategories) {
           subcategoryRoutes.push({
             url: `${baseUrl}/${category.slug}/${subcategory.slug}`,
-            lastModified: new Date(
-              subcategory.updated_at || subcategory.created_at
-            ),
+            lastModified: new Date(),
             changeFrequency: "weekly" as const,
             priority: 0.8,
           });
+          if (subcategory.tricks) {
+            for (const trick of subcategory.tricks) {
+              trickRoutes.push({
+                url: `${baseUrl}/${category.slug}/${subcategory.slug}/${trick.slug}`,
+                lastModified: new Date(),
+                changeFrequency: "monthly" as const,
+                priority: 0.7,
+              });
+            }
+          }
         }
       }
-    }
-
-    // Fetch tricks for individual trick pages
-    const tricksResponse = await fetch(`${baseUrl}/api/tricks?limit=1000`, {
-      headers: {
-        "User-Agent": "Sitemap Generator",
-      },
-    });
-
-    let trickRoutes: MetadataRoute.Sitemap = [];
-    if (tricksResponse.ok) {
-      const tricks = await tricksResponse.json();
-      trickRoutes = tricks.map((trick: any) => ({
-        url: `${baseUrl}/${trick.category_slug}/${trick.subcategory_slug}/${trick.slug}`,
-        lastModified: new Date(trick.updated_at || trick.created_at),
-        changeFrequency: "monthly" as const,
-        priority: 0.7,
-      }));
     }
 
     return [
       ...staticRoutes,
       ...categoryRoutes,
+      ...skillTreeRoutes,
       ...subcategoryRoutes,
       ...trickRoutes,
     ];

@@ -2,7 +2,8 @@
 module.exports = {
   siteUrl: process.env.NEXT_PUBLIC_SITE_URL || "https://trickipedia.app",
   generateRobotsTxt: true, // Generate robots.txt
-  generateIndexSitemap: false, // Disable index sitemap since you have a custom sitemap.ts
+  generateIndexSitemap: false, // Disable index sitemap, use custom sitemap.ts
+  // Reference custom sitemap in robots.txt
   outDir: "./public", // Output directory
 
   // Exclude paths that shouldn't be in sitemap
@@ -41,19 +42,19 @@ module.exports = {
       },
     ],
     additionalSitemaps: [
-      // This will reference your custom sitemap from sitemap.ts
       `${
         process.env.NEXT_PUBLIC_SITE_URL || "https://trickipedia.app"
       }/sitemap.xml`,
     ],
   },
-
-  // Transform function to modify URLs
   transform: async (config, path) => {
     // Skip generating sitemap entries since you have a custom sitemap.ts
     // This config is mainly for robots.txt and SEO analysis
     return null;
   },
+
+  // Transform function to modify URLs
+  // Use default transform for automatic sitemap generation
 
   // Change frequency for different path patterns
   changefreq: "daily",
