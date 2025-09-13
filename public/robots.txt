@@ -18,7 +18,7 @@ User-agent: Google-Extended
 Disallow: /
 
 # Host
-Host: http://localhost:2001
+Host: https://trickipedia.app
 
 # Sitemaps
-Sitemap: http://localhost:2001/sitemap.xml
+Sitemap: https://trickipedia.app/sitemap.xml
