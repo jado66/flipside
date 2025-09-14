@@ -1,3 +1,4 @@
+("");
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Play, ExternalLink } from "lucide-react";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";

@@ -1,3 +1,5 @@
+"use client";
+
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 
 interface TrickImageGalleryProps {
