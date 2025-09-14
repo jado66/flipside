@@ -1,6 +1,8 @@
 //app\(trickipedia)\layout-server.tsx
 import { supabaseServer } from "@/lib/supabase/supabase-server";
+import { createSupabaseServerClient } from "@/lib/supabase/supabase-auth-server";
 import { TrickipediaLayoutClient } from "./TrickipediaLayoutClient";
+import { AuthProvider } from "@/contexts/auth-provider";
 import type { NavigationCategory } from "@/components/side-nav/types";
 
 export const revalidate = 60;
@@ -96,10 +98,39 @@ export async function TrickipediaLayoutServer({
   children: React.ReactNode;
 }) {
   const navigationData = await getNavigationData();
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user: authUser },
+    error,
+  } = await supabase.auth.getUser();
+
+  let hydratedUser = null;
+  if (authUser) {
+    const { data: profile } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", authUser.id)
+      .single();
+    if (profile) {
+      hydratedUser = {
+        id: profile.id,
+        email: profile.email,
+        firstName: profile.first_name,
+        lastName: profile.last_name,
+        role: profile.role || "user",
+      };
+    }
+  }
+
+  if (error) {
+    console.error("Server auth error (layout):", error);
+  }
 
   return (
-    <TrickipediaLayoutClient initialNavigationData={navigationData}>
-      {children}
-    </TrickipediaLayoutClient>
+    <AuthProvider initialUser={hydratedUser}>
+      <TrickipediaLayoutClient initialNavigationData={navigationData} user={authUser}>
+        {children}
+      </TrickipediaLayoutClient>
+    </AuthProvider>
   );
 }

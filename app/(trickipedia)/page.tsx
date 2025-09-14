@@ -1,12 +1,34 @@
+// app/page.tsx (or wherever HomePageServer is)
 import { FeaturedCategories } from "@/components/featured-categories";
 import { RecentTricks } from "@/components/recent-tricks";
 import { CommunityStats } from "@/components/community-stats";
 import { TrickipediaHeroSection } from "@/components/trickipedia-hero-section";
-
+import { createSupabaseServerClient } from "@/lib/supabase/supabase-auth-server";
 import ContributingSection from "@/components/contributing-section";
 
-export default function HomePage() {
-  return (
+interface User {
+  id: string;
+  firstName: string;
+}
+
+export default async function HomePageServer() {
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  console.log("Server auth response:", { user, error }); // Debug log
+
+  if (error) {
+    console.error("Server auth error:", error);
+  }
+
+  return user ? (
+    <>
+      <h1>Hello Logged in user</h1>
+    </>
+  ) : (
     <main>
       <TrickipediaHeroSection />
       {/* Get the App Section */}
@@ -22,7 +44,6 @@ export default function HomePage() {
             alt="Flipside App Icon"
             className="mx-auto mb-2 w-16 h-16 rounded"
           />
-          {/* <InstallPWAButton /> */}
           <span className="text-xs text-muted-foreground block mt-2">
             PWA enabled for offline access
           </span>

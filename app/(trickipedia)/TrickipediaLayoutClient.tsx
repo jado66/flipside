@@ -13,14 +13,16 @@ import { MasterSideNav } from "@/components/side-nav";
 import { NavigationProvider } from "@/contexts/navigation-provider";
 import type { NavigationCategory } from "@/components/side-nav/types";
 
+import type { User } from "@supabase/supabase-js";
+
 export function TrickipediaLayoutClient({
   children,
-
   initialNavigationData,
+  user,
 }: {
   children: React.ReactNode;
-
   initialNavigationData: NavigationCategory[];
+  user?: User | null;
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
@@ -33,6 +35,7 @@ export function TrickipediaLayoutClient({
       <NavigationProvider initialData={initialNavigationData}>
         <TrickipediaHeader
           onMobileMenuClick={() => setMobileSidebarOpen(true)}
+          user={user}
         />
         {/* Mobile sidebar overlay */}
         {mobileSidebarOpen && (

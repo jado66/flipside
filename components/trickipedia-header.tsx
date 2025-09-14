@@ -22,17 +22,20 @@ import { supabase } from "@/lib/supabase/supabase-client";
 
 export function TrickipediaHeader({
   onMobileMenuClick,
+  user: userProp,
 }: {
   onMobileMenuClick?: () => void;
+  user?: User | null;
 }) {
-  const [user, setUser] = useState<User | null>(null);
+  const [userState, setUserState] = useState<User | null>(null);
 
   useEffect(() => {
+    if (userProp !== undefined) return; // Don't fetch if user is provided by prop
     const getUser = async () => {
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      setUser(user);
+      setUserState(user);
     };
 
     getUser();
@@ -40,11 +43,13 @@ export function TrickipediaHeader({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+      setUserState(session?.user ?? null);
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [userProp]);
+
+  const user = userProp !== undefined ? userProp : userState;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">

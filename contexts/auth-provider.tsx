@@ -1,3 +1,4 @@
+// contexts/auth-provider.tsx
 "use client";
 
 import {
@@ -39,7 +40,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [authUser, setAuthUser] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Memoize the fetchUser function to prevent unnecessary recreations
   const fetchUser = useCallback(async (id: string, email: string) => {
     try {
       const { data, error } = await supabase
@@ -57,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return null;
       }
 
-      const userProfile = {
+      const userProfile: User = {
         id: data.id,
         email: data.email,
         firstName: data.first_name,
@@ -65,11 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: data.role || "user",
       };
 
-      // Only update user state if the data has actually changed
       setUser((prevUser) => {
         if (!prevUser) return userProfile;
-
-        // Compare all relevant fields
+        // Only update if changed
         if (
           prevUser.id === userProfile.id &&
           prevUser.email === userProfile.email &&
@@ -77,10 +75,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           prevUser.lastName === userProfile.lastName &&
           prevUser.role === userProfile.role
         ) {
-          // Data hasn't changed, return the previous user object to maintain reference equality
           return prevUser;
         }
-
         return userProfile;
       });
 
@@ -94,13 +90,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    // Set up Supabase auth listener
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state change:", { event, session }); // Debug
       const newAuthUser = session?.user ?? null;
-
-      // Only update authUser if it's actually different
       setAuthUser((prevAuthUser) => {
         if (!prevAuthUser && !newAuthUser) return null;
         if (!prevAuthUser || !newAuthUser) return newAuthUser;
@@ -110,52 +104,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       if (event === "SIGNED_OUT") {
         setUser(null);
-      }
-    });
-
-    // Initial session check
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      const initialAuthUser = session?.user ?? null;
-      setAuthUser(initialAuthUser);
-    });
-
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, []);
-
-  useEffect(() => {
-    const initializeUser = async () => {
-      if (authUser) {
-        await fetchUser(authUser.id, authUser.email);
+        setIsLoading(false);
+      } else if (newAuthUser) {
+        await fetchUser(newAuthUser.id, newAuthUser.email);
       } else {
         setUser(null);
         setIsLoading(false);
       }
-    };
+    });
 
-    initializeUser();
-  }, [authUser, fetchUser]);
-
-  // Memoize authentication methods to prevent recreations
-  const login = useCallback(async (email: string, password: string) => {
-    try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+    // Initial session check
+    supabase.auth
+      .getSession()
+      .then(({ data: { session }, error }) => {
+        console.log("Initial session:", { session, error }); // Debug
+        if (error) {
+          console.error("Initial session error:", error);
+          setIsLoading(false);
+          return;
+        }
+        const initialAuthUser = session?.user ?? null;
+        setAuthUser(initialAuthUser);
+        if (initialAuthUser) {
+          fetchUser(initialAuthUser.id, initialAuthUser.email);
+        } else {
+          setIsLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.error("Failed to get initial session:", err);
+        setIsLoading(false);
       });
 
-      if (error) throw error;
-      return { data, error: null };
-    } catch (error) {
-      console.error("Error signing in:", error);
-      return { data: null, error };
-    }
-  }, []);
+    return () => {
+      subscription?.unsubscribe();
+    };
+  }, [fetchUser]);
+
+  const login = useCallback(
+    async (email: string, password: string) => {
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        console.log("Login response:", { data, error }); // Debug
+        if (error) throw error;
+
+        // No need for manual setSession—browser client handles cookies now
+
+        // Fetch user profile
+        if (data.user) {
+          await fetchUser(data.user.id, data.user.email);
+        }
+
+        return { data, error: null };
+      } catch (error) {
+        console.error("Error signing in:", error);
+        return { data: null, error };
+      }
+    },
+    [fetchUser]
+  );
 
   const logout = useCallback(async () => {
     try {
       const { error } = await supabase.auth.signOut();
+      console.log("Logout response:", { error }); // Debug
       if (error) throw error;
       return { error: null };
     } catch (error) {
@@ -173,7 +188,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [user?.role]
   );
 
-  // Memoize the context value to prevent unnecessary re-renders
   const contextValue = useMemo(
     () => ({
       user,
