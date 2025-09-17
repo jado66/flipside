@@ -5,6 +5,7 @@ import { CommunityStats } from "@/components/community-stats";
 import { TrickipediaHeroSection } from "@/components/trickipedia-hero-section";
 import { createSupabaseServerClient } from "@/lib/supabase/supabase-auth-server";
 import ContributingSection from "@/components/contributing-section";
+import { UserDashboard } from "@/components/user-dashboard/user-dashboard";
 
 interface User {
   id: string;
@@ -25,9 +26,14 @@ export default async function HomePageServer() {
   }
 
   return user ? (
-    <>
-      <h1>Hello Logged in user</h1>
-    </>
+    <main>
+      {/* Get the App Section */}
+      <section className="w-full flex flex-col items-center py-8 px-4">
+        <div className="container mx-auto px-4">
+          <UserDashboard />
+        </div>
+      </section>
+    </main>
   ) : (
     <main>
       <TrickipediaHeroSection />

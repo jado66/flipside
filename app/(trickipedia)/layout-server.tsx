@@ -91,7 +91,7 @@ async function getNavigationData(): Promise<NavigationCategory[]> {
     return [];
   }
 }
-
+// app/(trickipedia)/layout-server.tsx
 export async function TrickipediaLayoutServer({
   children,
 }: {
@@ -127,8 +127,8 @@ export async function TrickipediaLayoutServer({
   }
 
   return (
-    <AuthProvider initialUser={hydratedUser}>
-      <TrickipediaLayoutClient initialNavigationData={navigationData} user={authUser}>
+    <AuthProvider initialUser={hydratedUser} initialAuthUser={authUser}>
+      <TrickipediaLayoutClient initialNavigationData={navigationData}>
         {children}
       </TrickipediaLayoutClient>
     </AuthProvider>

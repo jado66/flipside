@@ -1,8 +1,7 @@
-// components/protected-route.tsx
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import React, { useEffect } from "react";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/auth-provider";
 
 interface ProtectedRouteProps {
@@ -10,6 +9,8 @@ interface ProtectedRouteProps {
   requireAuth?: boolean;
   requireModerator?: boolean;
   requireAdmin?: boolean;
+  redirectTo?: string;
+  fallback?: React.ReactNode;
 }
 
 export function ProtectedRoute({
@@ -17,57 +18,111 @@ export function ProtectedRoute({
   requireAuth = false,
   requireModerator = false,
   requireAdmin = false,
+  redirectTo = "/login",
+  fallback,
 }: ProtectedRouteProps) {
+  const { user, publicUser, loading } = useAuth();
   const router = useRouter();
-  const { user, isLoading, hasAdminAccess, hasModeratorAccess } = useAuth();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (isLoading) return;
+    if (loading) return;
 
+    // Check authentication
     if (requireAuth && !user) {
-      router.push("/login");
+      // Store the attempted URL for redirect after login
+      const redirectUrl = `${redirectTo}?from=${encodeURIComponent(pathname)}`;
+      router.push(redirectUrl);
       return;
     }
 
-    if (requireAdmin && !hasAdminAccess()) {
-      router.push("/unauthorized");
-      return;
-    }
+    // Check role-based access
+    if (user && publicUser) {
+      const userRole = publicUser.role;
 
-    if (requireModerator && !hasModeratorAccess()) {
-      router.push("/unauthorized");
-      return;
+      // Admin requirement
+      if (requireAdmin && userRole !== "admin") {
+        router.push("/unauthorized");
+        return;
+      }
+
+      // Moderator requirement (admin also satisfies moderator requirement)
+      if (
+        requireModerator &&
+        userRole !== "moderator" &&
+        userRole !== "admin"
+      ) {
+        router.push("/unauthorized");
+        return;
+      }
     }
   }, [
     user,
-    isLoading,
+    publicUser,
+    loading,
     requireAuth,
     requireAdmin,
     requireModerator,
     router,
-    hasAdminAccess,
-    hasModeratorAccess,
+    pathname,
+    redirectTo,
   ]);
 
-  if (isLoading) {
+  // Show loading state
+  if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
+      fallback || (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      )
     );
   }
 
+  // Check authentication
   if (requireAuth && !user) {
-    return null;
+    return fallback || null;
   }
 
-  if (requireAdmin && !hasAdminAccess()) {
-    return null;
+  // Check role-based access
+  if (user && publicUser) {
+    const userRole = publicUser.role;
+
+    if (requireAdmin && userRole !== "admin") {
+      return (
+        fallback || (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Admin Access Required
+              </h2>
+              <p className="text-gray-600">
+                You need administrator privileges to access this page.
+              </p>
+            </div>
+          </div>
+        )
+      );
+    }
+
+    if (requireModerator && userRole !== "moderator" && userRole !== "admin") {
+      return (
+        fallback || (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Moderator Access Required
+              </h2>
+              <p className="text-gray-600">
+                You need moderator privileges to access this page.
+              </p>
+            </div>
+          </div>
+        )
+      );
+    }
   }
 
-  if (requireModerator && !hasModeratorAccess()) {
-    return null;
-  }
-
+  // If all checks pass, render children
   return <>{children}</>;
 }

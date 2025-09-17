@@ -1,223 +1,451 @@
-// contexts/auth-provider.tsx
 "use client";
 
-import {
+import React, {
   createContext,
   useContext,
-  useState,
   useEffect,
+  useState,
   useCallback,
-  useMemo,
-  type ReactNode,
 } from "react";
-import { supabase } from "@/lib/supabase/supabase-client";
+import { createBrowserClient } from "@supabase/ssr";
+import { User, Session } from "@supabase/supabase-js";
 
-interface User {
+// Types
+export type UserRole = "user" | "admin" | "moderator"; // Add other roles as needed
+
+export interface PublicUser {
   id: string;
   email: string;
-  firstName: string;
-  lastName: string;
-  role: "administrator" | "moderator" | "user";
+  role: UserRole;
+  first_name?: string;
+  last_name?: string;
+  bio?: string;
+  profile_image_url?: string;
+  phone?: string;
+  date_of_birth?: string;
+  created_at?: string;
+  updated_at?: string;
+  username?: string;
+}
+
+interface AccessRequirements {
+  requireAuth?: boolean;
+  requireAdmin?: boolean;
+  requireModerator?: boolean;
+  allowedRoles?: UserRole[];
 }
 
 interface AuthContextType {
   user: User | null;
-  authUser: any;
-  isLoading: boolean;
-  login: (
+  publicUser: PublicUser | null;
+  session: Session | null;
+  loading: boolean;
+  error: Error | null;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (
     email: string,
-    password: string
-  ) => Promise<{ data: any; error: any }>;
-  logout: () => Promise<{ error: any }>;
-  hasAdminAccess: () => boolean;
-  hasModeratorAccess: () => boolean;
+    password: string,
+    userData?: Partial<PublicUser>
+  ) => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
+  updatePublicUser: (updates: Partial<PublicUser>) => Promise<void>;
 }
 
+// Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [authUser, setAuthUser] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
+// Create Supabase client
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
-  const fetchUser = useCallback(async (id: string, email: string) => {
+// Provider component
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [publicUser, setPublicUser] = useState<PublicUser | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
+
+  // Fetch public user data
+  const fetchPublicUser = useCallback(async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from("users")
         .select("*")
-        .eq("id", id)
+        .eq("id", userId)
         .single();
 
       if (error) throw error;
 
-      if (!data) {
-        console.log("No user profile found");
-        setUser(null);
-        setIsLoading(false);
-        return null;
-      }
-
-      const userProfile: User = {
-        id: data.id,
-        email: data.email,
-        firstName: data.first_name,
-        lastName: data.last_name,
-        role: data.role || "user",
-      };
-
-      setUser((prevUser) => {
-        if (!prevUser) return userProfile;
-        // Only update if changed
-        if (
-          prevUser.id === userProfile.id &&
-          prevUser.email === userProfile.email &&
-          prevUser.firstName === userProfile.firstName &&
-          prevUser.lastName === userProfile.lastName &&
-          prevUser.role === userProfile.role
-        ) {
-          return prevUser;
-        }
-        return userProfile;
-      });
-
-      setIsLoading(false);
-      return userProfile;
-    } catch (error) {
-      console.error("Could not fetch user", error);
-      setIsLoading(false);
+      setPublicUser(data);
+      return data;
+    } catch (err) {
+      console.error("Error fetching public user:", err);
+      setError(
+        err instanceof Error ? err : new Error("Failed to fetch user data")
+      );
       return null;
     }
   }, []);
 
+  // Initialize auth state
   useEffect(() => {
+    const initializeAuth = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Get initial session
+        const {
+          data: { session },
+          error: sessionError,
+        } = await supabase.auth.getSession();
+
+        if (sessionError) throw sessionError;
+
+        if (session) {
+          setSession(session);
+          setUser(session.user);
+
+          // Fetch public user data
+          await fetchPublicUser(session.user.id);
+        }
+      } catch (err) {
+        console.error("Error initializing auth:", err);
+        setError(
+          err instanceof Error
+            ? err
+            : new Error("Failed to initialize authentication")
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+
+    // Listen for auth changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state change:", { event, session }); // Debug
-      const newAuthUser = session?.user ?? null;
-      setAuthUser((prevAuthUser) => {
-        if (!prevAuthUser && !newAuthUser) return null;
-        if (!prevAuthUser || !newAuthUser) return newAuthUser;
-        if (prevAuthUser.id === newAuthUser.id) return prevAuthUser;
-        return newAuthUser;
-      });
+      console.log("Auth state change:", event);
 
-      if (event === "SIGNED_OUT") {
-        setUser(null);
-        setIsLoading(false);
-      } else if (newAuthUser) {
-        await fetchUser(newAuthUser.id, newAuthUser.email);
+      setSession(session);
+      setUser(session?.user ?? null);
+
+      if (session?.user) {
+        await fetchPublicUser(session.user.id);
       } else {
-        setUser(null);
-        setIsLoading(false);
+        setPublicUser(null);
+      }
+
+      // Handle specific events
+      switch (event) {
+        case "SIGNED_OUT":
+          setPublicUser(null);
+          break;
+        case "USER_UPDATED":
+          if (session?.user) {
+            await fetchPublicUser(session.user.id);
+          }
+          break;
       }
     });
 
-    // Initial session check
-    supabase.auth
-      .getSession()
-      .then(({ data: { session }, error }) => {
-        console.log("Initial session:", { session, error }); // Debug
-        if (error) {
-          console.error("Initial session error:", error);
-          setIsLoading(false);
-          return;
-        }
-        const initialAuthUser = session?.user ?? null;
-        setAuthUser(initialAuthUser);
-        if (initialAuthUser) {
-          fetchUser(initialAuthUser.id, initialAuthUser.email);
-        } else {
-          setIsLoading(false);
-        }
-      })
-      .catch((err) => {
-        console.error("Failed to get initial session:", err);
-        setIsLoading(false);
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [fetchPublicUser]);
+
+  // Sign in
+  const signIn = async (email: string, password: string) => {
+    try {
+      setError(null);
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
 
-    return () => {
-      subscription?.unsubscribe();
-    };
-  }, [fetchUser]);
-
-  const login = useCallback(
-    async (email: string, password: string) => {
-      try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        console.log("Login response:", { data, error }); // Debug
-        if (error) throw error;
-
-        // No need for manual setSession—browser client handles cookies now
-
-        // Fetch user profile
-        if (data.user) {
-          await fetchUser(data.user.id, data.user.email);
-        }
-
-        return { data, error: null };
-      } catch (error) {
-        console.error("Error signing in:", error);
-        return { data: null, error };
-      }
-    },
-    [fetchUser]
-  );
-
-  const logout = useCallback(async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      console.log("Logout response:", { error }); // Debug
       if (error) throw error;
-      return { error: null };
-    } catch (error) {
-      console.error("Error signing out:", error);
-      return { error };
+
+      // Public user will be fetched automatically via onAuthStateChange
+    } catch (err) {
+      console.error("Sign in error:", err);
+      setError(err instanceof Error ? err : new Error("Failed to sign in"));
+      throw err;
     }
-  }, []);
+  };
 
-  const hasAdminAccess = useCallback(
-    () => user?.role === "administrator",
-    [user?.role]
-  );
-  const hasModeratorAccess = useCallback(
-    () => user?.role === "administrator" || user?.role === "moderator",
-    [user?.role]
+  // Sign up
+  const signUp = async (
+    email: string,
+    password: string,
+    userData?: Partial<PublicUser>
+  ) => {
+    try {
+      setError(null);
+
+      // Create auth user
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      if (authError) throw authError;
+      if (!authData.user) throw new Error("Failed to create user");
+
+      // Create public user record
+      const publicUserData = {
+        id: authData.user.id,
+        email,
+        role: "user" as UserRole,
+        ...userData,
+      };
+
+      const { error: publicError } = await supabase
+        .from("users")
+        .insert(publicUserData);
+
+      if (publicError) {
+        // If public user creation fails, clean up auth user
+        await supabase.auth.admin.deleteUser(authData.user.id);
+        throw publicError;
+      }
+
+      // Public user will be fetched automatically via onAuthStateChange
+    } catch (err) {
+      console.error("Sign up error:", err);
+      setError(err instanceof Error ? err : new Error("Failed to sign up"));
+      throw err;
+    }
+  };
+
+  // Sign out
+  const signOut = async () => {
+    try {
+      setError(null);
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+
+      // Clear state
+      setUser(null);
+      setPublicUser(null);
+      setSession(null);
+    } catch (err) {
+      console.error("Sign out error:", err);
+      setError(err instanceof Error ? err : new Error("Failed to sign out"));
+      throw err;
+    }
+  };
+
+  // Refresh user data
+  const refreshUser = async () => {
+    try {
+      setError(null);
+
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
+
+      if (authError) throw authError;
+      if (!user) throw new Error("No user found");
+
+      setUser(user);
+      await fetchPublicUser(user.id);
+    } catch (err) {
+      console.error("Refresh user error:", err);
+      setError(
+        err instanceof Error ? err : new Error("Failed to refresh user")
+      );
+      throw err;
+    }
+  };
+
+  // Update public user data
+  const updatePublicUser = async (updates: Partial<PublicUser>) => {
+    try {
+      setError(null);
+
+      if (!user) throw new Error("No user logged in");
+
+      const { data, error } = await supabase
+        .from("users")
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setPublicUser(data);
+      return data;
+    } catch (err) {
+      console.error("Update user error:", err);
+      setError(err instanceof Error ? err : new Error("Failed to update user"));
+      throw err;
+    }
+  };
+
+  const isAuthenticated = useCallback(() => {
+    return !!user && !!publicUser;
+  }, [user, publicUser]);
+
+  const hasAdminAccess = useCallback(() => {
+    return publicUser?.role === "admin";
+  }, [publicUser]);
+
+  const hasModeratorAccess = useCallback(() => {
+    // Admin also has moderator access
+    return publicUser?.role === "moderator" || publicUser?.role === "admin";
+  }, [publicUser]);
+
+  const hasRole = useCallback(
+    (role: UserRole) => {
+      if (!publicUser) return false;
+
+      // Handle role hierarchy
+      if (role === "user") {
+        // All authenticated users have at least user role
+        return true;
+      }
+
+      if (role === "moderator") {
+        // Admin also satisfies moderator requirement
+        return hasModeratorAccess();
+      }
+
+      if (role === "admin") {
+        return hasAdminAccess();
+      }
+
+      // Direct role match for any custom roles
+      return publicUser.role === role;
+    },
+    [publicUser, hasAdminAccess, hasModeratorAccess]
   );
 
-  const contextValue = useMemo(
-    () => ({
-      user,
-      authUser,
-      isLoading,
-      login,
-      logout,
-      hasAdminAccess,
-      hasModeratorAccess,
-    }),
-    [
-      user,
-      authUser,
-      isLoading,
-      login,
-      logout,
-      hasAdminAccess,
-      hasModeratorAccess,
-    ]
+  const canAccess = useCallback(
+    (requirements: AccessRequirements) => {
+      // Check authentication requirement
+      if (requirements.requireAuth && !isAuthenticated()) {
+        return false;
+      }
+
+      // Check admin requirement
+      if (requirements.requireAdmin && !hasAdminAccess()) {
+        return false;
+      }
+
+      // Check moderator requirement
+      if (requirements.requireModerator && !hasModeratorAccess()) {
+        return false;
+      }
+
+      // Check allowed roles
+      if (requirements.allowedRoles && requirements.allowedRoles.length > 0) {
+        return requirements.allowedRoles.some((role) => hasRole(role));
+      }
+
+      return true;
+    },
+    [isAuthenticated, hasAdminAccess, hasModeratorAccess, hasRole]
   );
 
-  return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
-  );
+  const value = {
+    user,
+    publicUser,
+    session,
+    loading,
+    error,
+    signIn,
+    signUp,
+    signOut,
+    refreshUser,
+    updatePublicUser,
+    isAuthenticated,
+    hasAdminAccess,
+    hasModeratorAccess,
+    hasRole,
+    canAccess,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
+// Hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (!context) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
+}
+
+// Optional: HOC for protected routes
+export function withAuth<P extends object>(
+  Component: React.ComponentType<P>,
+  options?: {
+    redirectTo?: string;
+    allowedRoles?: UserRole[];
+  }
+) {
+  return function ProtectedComponent(props: P) {
+    const { user, publicUser, loading } = useAuth();
+    const router =
+      typeof window !== "undefined"
+        ? require("next/navigation").useRouter()
+        : null;
+
+    useEffect(() => {
+      if (!loading && !user && options?.redirectTo && router) {
+        router.push(options.redirectTo);
+      }
+
+      if (!loading && publicUser && options?.allowedRoles) {
+        const hasRole = options.allowedRoles.includes(publicUser.role);
+        if (!hasRole && options.redirectTo && router) {
+          router.push(options.redirectTo);
+        }
+      }
+    }, [loading, user, publicUser, router]);
+
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+        </div>
+      );
+    }
+
+    if (!user) {
+      return null;
+    }
+
+    if (options?.allowedRoles && publicUser) {
+      const hasRole = options.allowedRoles.includes(publicUser.role);
+      if (!hasRole) {
+        return (
+          <div className="flex items-center justify-center min-h-screen">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                Access Denied
+              </h2>
+              <p className="text-gray-600">
+                You don't have permission to access this page.
+              </p>
+            </div>
+          </div>
+        );
+      }
+    }
+
+    return <Component {...props} />;
+  };
 }
