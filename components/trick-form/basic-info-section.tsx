@@ -144,7 +144,7 @@ export function BasicInfoSection({
               </Select>
             )}
           </div>
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="parent">Variation Of (Optional)</Label>
             {mode === "view" ? (
               <div>
@@ -172,10 +172,10 @@ export function BasicInfoSection({
                 </SelectContent>
               </Select>
             )}
-          </div>
+          </div> */}
 
           {/* NEW: Promote as Main Trick (if sub-trick) */}
-          {formData.parent_id && (
+          {/* {formData.parent_id && (
             <div className="flex items-center space-x-2">
               <input
                 type="checkbox"
@@ -187,10 +187,10 @@ export function BasicInfoSection({
                 Promote to main navigation (shows independently)
               </Label>
             </div>
-          )}
+          )} */}
 
           {/* NEW: Trick Details (JSON fields) - Shown for single or if not combo */}
-          {trickType === "single" && (
+          {/* {trickType === "single" && (
             <div className="space-y-2">
               <Label>Trick Details (Variations)</Label>
               <Input
@@ -209,7 +209,7 @@ export function BasicInfoSection({
               />
               {/* Add more as needed, e.g., somersaults */}
             </div>
-          )}
+          )} */}
         </div>
       </AccordionContent>
     </AccordionItem>
