@@ -25,16 +25,17 @@ export default async function HomePageServer() {
     console.error("Server auth error:", error);
   }
 
-  return user ? (
-    <main>
-      {/* Get the App Section */}
-      <section className="w-full flex flex-col items-center py-8 px-4">
-        <div className="container mx-auto px-4">
-          <UserDashboard />
-        </div>
-      </section>
-    </main>
-  ) : (
+  //  user ? (
+  //   <main>
+  //     {/* Get the App Section */}
+  //     <section className="w-full flex flex-col items-center py-8 px-4">
+  //       <div className="container mx-auto px-4">
+  //         <UserDashboard />
+  //       </div>
+  //     </section>
+  //   </main>
+  // ) : (
+  return (
     <main>
       <TrickipediaHeroSection />
       {/* Get the App Section */}

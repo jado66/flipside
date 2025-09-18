@@ -259,29 +259,60 @@ export function UserDashboard() {
     const newSportsIds = draftSportsIds;
     if (user) {
       try {
-        // Use upsert to handle both new and existing users
-        const { data, error } = await supabase
+        // First try a simple update (more efficient if row exists)
+        const { data: updateData, error: updateError } = await supabase
           .from("users")
-          .upsert(
-            {
-              id: user.id,
-              email: user.email || "",
-              users_sports_ids: newSportsIds,
-              updated_at: new Date().toISOString(),
-            },
-            {
-              onConflict: "id",
-            }
-          )
+          .update({
+            users_sports_ids: newSportsIds,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id)
           .select()
           .single();
 
-        if (error) {
-          console.error("Error saving sports selection:", error);
-          throw error;
+        if (updateError) {
+          // If it's an RLS error, provide helpful message
+          if (updateError.code === "42501") {
+            console.error("RLS Policy Error:", updateError);
+            toast.error(
+              "Permission denied. Please contact support if this persists."
+            );
+            return;
+          }
+
+          // If no rows found, try insert
+          if (updateError.code === "PGRST116") {
+            const { data: insertData, error: insertError } = await supabase
+              .from("users")
+              .insert({
+                id: user.id,
+                email: user.email || "",
+                users_sports_ids: newSportsIds,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              })
+              .select()
+              .single();
+
+            if (insertError) {
+              console.error("Error creating user profile:", insertError);
+              if (insertError.code === "42501") {
+                toast.error("Permission denied. Please contact support.");
+              } else {
+                toast.error("Failed to save sports selection");
+              }
+              return;
+            }
+
+            console.log("User profile created with sports:", insertData);
+          } else {
+            console.error("Error updating sports selection:", updateError);
+            throw updateError;
+          }
+        } else {
+          console.log("Sports saved successfully:", updateData);
         }
 
-        console.log("Sports saved successfully:", data);
         setUserSportsIds(newSportsIds);
         toast.success("Sports selection saved");
       } catch (e) {
