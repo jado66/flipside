@@ -27,7 +27,7 @@ export function MasterSideNav({
   onItemClick,
 }: { onItemClick?: () => void } = {}) {
   const router = useRouter();
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
 
   // Use the navigation context
   const {
@@ -41,7 +41,7 @@ export function MasterSideNav({
   } = useNavigation();
 
   const handleSignOut = async () => {
-    await logout();
+    await signOut();
     router.push("/");
     if (onItemClick) onItemClick();
   };

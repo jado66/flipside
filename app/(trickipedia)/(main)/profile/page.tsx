@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase/supabase-client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -100,19 +101,40 @@ const getPlatformIcon = (platformId: string) => {
 };
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const {
+    user,
+    publicUser,
+    loading: authLoading,
+    updatePublicUser,
+  } = useAuth();
 
   // Initialize with current user data or defaults
   const [profileData, setProfileData] = useState<ProfileData>({
-    firstName: user?.firstName || "",
-    lastName: user?.lastName || "",
-    email: user?.email || "",
+    firstName: "",
+    lastName: "",
+    email: "",
     phone: "",
     dateOfBirth: "",
     bio: "",
     profileImageUrl: "",
     socialLinks: [],
   });
+
+  // Load user data when available
+  useEffect(() => {
+    if (publicUser) {
+      setProfileData({
+        firstName: publicUser.first_name || "",
+        lastName: publicUser.last_name || "",
+        email: publicUser.email || "",
+        phone: publicUser.phone || "",
+        dateOfBirth: publicUser.date_of_birth || "",
+        bio: publicUser.bio || "",
+        profileImageUrl: publicUser.profile_image_url || "",
+        socialLinks: [], // Will load from database if needed
+      });
+    }
+  }, [publicUser]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -156,37 +178,67 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
+    console.log("Starting save process...");
     setIsSaving(true);
     setMessage(null);
 
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      if (!user?.id) {
+        throw new Error("User not authenticated");
+      }
 
+      if (!updatePublicUser) {
+        throw new Error("Update function not available");
+      }
+
+      console.log("Updating profile with data:", {
+        first_name: profileData.firstName,
+        last_name: profileData.lastName,
+        phone: profileData.phone,
+        date_of_birth: profileData.dateOfBirth || undefined,
+        bio: profileData.bio,
+        profile_image_url: profileData.profileImageUrl,
+      });
+
+      // Update user profile using auth context method
+      await updatePublicUser({
+        first_name: profileData.firstName,
+        last_name: profileData.lastName,
+        phone: profileData.phone,
+        date_of_birth: profileData.dateOfBirth || undefined,
+        bio: profileData.bio,
+        profile_image_url: profileData.profileImageUrl,
+      });
+
+      console.log("Profile updated successfully");
       setMessage({ type: "success", text: "Profile updated successfully!" });
       setIsEditing(false);
     } catch (error) {
+      console.error("Error updating profile:", error);
       setMessage({
         type: "error",
         text: "Failed to update profile. Please try again.",
       });
     } finally {
+      console.log("Finishing save process...");
       setIsSaving(false);
     }
   };
 
   const handleCancel = () => {
-    // Reset to original data (in real app, would fetch from server)
-    setProfileData({
-      firstName: user?.firstName || "",
-      lastName: user?.lastName || "",
-      email: user?.email || "",
-      phone: "",
-      dateOfBirth: "",
-      bio: "",
-      profileImageUrl: "",
-      socialLinks: [],
-    });
+    // Reset to original data
+    if (publicUser) {
+      setProfileData({
+        firstName: publicUser.first_name || "",
+        lastName: publicUser.last_name || "",
+        email: publicUser.email || "",
+        phone: publicUser.phone || "",
+        dateOfBirth: publicUser.date_of_birth || "",
+        bio: publicUser.bio || "",
+        profileImageUrl: publicUser.profile_image_url || "",
+        socialLinks: [], // Will load from database if needed
+      });
+    }
     setIsEditing(false);
     setMessage(null);
   };
@@ -216,441 +268,474 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-balance mb-2">My Profile</h1>
-          <p className="text-muted-foreground">
-            Manage your account information and preferences
-          </p>
-        </div>
-
-        {/* Success/Error Messages */}
-        {message && (
-          <Alert
-            className={`mb-6 ${
-              message.type === "success" ? "border-green-200 bg-green-50" : ""
-            }`}
-          >
-            {message.type === "success" ? (
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            ) : (
-              <AlertCircle className="h-4 w-4" />
-            )}
-            <AlertDescription
-              className={message.type === "success" ? "text-green-800" : ""}
-            >
-              {message.text}
-            </AlertDescription>
-          </Alert>
+        {/* Loading State */}
+        {authLoading && (
+          <div className="flex items-center justify-center min-h-[400px]">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading profile...</p>
+            </div>
+          </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Profile Overview Card */}
-          <div className="lg:col-span-1">
-            <Card>
-              <CardHeader className="text-center">
-                <div className="relative mx-auto mb-4">
-                  <Avatar className="h-24 w-24 mx-auto">
-                    <AvatarImage
-                      src={profileData.profileImageUrl || "/placeholder.svg"}
-                      alt="Profile picture"
-                    />
-                    <AvatarFallback className="text-lg">
-                      {profileData.firstName.charAt(0)}
-                      {profileData.lastName.charAt(0)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {isEditing && (
-                    <Button
-                      size="sm"
-                      variant="secondary"
-                      className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
-                    >
-                      <Camera className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-                <CardTitle className="text-xl">
-                  {profileData.firstName} {profileData.lastName}
-                </CardTitle>
-                <CardDescription className="flex items-center justify-center gap-2">
-                  {user && (
-                    <Badge
-                      variant={getRoleBadgeVariant(user.role)}
-                      className="flex items-center gap-1"
-                    >
-                      {getRoleIcon(user.role)}
-                      {user.role}
-                    </Badge>
-                  )}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-3 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span>{profileData.email}</span>
-                </div>
-                {profileData.phone && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{profileData.phone}</span>
-                  </div>
-                )}
-                {profileData.dateOfBirth && (
-                  <div className="flex items-center gap-3 text-sm">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span>
-                      {new Date(profileData.dateOfBirth).toLocaleDateString()}
-                    </span>
-                  </div>
-                )}
+        {/* Main Content */}
+        {!authLoading && (
+          <>
+            {/* Header */}
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold text-balance mb-2">
+                My Profile
+              </h1>
+              <p className="text-muted-foreground">
+                Manage your account information and preferences
+              </p>
+            </div>
 
-                {/* Social Links */}
-                {profileData.socialLinks &&
-                  profileData.socialLinks.length > 0 && (
-                    <>
-                      <Separator className="my-2" />
-                      <div className="flex flex-wrap gap-2 justify-center">
-                        {profileData.socialLinks
-                          .filter((link) => link.isPublic)
-                          .map((link, index) => (
-                            <TooltipProvider key={index}>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <a
-                                    href={link.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80"
-                                  >
-                                    {getPlatformIcon(link.platform)}
-                                  </a>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>
-                                    {link.displayName ||
-                                      SOCIAL_PLATFORMS.find(
-                                        (p) => p.id === link.platform
-                                      )?.label}
-                                  </p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          ))}
+            {/* Success/Error Messages */}
+            {message && (
+              <Alert
+                className={`mb-6 ${
+                  message.type === "success"
+                    ? "border-green-200 bg-green-50"
+                    : ""
+                }`}
+              >
+                {message.type === "success" ? (
+                  <CheckCircle className="h-4 w-4 text-green-600" />
+                ) : (
+                  <AlertCircle className="h-4 w-4" />
+                )}
+                <AlertDescription
+                  className={message.type === "success" ? "text-green-800" : ""}
+                >
+                  {message.text}
+                </AlertDescription>
+              </Alert>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Profile Overview Card */}
+              <div className="lg:col-span-1">
+                <Card>
+                  <CardHeader className="text-center">
+                    <div className="relative mx-auto mb-4">
+                      <Avatar className="h-24 w-24 mx-auto">
+                        <AvatarImage
+                          src={
+                            profileData.profileImageUrl || "/placeholder.svg"
+                          }
+                          alt="Profile picture"
+                        />
+                        <AvatarFallback className="text-lg">
+                          {profileData.firstName.charAt(0)}
+                          {profileData.lastName.charAt(0)}
+                        </AvatarFallback>
+                      </Avatar>
+                      {isEditing && (
+                        <Button
+                          size="sm"
+                          variant="secondary"
+                          className="absolute -bottom-2 -right-2 h-8 w-8 rounded-full p-0"
+                        >
+                          <Camera className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                    <CardTitle className="text-xl">
+                      {profileData.firstName} {profileData.lastName}
+                    </CardTitle>
+                    <CardDescription className="flex items-center justify-center gap-2">
+                      {publicUser && (
+                        <Badge
+                          variant={getRoleBadgeVariant(publicUser.role)}
+                          className="flex items-center gap-1"
+                        >
+                          {getRoleIcon(publicUser.role)}
+                          {publicUser.role}
+                        </Badge>
+                      )}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="flex items-center gap-3 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground" />
+                      <span>{profileData.email}</span>
+                    </div>
+                    {profileData.phone && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <Phone className="h-4 w-4 text-muted-foreground" />
+                        <span>{profileData.phone}</span>
                       </div>
-                    </>
-                  )}
-              </CardContent>
-            </Card>
-          </div>
+                    )}
+                    {profileData.dateOfBirth && (
+                      <div className="flex items-center gap-3 text-sm">
+                        <Calendar className="h-4 w-4 text-muted-foreground" />
+                        <span>
+                          {new Date(
+                            profileData.dateOfBirth
+                          ).toLocaleDateString()}
+                        </span>
+                      </div>
+                    )}
 
-          {/* Profile Details Card */}
-          <div className="lg:col-span-2">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                  <CardTitle>Profile Information</CardTitle>
-                  <CardDescription>
-                    Update your personal details and preferences
-                  </CardDescription>
-                </div>
-                {!isEditing && (
-                  <Button onClick={() => setIsEditing(true)}>
-                    Edit Profile
-                  </Button>
-                )}
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Personal Information */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">
-                    Personal Information
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="firstName">First Name</Label>
-                      <Input
-                        id="firstName"
-                        value={profileData.firstName}
-                        onChange={(e) =>
-                          handleInputChange("firstName", e.target.value)
-                        }
-                        disabled={!isEditing}
-                        placeholder="Enter your first name"
-                      />
+                    {/* Social Links */}
+                    {profileData.socialLinks &&
+                      profileData.socialLinks.length > 0 && (
+                        <>
+                          <Separator className="my-2" />
+                          <div className="flex flex-wrap gap-2 justify-center">
+                            {profileData.socialLinks
+                              .filter((link) => link.isPublic)
+                              .map((link, index) => (
+                                <TooltipProvider key={index}>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <a
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                                      >
+                                        {getPlatformIcon(link.platform)}
+                                      </a>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                      <p>
+                                        {link.displayName ||
+                                          SOCIAL_PLATFORMS.find(
+                                            (p) => p.id === link.platform
+                                          )?.label}
+                                      </p>
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              ))}
+                          </div>
+                        </>
+                      )}
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Profile Details Card */}
+              <div className="lg:col-span-2">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                      <CardTitle>Profile Information</CardTitle>
+                      <CardDescription>
+                        Update your personal details and preferences
+                      </CardDescription>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="lastName">Last Name</Label>
-                      <Input
-                        id="lastName"
-                        value={profileData.lastName}
-                        onChange={(e) =>
-                          handleInputChange("lastName", e.target.value)
-                        }
-                        disabled={!isEditing}
-                        placeholder="Enter your last name"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={profileData.email}
-                      onChange={(e) =>
-                        handleInputChange("email", e.target.value)
-                      }
-                      disabled
-                      placeholder="Enter your email address"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="phone">Phone Number</Label>
-                      <Input
-                        id="phone"
-                        type="tel"
-                        value={profileData.phone}
-                        onChange={(e) =>
-                          handleInputChange("phone", e.target.value)
-                        }
-                        disabled={!isEditing}
-                        placeholder="Enter your phone number"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                      <Input
-                        id="dateOfBirth"
-                        type="date"
-                        value={profileData.dateOfBirth}
-                        onChange={(e) =>
-                          handleInputChange("dateOfBirth", e.target.value)
-                        }
-                        disabled={!isEditing}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Bio Section */}
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold">About</h3>
-                  <div className="space-y-2">
-                    <Label htmlFor="bio">Bio</Label>
-                    <Textarea
-                      id="bio"
-                      value={profileData.bio}
-                      onChange={(e) => handleInputChange("bio", e.target.value)}
-                      disabled={!isEditing}
-                      placeholder="Tell us about yourself..."
-                      rows={4}
-                    />
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Social Links Section */}
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold">Social Links</h3>
-                    {isEditing && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={addSocialLink}
-                        className="flex items-center gap-1"
-                      >
-                        <Plus className="h-4 w-4" />
-                        Add Link
+                    {!isEditing && (
+                      <Button onClick={() => setIsEditing(true)}>
+                        Edit Profile
                       </Button>
                     )}
-                  </div>
-
-                  {profileData.socialLinks.length === 0 ? (
-                    <div className="text-muted-foreground text-sm italic">
-                      No social links added yet.
-                      {isEditing &&
-                        " Click 'Add Link' to add your first social media link."}
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {profileData.socialLinks.map((link, index) => (
-                        <div
-                          key={index}
-                          className="grid grid-cols-12 gap-2 items-start p-3 rounded-md border"
-                        >
-                          <div className="col-span-12 md:col-span-3">
-                            <Label className="mb-1 block text-xs">
-                              Platform
-                            </Label>
-                            {isEditing ? (
-                              <Select
-                                value={link.platform}
-                                onValueChange={(value) =>
-                                  updateSocialLink(index, "platform", value)
-                                }
-                                disabled={!isEditing}
-                              >
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select platform" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {SOCIAL_PLATFORMS.map((platform) => (
-                                    <SelectItem
-                                      key={platform.id}
-                                      value={platform.id}
-                                    >
-                                      <div className="flex items-center gap-2">
-                                        {platform.icon}
-                                        <span>{platform.label}</span>
-                                      </div>
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            ) : (
-                              <div className="flex items-center gap-2 text-sm py-2">
-                                {getPlatformIcon(link.platform)}
-                                <span>
-                                  {SOCIAL_PLATFORMS.find(
-                                    (p) => p.id === link.platform
-                                  )?.label || "Other"}
-                                </span>
-                              </div>
-                            )}
-                          </div>
-                          <div className="col-span-12 md:col-span-4">
-                            <Label className="mb-1 block text-xs">URL</Label>
-                            {isEditing ? (
-                              <Input
-                                value={link.url}
-                                onChange={(e) =>
-                                  updateSocialLink(index, "url", e.target.value)
-                                }
-                                disabled={!isEditing}
-                                placeholder="https://..."
-                              />
-                            ) : (
-                              <div className="flex items-center gap-2 text-sm py-2 truncate">
-                                <a
-                                  href={link.url}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-primary flex items-center hover:underline truncate"
-                                >
-                                  <span className="truncate">{link.url}</span>
-                                  <ExternalLink className="h-3 w-3 ml-1 inline-block flex-shrink-0" />
-                                </a>
-                              </div>
-                            )}
-                          </div>
-                          <div className="col-span-12 md:col-span-3">
-                            <Label className="mb-1 block text-xs">
-                              Display Name
-                            </Label>
-                            {isEditing ? (
-                              <Input
-                                value={link.displayName}
-                                onChange={(e) =>
-                                  updateSocialLink(
-                                    index,
-                                    "displayName",
-                                    e.target.value
-                                  )
-                                }
-                                disabled={!isEditing}
-                                placeholder="My GitHub"
-                              />
-                            ) : (
-                              <div className="text-sm py-2">
-                                {link.displayName || "-"}
-                              </div>
-                            )}
-                          </div>
-                          <div className="col-span-12 md:col-span-2">
-                            <div className="flex justify-between items-center h-full">
-                              {isEditing ? (
-                                <>
-                                  <div className="flex items-center space-x-2 mt-6">
-                                    <Label
-                                      className="text-xs"
-                                      htmlFor={`public-${index}`}
-                                    >
-                                      Public
-                                    </Label>
-                                    <input
-                                      type="checkbox"
-                                      id={`public-${index}`}
-                                      checked={link.isPublic}
-                                      onChange={(e) =>
-                                        updateSocialLink(
-                                          index,
-                                          "isPublic",
-                                          e.target.checked
-                                        )
-                                      }
-                                      className="h-4 w-4"
-                                    />
-                                  </div>
-                                  <Button
-                                    variant="ghost"
-                                    size="sm"
-                                    className="text-destructive mt-5"
-                                    onClick={() => removeSocialLink(index)}
-                                  >
-                                    <Trash className="h-4 w-4" />
-                                  </Button>
-                                </>
-                              ) : (
-                                <Badge
-                                  variant={
-                                    link.isPublic ? "secondary" : "outline"
-                                  }
-                                >
-                                  {link.isPublic ? "Public" : "Private"}
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Personal Information */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">
+                        Personal Information
+                      </h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="firstName">First Name</Label>
+                          <Input
+                            id="firstName"
+                            value={profileData.firstName}
+                            onChange={(e) =>
+                              handleInputChange("firstName", e.target.value)
+                            }
+                            disabled={!isEditing}
+                            placeholder="Enter your first name"
+                          />
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="lastName">Last Name</Label>
+                          <Input
+                            id="lastName"
+                            value={profileData.lastName}
+                            onChange={(e) =>
+                              handleInputChange("lastName", e.target.value)
+                            }
+                            disabled={!isEditing}
+                            placeholder="Enter your last name"
+                          />
+                        </div>
+                      </div>
 
-                {/* Action Buttons */}
-                {isEditing && (
-                  <div className="flex gap-4 pt-4">
-                    <Button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="flex items-center gap-2"
-                    >
-                      <Save className="h-4 w-4" />
-                      {isSaving ? "Saving..." : "Save Changes"}
-                    </Button>
-                    <Button
-                      variant="secondary"
-                      onClick={handleCancel}
-                      disabled={isSaving}
-                      className="flex items-center gap-2"
-                    >
-                      <X className="h-4 w-4" />
-                      Cancel
-                    </Button>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="email">Email Address</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={profileData.email}
+                          onChange={(e) =>
+                            handleInputChange("email", e.target.value)
+                          }
+                          disabled
+                          placeholder="Enter your email address"
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="phone">Phone Number</Label>
+                          <Input
+                            id="phone"
+                            type="tel"
+                            value={profileData.phone}
+                            onChange={(e) =>
+                              handleInputChange("phone", e.target.value)
+                            }
+                            disabled={!isEditing}
+                            placeholder="Enter your phone number"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="dateOfBirth">Date of Birth</Label>
+                          <Input
+                            id="dateOfBirth"
+                            type="date"
+                            value={profileData.dateOfBirth}
+                            onChange={(e) =>
+                              handleInputChange("dateOfBirth", e.target.value)
+                            }
+                            disabled={!isEditing}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Bio Section */}
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">About</h3>
+                      <div className="space-y-2">
+                        <Label htmlFor="bio">Bio</Label>
+                        <Textarea
+                          id="bio"
+                          value={profileData.bio}
+                          onChange={(e) =>
+                            handleInputChange("bio", e.target.value)
+                          }
+                          disabled={!isEditing}
+                          placeholder="Tell us about yourself..."
+                          rows={4}
+                        />
+                      </div>
+                    </div>
+
+                    <Separator />
+
+                    {/* Social Links Section */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold">Social Links</h3>
+                        {isEditing && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={addSocialLink}
+                            className="flex items-center gap-1"
+                          >
+                            <Plus className="h-4 w-4" />
+                            Add Link
+                          </Button>
+                        )}
+                      </div>
+
+                      {profileData.socialLinks.length === 0 ? (
+                        <div className="text-muted-foreground text-sm italic">
+                          No social links added yet.
+                          {isEditing &&
+                            " Click 'Add Link' to add your first social media link."}
+                        </div>
+                      ) : (
+                        <div className="space-y-3">
+                          {profileData.socialLinks.map((link, index) => (
+                            <div
+                              key={index}
+                              className="grid grid-cols-12 gap-2 items-start p-3 rounded-md border"
+                            >
+                              <div className="col-span-12 md:col-span-3">
+                                <Label className="mb-1 block text-xs">
+                                  Platform
+                                </Label>
+                                {isEditing ? (
+                                  <Select
+                                    value={link.platform}
+                                    onValueChange={(value) =>
+                                      updateSocialLink(index, "platform", value)
+                                    }
+                                    disabled={!isEditing}
+                                  >
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select platform" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {SOCIAL_PLATFORMS.map((platform) => (
+                                        <SelectItem
+                                          key={platform.id}
+                                          value={platform.id}
+                                        >
+                                          <div className="flex items-center gap-2">
+                                            {platform.icon}
+                                            <span>{platform.label}</span>
+                                          </div>
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <div className="flex items-center gap-2 text-sm py-2">
+                                    {getPlatformIcon(link.platform)}
+                                    <span>
+                                      {SOCIAL_PLATFORMS.find(
+                                        (p) => p.id === link.platform
+                                      )?.label || "Other"}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="col-span-12 md:col-span-4">
+                                <Label className="mb-1 block text-xs">
+                                  URL
+                                </Label>
+                                {isEditing ? (
+                                  <Input
+                                    value={link.url}
+                                    onChange={(e) =>
+                                      updateSocialLink(
+                                        index,
+                                        "url",
+                                        e.target.value
+                                      )
+                                    }
+                                    disabled={!isEditing}
+                                    placeholder="https://..."
+                                  />
+                                ) : (
+                                  <div className="flex items-center gap-2 text-sm py-2 truncate">
+                                    <a
+                                      href={link.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-primary flex items-center hover:underline truncate"
+                                    >
+                                      <span className="truncate">
+                                        {link.url}
+                                      </span>
+                                      <ExternalLink className="h-3 w-3 ml-1 inline-block flex-shrink-0" />
+                                    </a>
+                                  </div>
+                                )}
+                              </div>
+                              <div className="col-span-12 md:col-span-3">
+                                <Label className="mb-1 block text-xs">
+                                  Display Name
+                                </Label>
+                                {isEditing ? (
+                                  <Input
+                                    value={link.displayName}
+                                    onChange={(e) =>
+                                      updateSocialLink(
+                                        index,
+                                        "displayName",
+                                        e.target.value
+                                      )
+                                    }
+                                    disabled={!isEditing}
+                                    placeholder="My GitHub"
+                                  />
+                                ) : (
+                                  <div className="text-sm py-2">
+                                    {link.displayName || "-"}
+                                  </div>
+                                )}
+                              </div>
+                              <div className="col-span-12 md:col-span-2">
+                                <div className="flex justify-between items-center h-full">
+                                  {isEditing ? (
+                                    <>
+                                      <div className="flex items-center space-x-2 mt-6">
+                                        <Label
+                                          className="text-xs"
+                                          htmlFor={`public-${index}`}
+                                        >
+                                          Public
+                                        </Label>
+                                        <input
+                                          type="checkbox"
+                                          id={`public-${index}`}
+                                          checked={link.isPublic}
+                                          onChange={(e) =>
+                                            updateSocialLink(
+                                              index,
+                                              "isPublic",
+                                              e.target.checked
+                                            )
+                                          }
+                                          className="h-4 w-4"
+                                        />
+                                      </div>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="text-destructive mt-5"
+                                        onClick={() => removeSocialLink(index)}
+                                      >
+                                        <Trash className="h-4 w-4" />
+                                      </Button>
+                                    </>
+                                  ) : (
+                                    <Badge
+                                      variant={
+                                        link.isPublic ? "secondary" : "outline"
+                                      }
+                                    >
+                                      {link.isPublic ? "Public" : "Private"}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    {isEditing && (
+                      <div className="flex gap-4 pt-4">
+                        <Button
+                          onClick={handleSave}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          <Save className="h-4 w-4" />
+                          {isSaving ? "Saving..." : "Save Changes"}
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          onClick={handleCancel}
+                          disabled={isSaving}
+                          className="flex items-center gap-2"
+                        >
+                          <X className="h-4 w-4" />
+                          Cancel
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

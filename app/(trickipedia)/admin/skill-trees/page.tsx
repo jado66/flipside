@@ -10,7 +10,7 @@ import Link from "next/link";
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   // Show loading while auth is loading
   if (authLoading) {

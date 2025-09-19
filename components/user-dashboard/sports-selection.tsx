@@ -56,31 +56,15 @@ export function SportsSelection({
             What Are You Interested In?
           </h2>
           <p className="text-muted-foreground text-sm max-w-prose">
-            Select any sports you're interested in. We'll tailor trick
+            Select any sports you&apos;re interested in. We&apos;ll tailor trick
             suggestions and progress to these categories. You can always update
             your selections later.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleSelectAll}
-            disabled={categories.length === 0}
-          >
-            {allSelected ? (
-              <>
-                <X className="h-3 w-3 mr-1" /> Clear All
-              </>
-            ) : (
-              <>
-                <Check className="h-3 w-3 mr-1" /> Select All
-              </>
-            )}
-          </Button>
           {userSportsIds.length > 0 && (
             <Button size="sm" onClick={onFinish}>
-              Continue ({userSportsIds.length})
+              Continue
             </Button>
           )}
         </div>
@@ -155,18 +139,6 @@ export function SportsSelection({
           {userSportsIds.length === 0
             ? "No sports selected"
             : `${userSportsIds.length} selected`}
-        </div>
-        <div className="flex gap-2">
-          <Link href="/browse">
-            <Button variant="ghost" size="sm">
-              Browse Tricks
-            </Button>
-          </Link>
-          {userSportsIds.length > 0 && (
-            <Button onClick={onFinish} size="sm">
-              See Suggestions
-            </Button>
-          )}
         </div>
       </div>
     </div>

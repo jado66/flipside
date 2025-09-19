@@ -1,50 +1,27 @@
 "use client";
 
 import { useMemo } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  CheckCircle2,
-  ArrowRight,
-  Target,
-  Plus,
-  Dumbbell,
-  Activity,
-  Music,
-  Sparkles,
-} from "lucide-react";
+import { CheckCircle2, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import type { Trick } from "@/types/trick";
-import { TrickWithProgress } from "./user-dashboard.types";
 
-interface NextTricksSuggestionsProps {
+interface TrickWithProgress extends Trick {
+  user_can_do: boolean;
+  missing_prerequisites: string[];
+  category_progress: number;
+}
+
+interface NextSuggestedTricksProps {
   maxSuggestions?: number;
   allTricks: Trick[];
   userCanDoTricks: Set<string>;
   userSportsIds: string[];
-  onMarkLearned: (trickId: string) => Promise<void> | void; // callback to parent
-  onManageSports: () => void;
+  onMarkLearned: (trickId: string) => Promise<void> | void;
   loading?: boolean;
 }
-
-// Icon mapping for categories (add more as needed)
-const getCategoryIcon = (iconName?: string) => {
-  const iconMap: Record<string, any> = {
-    dumbbell: Dumbbell,
-    activity: Activity,
-    music: Music,
-    sparkles: Sparkles,
-  };
-  const Icon = iconName ? iconMap[iconName.toLowerCase()] : Activity;
-  return Icon || Activity;
-};
 
 export function NextTricksSuggestions({
   maxSuggestions = 6,
@@ -52,9 +29,8 @@ export function NextTricksSuggestions({
   userCanDoTricks,
   userSportsIds,
   onMarkLearned,
-  onManageSports,
   loading = false,
-}: NextTricksSuggestionsProps) {
+}: NextSuggestedTricksProps) {
   // Calculate suggested tricks based on user progress and selected sports
   const calculatedSuggestions = useMemo(() => {
     if (!allTricks.length || userSportsIds.length === 0) return [];
@@ -64,7 +40,6 @@ export function NextTricksSuggestions({
 
     // Filter tricks to only include those from selected sports
     const relevantTricks = allTricks.filter((trick) => {
-      // master_category may be typed without id; cast to any for runtime safety while types refined
       const categoryId = (trick.subcategory?.master_category as any)?.id as
         | string
         | undefined;
@@ -133,14 +108,16 @@ export function NextTricksSuggestions({
     return sorted.slice(0, maxSuggestions);
   }, [allTricks, userCanDoTricks, userSportsIds, maxSuggestions]);
 
-  // Interaction handlers delegated to parent via props
-
   const getDifficultyColor = (level?: number) => {
-    if (!level) return "bg-gray-500";
-    if (level <= 3) return "bg-green-500";
-    if (level <= 6) return "bg-yellow-500";
-    if (level <= 8) return "bg-orange-500";
-    return "bg-red-500";
+    if (!level)
+      return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+    if (level <= 3)
+      return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
+    if (level <= 6)
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+    if (level <= 8)
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+    return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
   };
 
   const getDifficultyLabel = (level?: number) => {
@@ -151,171 +128,123 @@ export function NextTricksSuggestions({
     return "Expert";
   };
 
-  // Selection UI removed; handled by parent component
-
-  // Loading state skeletons
+  // Loading state
   if (loading) {
-    const skeletonCount = Math.min(maxSuggestions, 6);
     return (
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Target className="h-5 w-5" />
-          <span className="font-semibold">Next Tricks to Learn</span>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-          {Array.from({ length: skeletonCount }).map((_, i) => (
-            <Card key={i}>
-              <CardHeader className="pb-3">
-                <div className="h-4 bg-muted rounded w-2/3 animate-pulse mb-2" />
-                <div className="h-3 bg-muted rounded w-1/3 animate-pulse" />
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-3">
-                  <div className="h-3 bg-muted rounded w-full animate-pulse" />
-                  <div className="h-3 bg-muted rounded w-5/6 animate-pulse" />
-                  <div className="flex gap-2 pt-2">
-                    <div className="h-8 bg-muted rounded flex-1 animate-pulse" />
-                    <div className="h-8 bg-muted rounded w-10 animate-pulse" />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-bold">Ready to Learn</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {Array.from({ length: Math.min(maxSuggestions, 3) }).map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center justify-between p-4 border rounded-lg"
+              >
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="h-4 bg-muted rounded w-1/3 animate-pulse" />
+                    <div className="h-5 bg-muted rounded w-16 animate-pulse" />
                   </div>
+                  <div className="h-3 bg-muted rounded w-2/3 animate-pulse" />
+                  <div className="h-3 bg-muted rounded w-1/4 animate-pulse" />
                 </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
+                <div className="flex gap-2">
+                  <div className="h-8 bg-muted rounded w-24 animate-pulse" />
+                  <div className="h-8 bg-muted rounded w-16 animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  // No suggestions available (only when not loading and user has selected sports)
+  // No suggestions available
   if (
     calculatedSuggestions.length === 0 &&
     userSportsIds.length > 0 &&
     allTricks.length > 0
   ) {
     return (
-      <div>
-        <div className="flex items-center gap-2 mb-2">
-          <Target className="h-5 w-5" />
-          <span className="font-semibold">Next Tricks to Learn</span>
-        </div>
-        <div className="text-center py-8">
-          <div className="text-muted-foreground mb-4">
-            No new tricks available in your selected sports. Try adding more
-            sports or browse all tricks!
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-xl font-bold">Ready to Learn</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8 text-muted-foreground">
+            <p>
+              No new tricks available in your selected sports. Try adding more
+              sports or browse all tricks!
+            </p>
           </div>
-          <div className="flex justify-center gap-4">
-            <Button onClick={onManageSports}>
-              <Plus className="h-4 w-4 mr-2" />
-              Add More Sports
-            </Button>
-            <Link href="/browse">
-              <Button variant="outline">Browse All Tricks</Button>
-            </Link>
-          </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     );
   }
 
-  // Show trick suggestions
+  // Show trick suggestions with clean styling
   return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <Target className="h-5 w-5" />
-          <span className="font-semibold">Next Tricks to Learn</span>
-        </div>
-        <Button variant="outline" size="sm" onClick={onManageSports}>
-          <Plus className="h-4 w-4 mr-2" />
-          Manage Sports
-        </Button>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {calculatedSuggestions.map((trick) => (
-          <Card key={trick.id} className="relative">
-            <CardHeader className="pb-3">
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <CardTitle className="text-sm font-medium truncate">
-                    {trick.name}
-                  </CardTitle>
-                  <CardDescription className="text-xs">
-                    {trick.subcategory?.master_category?.name} •{" "}
-                    {trick.subcategory?.name}
-                  </CardDescription>
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-xl font-bold">Ready to Learn</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {calculatedSuggestions.map((trick) => (
+            <div
+              key={trick.id}
+              className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+            >
+              <div className="space-y-1 flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h3 className="font-semibold">{trick.name}</h3>
+                  <Badge
+                    className={getDifficultyColor(
+                      trick.difficulty_level ?? undefined
+                    )}
+                  >
+                    {getDifficultyLabel(trick.difficulty_level ?? undefined)}
+                  </Badge>
                 </div>
-                <Badge
-                  variant="secondary"
-                  className={`text-xs ${getDifficultyColor(
-                    trick.difficulty_level ?? undefined
-                  )} text-white`}
-                >
-                  {getDifficultyLabel(trick.difficulty_level ?? undefined)}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-0">
-              <div className="space-y-3">
-                {/* Missing Prerequisites */}
+                <p className="text-sm text-muted-foreground">
+                  {trick.description || "Learn this exciting new trick!"}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {trick.subcategory?.master_category?.name} •{" "}
+                  {trick.subcategory?.name}
+                </p>
                 {trick.missing_prerequisites.length > 0 && (
-                  <div className="space-y-1">
-                    <div className="text-xs text-muted-foreground">
-                      Need to learn first:
-                    </div>
-                    <div className="flex flex-wrap gap-1">
-                      {trick.missing_prerequisites
-                        .slice(0, 2)
-                        .map((prereq, index) => (
-                          <Badge
-                            key={index}
-                            variant="outline"
-                            className="text-xs"
-                          >
-                            {prereq}
-                          </Badge>
-                        ))}
-                      {trick.missing_prerequisites.length > 2 && (
-                        <Badge variant="outline" className="text-xs">
-                          +{trick.missing_prerequisites.length - 2} more
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
+                  <p className="text-xs text-orange-600 dark:text-orange-400">
+                    Prerequisites needed:{" "}
+                    {trick.missing_prerequisites.join(", ")}
+                  </p>
                 )}
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    size="sm"
-                    onClick={() => onMarkLearned(trick.id)}
-                    className="flex-1 text-xs"
-                  >
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Mark as Learned
-                  </Button>
-                  <Link
-                    href={`/${trick.subcategory?.master_category?.slug}/${trick.subcategory?.slug}/${trick.slug}`}
-                  >
-                    <Button variant="ghost" size="sm" className="px-2">
-                      <ArrowRight className="h-3 w-3" />
-                    </Button>
-                  </Link>
-                </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {/* View More Link */}
-      <div className="text-center pt-4">
-        <Link href="/browse">
-          <Button variant="outline" size="sm">
-            Browse All Tricks
-          </Button>
-        </Link>
-      </div>
-    </div>
+              <div className="flex gap-2 flex-shrink-0">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => onMarkLearned(trick.id)}
+                  className="text-xs whitespace-nowrap"
+                >
+                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                  Already Can Do
+                </Button>
+                <Link
+                  href={`/${trick.subcategory?.master_category?.slug}/${trick.subcategory?.slug}/${trick.slug}`}
+                >
+                  <Button variant="ghost" size="sm">
+                    Learn <ArrowRight className="w-4 h-4 ml-1" />
+                  </Button>
+                </Link>
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 }

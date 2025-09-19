@@ -21,7 +21,7 @@ export default function TrickNewPage() {
   const params = useParams();
   const category = params.slug as string;
   const subcategorySlug = params.subcategory as string;
-  const { user, isLoading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
 
   const [subcategory, setSubcategory] = useState<Subcategory | null>(null);
   const [initialTrick, setInitialTrick] = useState<TrickData | null>(null);

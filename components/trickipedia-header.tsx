@@ -30,7 +30,11 @@ export function TrickipediaHeader({
   const [userState, setUserState] = useState<User | null>(null);
 
   useEffect(() => {
-    if (userProp !== undefined) return; // Don't fetch if user is provided by prop
+    if (userProp !== undefined) {
+      setUserState(userProp);
+      return; // Don't fetch if user is provided by prop
+    }
+
     const getUser = async () => {
       const {
         data: { user },

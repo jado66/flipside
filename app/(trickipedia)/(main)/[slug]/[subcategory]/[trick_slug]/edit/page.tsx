@@ -18,7 +18,7 @@ export default function TrickEditPage() {
   const category = params.slug as string;
   const slug = params.trick_slug as string;
   const subcategory = params.subcategory as string;
-  const { user, hasModeratorAccess, isLoading: authLoading } = useAuth();
+  const { user, hasModeratorAccess, loading: authLoading } = useAuth();
 
   const [trick, setTrick] = useState<Trick | null>(null);
   const [loading, setLoading] = useState(true);

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/supabase-client";
+import { useAuth } from "@/contexts/auth-provider";
 import { useStableUser } from "@/hooks/use-stable-user";
 import { SportsSelection } from "./sports-selection";
 import { NextTricksSuggestions } from "./new-trick-suggestions";
@@ -15,6 +16,10 @@ import {
 } from "./user-dashboard.types";
 import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
+import { Button } from "../ui/button";
+import { Plus, Settings } from "lucide-react";
+import { Wishlist } from "../wishlist";
+import { FeaturePoll } from "../feature-poll";
 
 export function UserDashboard() {
   const [loading, setLoading] = useState(true);
@@ -38,30 +43,57 @@ export function UserDashboard() {
   // Remain in selection mode until user explicitly continues
   const [selectingSports, setSelectingSports] = useState(false);
 
-  const { user } = useStableUser(async (userId) => {
-    await loadData(userId);
-  }, []);
+  const { user, publicUser, updatePublicUser, refreshUser } = useAuth();
 
-  const loadData = useCallback(async (userId?: string | null) => {
-    try {
-      setLoading(true);
-      // categories
-      const { data: categoriesData, error: catError } = await supabase
-        .from("master_categories")
-        .select("id, name, slug, color, icon_name")
-        .eq("is_active", true)
-        .order("sort_order");
-      if (catError) {
-        console.error("Error fetching categories", catError);
-        throw catError;
+  // Load data when user changes
+  useEffect(() => {
+    if (user) {
+      loadData(user.id);
+    } else {
+      loadData(null);
+    }
+  }, [user?.id]);
+
+  // Update sports when publicUser data becomes available
+  useEffect(() => {
+    if (publicUser && user) {
+      console.log("Public user data loaded:", publicUser.users_sports_ids);
+      setUserSportsIds(publicUser.users_sports_ids || []);
+
+      // If user has no sports yet, enter selection mode
+      if (
+        !publicUser.users_sports_ids ||
+        publicUser.users_sports_ids.length === 0
+      ) {
+        setSelectingSports(true);
+      } else {
+        // User has sports, exit selection mode if we're in it
+        setSelectingSports(false);
       }
-      setCategories(categoriesData || []);
+    }
+  }, [publicUser?.users_sports_ids, user?.id]);
 
-      // tricks
-      const { data: tricksData, error: tricksError } = await supabase
-        .from("tricks")
-        .select(
-          `
+  const loadData = useCallback(
+    async (userId?: string | null) => {
+      try {
+        setLoading(true);
+        // categories
+        const { data: categoriesData, error: catError } = await supabase
+          .from("master_categories")
+          .select("id, name, slug, color, icon_name")
+          .eq("is_active", true)
+          .order("sort_order");
+        if (catError) {
+          console.error("Error fetching categories", catError);
+          throw catError;
+        }
+        setCategories(categoriesData || []);
+
+        // tricks
+        const { data: tricksData, error: tricksError } = await supabase
+          .from("tricks")
+          .select(
+            `
           id,
           name,
           slug,
@@ -81,99 +113,54 @@ export function UserDashboard() {
             )
           )
         `
-        )
-        .eq("is_published", true)
-        .order("difficulty_level", { ascending: true, nullsFirst: true });
-      if (tricksError) {
-        console.error("Error fetching tricks", tricksError);
-        throw tricksError;
-      }
-      // @ts-expect-error complex nested type
-      setAllTricks(tricksData || []);
+          )
+          .eq("is_published", true)
+          .order("difficulty_level", { ascending: true, nullsFirst: true });
+        if (tricksError) {
+          console.error("Error fetching tricks", tricksError);
+          throw tricksError;
+        }
+        // @ts-expect-error complex nested type
+        setAllTricks(tricksData || []);
 
-      if (userId) {
-        // user profile
-        const {
-          data: userProfile,
-          error: userError,
-          status: userStatus,
-        } = await supabase
-          .from("users")
-          .select("users_sports_ids")
-          .eq("id", userId)
-          .maybeSingle();
-        if (userError) {
-          console.error("Error fetching user profile", userError);
-          throw userError;
-        }
-        if (!userProfile) {
-          console.warn(
-            "No user profile row found for id",
-            userId,
-            "status=",
-            userStatus
-          );
-          setUserSportsIds([]);
-        } else {
-          setUserSportsIds(userProfile.users_sports_ids || []);
-        }
-        // Defensive duplicate check (should not happen with maybeSingle but logs in case view causes duplicates)
-        try {
-          const { data: duplicateCheck } = await supabase
-            .from("users")
-            .select("id")
-            .eq("id", userId);
-          if (duplicateCheck && duplicateCheck.length > 1) {
-            console.warn(
-              "Duplicate user rows detected for id",
-              userId,
-              "count=",
-              duplicateCheck.length
-            );
+        if (userId) {
+          // Sports data will be handled by the separate useEffect for publicUser
+
+          // user tricks
+          const { data: userTricksData, error: userTricksError } =
+            await supabase
+              .from("user_tricks")
+              .select("trick_id, achieved_at")
+              .eq("user_id", userId)
+              .eq("can_do", true);
+          if (userTricksError) {
+            console.error("Error fetching user tricks", userTricksError);
+            throw userTricksError;
           }
-        } catch (dupErr) {
-          console.warn("Duplicate check failed", dupErr);
-        }
-        // If user has no sports yet, enter selection mode and stay there through first picks
-        if (
-          !userProfile?.users_sports_ids ||
-          userProfile.users_sports_ids.length === 0
-        ) {
+          setUserCanDoTricks(
+            new Set(userTricksData?.map((r) => r.trick_id) || [])
+          );
+
+          // progress calculation
+          calculateProgress(
+            categoriesData || [],
+            tricksData || [],
+            userTricksData || []
+          );
+        } else {
+          // Anonymous user: still compute base progress (all zeros) and allow selecting sports.
           setSelectingSports(true);
+          calculateProgress(categoriesData || [], tricksData || [], []);
         }
-
-        // user tricks
-        const { data: userTricksData, error: userTricksError } = await supabase
-          .from("user_tricks")
-          .select("trick_id, achieved_at")
-          .eq("user_id", userId)
-          .eq("can_do", true);
-        if (userTricksError) {
-          console.error("Error fetching user tricks", userTricksError);
-          throw userTricksError;
-        }
-        setUserCanDoTricks(
-          new Set(userTricksData?.map((r) => r.trick_id) || [])
-        );
-
-        // progress calculation
-        calculateProgress(
-          categoriesData || [],
-          tricksData || [],
-          userTricksData || []
-        );
-      } else {
-        // Anonymous user: still compute base progress (all zeros) and allow selecting sports.
-        setSelectingSports(true);
-        calculateProgress(categoriesData || [], tricksData || [], []);
+      } catch (e) {
+        console.error("Failed loading dashboard data", e);
+        toast.error("Failed to load dashboard data");
+      } finally {
+        setLoading(false);
       }
-    } catch (e) {
-      console.error("Failed loading dashboard data", e);
-      toast.error("Failed to load dashboard data");
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [publicUser]
+  );
 
   const calculateProgress = (
     categoriesData: any[],
@@ -255,69 +242,34 @@ export function UserDashboard() {
 
   // Commit draft selections in one batch update
   const handleFinishSportsSelection = async () => {
-    // If user unchanged and just closing, still update base selection state
+    console.log("Starting sports selection save...");
     const newSportsIds = draftSportsIds;
+    console.log("New sports IDs:", newSportsIds);
+
     if (user) {
       try {
-        // First try a simple update (more efficient if row exists)
-        const { data: updateData, error: updateError } = await supabase
-          .from("users")
-          .update({
-            users_sports_ids: newSportsIds,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", user.id)
-          .select()
-          .single();
+        console.log("Updating sports selection:", newSportsIds);
 
-        if (updateError) {
-          // If it's an RLS error, provide helpful message
-          if (updateError.code === "42501") {
-            console.error("RLS Policy Error:", updateError);
-            toast.error(
-              "Permission denied. Please contact support if this persists."
-            );
-            return;
-          }
-
-          // If no rows found, try insert
-          if (updateError.code === "PGRST116") {
-            const { data: insertData, error: insertError } = await supabase
-              .from("users")
-              .insert({
-                id: user.id,
-                email: user.email || "",
-                users_sports_ids: newSportsIds,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString(),
-              })
-              .select()
-              .single();
-
-            if (insertError) {
-              console.error("Error creating user profile:", insertError);
-              if (insertError.code === "42501") {
-                toast.error("Permission denied. Please contact support.");
-              } else {
-                toast.error("Failed to save sports selection");
-              }
-              return;
-            }
-
-            console.log("User profile created with sports:", insertData);
-          } else {
-            console.error("Error updating sports selection:", updateError);
-            throw updateError;
-          }
-        } else {
-          console.log("Sports saved successfully:", updateData);
+        if (!updatePublicUser) {
+          throw new Error("Update function not available");
         }
+
+        // Use the auth context method to update user sports
+        await updatePublicUser({
+          users_sports_ids: newSportsIds,
+        });
+
+        console.log("Update completed, refreshing user data...");
+
+        // Refresh user data to get updated sports
+        await refreshUser();
 
         setUserSportsIds(newSportsIds);
         toast.success("Sports selection saved");
+        console.log("Sports saved successfully");
       } catch (e) {
         console.error("Failed saving sports selection:", e);
-        toast.error("Failed saving sports selection");
+        toast.error("Failed to save sports selection");
         return; // keep user in selection mode so they can retry
       }
     } else {
@@ -325,6 +277,7 @@ export function UserDashboard() {
       toast("Login to save your selections and track progress");
       setUserSportsIds(newSportsIds);
     }
+    console.log("Exiting sports selection mode");
     setSelectingSports(false);
   };
 
@@ -379,24 +332,59 @@ export function UserDashboard() {
           onFinish={handleFinishSportsSelection}
         />
       ) : (
-        <div className="grid gap-8 lg:grid-cols-4">
-          <div className="lg:col-span-3 space-y-6">
-            <NextTricksSuggestions
-              maxSuggestions={6}
-              allTricks={allTricks}
-              userCanDoTricks={userCanDoTricks}
-              userSportsIds={userSportsIds}
-              loading={loading}
-              onMarkLearned={handleMarkLearned}
-              onManageSports={() => setSelectingSports(true)}
-            />
-          </div>
-          <div className="lg:col-span-1">
-            <UserProgressOverview
-              categoryProgress={categoryProgress}
-              totalStats={totalStats}
-              loading={loading}
-            />
+        <div className="min-h-screen bg-background ">
+          <div className="container mx-auto px-4 py-8 relative">
+            <div className="mb-8">
+              <h1 className="text-4xl font-bold text-balance mb-2">
+                Welcome Back{" "}
+                {publicUser?.first_name ||
+                  (publicUser?.email
+                    ? publicUser.email.charAt(0).toUpperCase() +
+                      publicUser.email.slice(1)
+                    : "")}
+              </h1>
+              <p className="text-lg text-muted-foreground text-pretty">
+                Track your progress and discover new tricks to master
+              </p>
+            </div>
+
+            <div className="flex items-center justify-between absolute top-10 right-4 mb-6">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setSelectingSports(true)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Manage Sports
+              </Button>
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-2">
+              {/* Left Column */}
+              <div className="space-y-6">
+                <UserProgressOverview
+                  categoryProgress={categoryProgress}
+                  // totalStats={totalStats}
+                  userSportsIds={userSportsIds}
+                  loading={loading}
+                />
+                <NextTricksSuggestions
+                  maxSuggestions={6}
+                  allTricks={allTricks}
+                  userCanDoTricks={userCanDoTricks}
+                  userSportsIds={userSportsIds}
+                  loading={loading}
+                  onMarkLearned={handleMarkLearned}
+                />
+              </div>
+
+              {/* Right Column */}
+              <div className="space-y-6">
+                {/* <PrerequisiteGaps gaps={prerequisiteGaps} /> */}
+                <Wishlist />
+                <FeaturePoll />
+              </div>
+            </div>
           </div>
         </div>
       )}
@@ -410,3 +398,35 @@ export function UserDashboard() {
     </div>
   );
 }
+
+// <div className="space-y-6">
+//   {/* Header with Manage Sports */}
+//   <div className="flex items-center justify-between mb-2">
+//     <h2 className="text-lg font-semibold tracking-tight ">
+//       Welcome back{" "}
+//       {publicUser?.first_name ||
+//         (publicUser?.email
+//           ? publicUser.email.charAt(0).toUpperCase() + publicUser.email.slice(1)
+//           : "")}
+//       ! You should work on the following tricks:
+//     </h2>
+//     <Button
+//       variant="outline"
+//       size="sm"
+//       onClick={() => setSelectingSports(true)}
+//     >
+//       <Settings className="h-4 w-4 mr-2" />
+//       Manage Sports
+//     </Button>
+//   </div>
+//   {/* Main content grid */}
+//   <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_350px]">
+//     <div className="space-y-6">
+
+//     </div>
+//     <div className="lg:min-w-[350px] w-full">
+//       {/* progress sidebar */}
+//
+//     </div>
+//   </div>
+// </div>;

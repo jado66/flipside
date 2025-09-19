@@ -1,6 +1,7 @@
 "use client";
 
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, ReactNode, useMemo } from "react";
+import { useAuth } from "./auth-provider";
 import type {
   NavigationCategory,
   NavigationSubcategory,
@@ -28,8 +29,24 @@ export function NavigationProvider({
   children: ReactNode;
   initialData?: NavigationCategory[];
 }) {
-  // Use initialData directly, no need to fetch
-  const [categories] = useState<NavigationCategory[]>(initialData);
+  const { publicUser } = useAuth();
+
+  // Filter categories based on user's selected sports
+  const categories = useMemo(() => {
+    if (
+      !publicUser?.users_sports_ids ||
+      publicUser.users_sports_ids.length === 0
+    ) {
+      // If user has no sports selected, show all categories
+      return initialData;
+    }
+
+    // Filter to only show categories user has selected
+    return initialData.filter((category) =>
+      publicUser.users_sports_ids!.includes(category.id)
+    );
+  }, [initialData, publicUser?.users_sports_ids]);
+
   const [isLoading] = useState(false);
   const [error] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set());

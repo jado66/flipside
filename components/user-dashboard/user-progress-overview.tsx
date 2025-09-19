@@ -1,169 +1,169 @@
 "use client";
 
-// Refactored: now purely presentational; data fetched in UserDashboard
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { TrendingUp, Target, BookOpen } from "lucide-react";
+import { Button } from "../ui/button";
+import { Network, TrendingUp } from "lucide-react";
 import Link from "next/link";
-import { CategoryProgress, TotalStats } from "./user-dashboard.types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
 
-interface UserProgressOverviewProps {
-  categoryProgress: CategoryProgress[];
-  totalStats: TotalStats;
-  loading?: boolean;
+// New simplified stats type (can be elevated to a shared types file if needed)
+export interface ProgressStats {
+  sport: string; // label (e.g., category or sport name)
+  mastered: number; // completed tricks count
+  total: number; // total available tricks
+  percentage: number; // 0-100 rounded
 }
 
-export function UserProgressOverview({
-  categoryProgress,
-  totalStats,
-  loading,
-}: UserProgressOverviewProps) {
+// Legacy types (from previous implementation)
+interface LegacyCategoryProgressItem {
+  category: { id: string; name: string; slug: string };
+  completed: number;
+  total: number;
+  percentage: number;
+}
+interface LegacyTotalStats {
+  totalTricks: number;
+  completedTricks: number;
+  percentage: number;
+  recentlyCompleted?: any[];
+}
+
+// New props OR legacy props (discriminated by presence of progressStats)
+type ProgressOverviewProps =
+  | {
+      progressStats: ProgressStats[];
+      loading?: boolean;
+      className?: string;
+      title?: string;
+    }
+  | {
+      // Legacy
+      categoryProgress?: LegacyCategoryProgressItem[];
+      totalStats?: LegacyTotalStats;
+      userSportsIds?: string[];
+      loading?: boolean;
+      className?: string;
+      title?: string;
+      progressStats?: undefined; // ensure mutual exclusivity
+    };
+
+export function ProgressOverview(props: ProgressOverviewProps) {
+  const { loading, className, title = "Your Progress" } = props as any;
+
+  // Normalize to progressStats[] if legacy props were provided
+  let progressStats: ProgressStats[] = [];
+
+  if ("progressStats" in props && props.progressStats !== undefined) {
+    progressStats = props.progressStats || [];
+  } else {
+    const legacyCategoryProgress = (props as any).categoryProgress as
+      | LegacyCategoryProgressItem[]
+      | undefined;
+    const userSportsIds = ((props as any).userSportsIds || []) as string[];
+
+    if (legacyCategoryProgress && legacyCategoryProgress.length > 0) {
+      // Optionally filter by userSportsIds if provided
+      const filtered = userSportsIds.length
+        ? legacyCategoryProgress.filter((c) =>
+            userSportsIds.includes(c.category.id)
+          )
+        : legacyCategoryProgress;
+      progressStats = filtered.map((c) => ({
+        sport: c.category.name,
+        mastered: c.completed,
+        total: c.total,
+        percentage: c.percentage,
+      }));
+    }
+  }
+
   if (loading) {
     return (
-      <Card>
+      <Card className={className}>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <TrendingUp className="h-5 w-5" />
-            Your Progress
-          </CardTitle>
+          <CardTitle className="text-xl font-bold">{title}</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="text-muted-foreground">Loading progress...</div>
+          <div className="flex items-center justify-center py-8 text-sm text-muted-foreground">
+            Loading progress...
           </div>
         </CardContent>
       </Card>
     );
   }
 
-  // Only show categories where the user has completed at least one trick
-  const interestedCategories = categoryProgress.filter(
-    (progress) => progress.completed > 0
-  );
-
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          Your Progress
+        <CardTitle className="text-xl font-bold flex items-center gap-2">
+          <TrendingUp className="w-5 h-5 " />
+          {title}
         </CardTitle>
-        <CardDescription>
-          Track your learning journey across all skill categories
-        </CardDescription>
       </CardHeader>
-      <CardContent>
-        <div className="space-y-6">
-          {/* Overall Stats */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-accent">
-                {totalStats.completedTricks}
-              </div>
-              <div className="text-xs text-muted-foreground">
-                Tricks Learned
-              </div>
-            </div>
-            <div className="text-center">
-              <div className="text-2xl font-bold">{totalStats.percentage}%</div>
-              <div className="text-xs text-muted-foreground">
-                Overall Progress
-              </div>
-            </div>
-
-            <div className="text-center">
-              <div className="text-2xl font-bold text-muted-foreground">
-                {totalStats.totalTricks}
-              </div>
-              <div className="text-xs text-muted-foreground">Total Tricks</div>
-            </div>
+      <CardContent className="space-y-6">
+        {progressStats.length === 0 && (
+          <div className="py-6 text-center text-sm text-muted-foreground">
+            No progress recorded yet.
           </div>
+        )}
+        {progressStats.map((stat) => (
+          <div key={stat.sport} className="space-y-2">
+            <div className="flex justify-between items-center">
+              <div className="flex justify-start">
+                <h3 className="font-semibold text-base md:text-lg truncate pr-4">
+                  {stat.sport}
+                </h3>
+                {/* Skill Tree link with tooltip */}
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        asChild
+                        className="hover:text-accent-foreground"
+                      >
+                        <Link
+                          href={`/${encodeURIComponent(
+                            stat.sport
+                              .toLowerCase()
+                              .replace(/[^a-z0-9]+/g, "-")
+                              .replace(/^-|-$/g, "")
+                          )}/skill-tree`}
+                          aria-label={`${stat.sport} Skill Tree`}
+                        >
+                          <Network className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="top">
+                      {`${stat.sport} Skill Tree`}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
 
-          {/* Overall Progress Bar */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="font-medium">Overall Progress</span>
-              <span className="text-muted-foreground">
-                {totalStats.completedTricks} / {totalStats.totalTricks}
+              <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
+                {stat.mastered}/{stat.total} mastered ({stat.percentage}%)
               </span>
             </div>
             <Progress
-              value={totalStats.percentage}
+              value={stat.percentage}
               className="h-3 [&>div]:bg-accent"
             />
           </div>
-
-          {/* Category Progress */}
-          <div className="space-y-4">
-            <h4 className="font-medium text-sm">Progress by Category</h4>
-            {interestedCategories.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                You haven't added any tricks yet. Browse tricks to get started!
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {interestedCategories.map((progress) => (
-                  <div key={progress.category.id} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{
-                            backgroundColor: progress.category.color || "#fff",
-                          }}
-                        />
-                        <span className="text-sm font-medium">
-                          {progress.category.name}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {progress.completed} / {progress.total}
-                        </span>
-                        <Link href={`/${progress.category.slug}/skill-tree`}>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 px-2 text-xs"
-                          >
-                            Skill Tree
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                    <Progress
-                      value={progress.percentage}
-                      className="h-2 [&>div]:bg-accent"
-                    />
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Quick Actions */}
-          <div className="flex flex-wrap gap-2 pt-4 border-t">
-            <Link href="/browse">
-              <Button
-                variant="outline"
-                size="sm"
-                className="text-xs bg-transparent"
-              >
-                <BookOpen className="h-3 w-3 mr-1" />
-                Browse Tricks
-              </Button>
-            </Link>
-          </div>
-        </div>
+        ))}
       </CardContent>
     </Card>
   );
 }
+
+// Backwards compatibility: re-export under previous name expecting transformed input upstream.
+// NOTE: Previous props signature was very different; upstream code must adapt to supply progressStats.
+export const UserProgressOverview = ProgressOverview;

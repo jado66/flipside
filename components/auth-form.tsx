@@ -21,7 +21,8 @@ export default function AuthForm() {
             Trickipedia
           </CardTitle>
           <CardDescription className="text-base text-grey-500 mt-2">
-            Join the world's largest action sports trick database and community
+            Join the world&apos;s largest action sports trick database and
+            community
           </CardDescription>
         </CardHeader>
         <CardContent>

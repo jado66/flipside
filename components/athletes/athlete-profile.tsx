@@ -16,8 +16,9 @@ import {
   Award,
 } from "lucide-react";
 import Image from "next/image";
+// @ts-expect-error TODO
 import type { Athlete } from "@/types/athlete";
-import { AthleteInteractions } from "@/components/athlete-interactions";
+// import { AthleteInteractions } from "@/components/athlete-interactions";
 
 interface AthleteProfileProps {
   athlete: Athlete;
@@ -142,7 +143,7 @@ export function AthleteProfile({ athlete }: AthleteProfileProps) {
                     )}
                   </div>
 
-                  <AthleteInteractions athlete={athlete} />
+                  {/* <AthleteInteractions athlete={athlete} /> */}
                 </div>
               </div>
             </CardContent>

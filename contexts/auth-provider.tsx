@@ -9,6 +9,7 @@ import React, {
 } from "react";
 import { createBrowserClient } from "@supabase/ssr";
 import { User, Session } from "@supabase/supabase-js";
+import { useRouter } from "next/navigation";
 
 // Types
 export type UserRole = "user" | "admin" | "moderator"; // Add other roles as needed
@@ -26,13 +27,7 @@ export interface PublicUser {
   created_at?: string;
   updated_at?: string;
   username?: string;
-}
-
-interface AccessRequirements {
-  requireAuth?: boolean;
-  requireAdmin?: boolean;
-  requireModerator?: boolean;
-  allowedRoles?: UserRole[];
+  users_sports_ids?: string[];
 }
 
 interface AuthContextType {
@@ -50,6 +45,19 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updatePublicUser: (updates: Partial<PublicUser>) => Promise<void>;
+  // Permission helpers
+  isAuthenticated: () => boolean;
+  hasAdminAccess: () => boolean;
+  hasModeratorAccess: () => boolean;
+  hasRole: (role: UserRole) => boolean;
+  canAccess: (requirements: AccessRequirements) => boolean;
+}
+
+interface AccessRequirements {
+  requireAuth?: boolean;
+  requireAdmin?: boolean;
+  requireModerator?: boolean;
+  allowedRoles?: UserRole[];
 }
 
 // Create context
@@ -62,9 +70,17 @@ const supabase = createBrowserClient(
 );
 
 // Provider component
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [publicUser, setPublicUser] = useState<PublicUser | null>(null);
+export function AuthProvider({
+  children,
+  initialUser = null,
+  initialAuthUser = null,
+}: {
+  children: React.ReactNode;
+  initialUser?: PublicUser | null;
+  initialAuthUser?: User | null;
+}) {
+  const [user, setUser] = useState<User | null>(initialAuthUser);
+  const [publicUser, setPublicUser] = useState<PublicUser | null>(initialUser);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
@@ -108,10 +124,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (session) {
           setSession(session);
-          setUser(session.user);
+          // Only set user if we don't already have initial data
+          if (!initialAuthUser) {
+            setUser(session.user);
+          }
 
-          // Fetch public user data
-          await fetchPublicUser(session.user.id);
+          // Only fetch public user data if we don't already have it
+          if (!initialUser) {
+            await fetchPublicUser(session.user.id);
+          }
         }
       } catch (err) {
         console.error("Error initializing auth:", err);
@@ -158,7 +179,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchPublicUser]);
+  }, [fetchPublicUser, initialUser, initialAuthUser]);
 
   // Sign in
   const signIn = async (email: string, password: string) => {
@@ -293,6 +314,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Permission helper functions
   const isAuthenticated = useCallback(() => {
     return !!user && !!publicUser;
   }, [user, publicUser]);
@@ -369,6 +391,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signOut,
     refreshUser,
     updatePublicUser,
+    // Add permission helpers
     isAuthenticated,
     hasAdminAccess,
     hasModeratorAccess,
@@ -398,10 +421,7 @@ export function withAuth<P extends object>(
 ) {
   return function ProtectedComponent(props: P) {
     const { user, publicUser, loading } = useAuth();
-    const router =
-      typeof window !== "undefined"
-        ? require("next/navigation").useRouter()
-        : null;
+    const router = useRouter();
 
     useEffect(() => {
       if (!loading && !user && options?.redirectTo && router) {
@@ -438,7 +458,7 @@ export function withAuth<P extends object>(
                 Access Denied
               </h2>
               <p className="text-gray-600">
-                You don't have permission to access this page.
+                You don&apos;t have permission to access this page.
               </p>
             </div>
           </div>

@@ -104,7 +104,8 @@ export async function TrickipediaLayoutServer({
     error,
   } = await supabase.auth.getUser();
 
-  let hydratedUser = null;
+  let hydratedUser: any = null;
+  let userSportsIds: string[] = [];
   if (authUser) {
     const { data: profile } = await supabase
       .from("users")
@@ -115,12 +116,19 @@ export async function TrickipediaLayoutServer({
       hydratedUser = {
         id: profile.id,
         email: profile.email,
-        firstName: profile.first_name,
-        lastName: profile.last_name,
         role: profile.role || "user",
+        first_name: profile.first_name,
+        last_name: profile.last_name,
+        users_sports_ids: profile.users_sports_ids || [],
       };
+      userSportsIds = profile.users_sports_ids || [];
     }
   }
+
+  // Filter navigation data based on user's selected sports
+  // Note: We'll do this filtering on the client side to allow real-time updates
+  // when user changes their sports selection
+  const filteredNavigationData = navigationData;
 
   if (error) {
     console.error("Server auth error (layout):", error);
@@ -128,7 +136,10 @@ export async function TrickipediaLayoutServer({
 
   return (
     <AuthProvider initialUser={hydratedUser} initialAuthUser={authUser}>
-      <TrickipediaLayoutClient initialNavigationData={navigationData}>
+      <TrickipediaLayoutClient
+        initialNavigationData={filteredNavigationData}
+        user={authUser}
+      >
         {children}
       </TrickipediaLayoutClient>
     </AuthProvider>
