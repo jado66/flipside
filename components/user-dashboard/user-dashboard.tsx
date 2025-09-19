@@ -333,9 +333,9 @@ export function UserDashboard() {
         />
       ) : (
         <div className="min-h-screen bg-background ">
-          <div className="container mx-auto px-4 py-8 relative">
+          <div className="container mx-auto px-4  relative">
             <div className="mb-8">
-              <h1 className="text-4xl font-bold text-balance mb-2">
+              <h1 className="lg:text-4xl text-xl font-bold text-balance mb-2">
                 Welcome Back{" "}
                 {publicUser?.first_name ||
                   (publicUser?.email
@@ -348,7 +348,7 @@ export function UserDashboard() {
               </p>
             </div>
 
-            <div className="flex items-center justify-between absolute top-10 right-4 mb-6">
+            <div className="flex items-center justify-between lg:absolute lg:top-10 lg:right-4 mb-6">
               <Button
                 variant="outline"
                 size="sm"

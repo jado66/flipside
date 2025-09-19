@@ -116,9 +116,9 @@ export function ProgressOverview(props: ProgressOverviewProps) {
           <div key={stat.sport} className="space-y-2">
             <div className="flex justify-between items-center">
               <div className="flex justify-start">
-                <h3 className="font-semibold text-base md:text-lg truncate pr-4">
+                <h6 className="font-semibold text-sm md:text-lg truncate pr-4">
                   {stat.sport}
-                </h3>
+                </h6>
                 {/* Skill Tree link with tooltip */}
                 <TooltipProvider delayDuration={150}>
                   <Tooltip>
@@ -149,7 +149,7 @@ export function ProgressOverview(props: ProgressOverviewProps) {
                 </TooltipProvider>
               </div>
 
-              <span className="text-xs md:text-sm text-muted-foreground whitespace-nowrap">
+              <span className="hidden md:inline-block text-xs md:text-sm text-muted-foreground whitespace-nowrap">
                 {stat.mastered}/{stat.total} mastered ({stat.percentage}%)
               </span>
             </div>
@@ -157,6 +157,10 @@ export function ProgressOverview(props: ProgressOverviewProps) {
               value={stat.percentage}
               className="h-3 [&>div]:bg-accent"
             />
+            {/* Mobile stats below progress bar */}
+            <span className="md:hidden block text-xs text-muted-foreground mt-1">
+              {stat.mastered}/{stat.total} mastered ({stat.percentage}%)
+            </span>
           </div>
         ))}
       </CardContent>

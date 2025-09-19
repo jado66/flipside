@@ -49,8 +49,8 @@ export function SportsSelection({
   };
 
   return (
-    <div>
-      <div className="mb-4 flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+    <div className="px-4">
+      <div className="mb-4 flex flex-col md:flex-row md:items-end md:justify-between gap-4 ">
         <div>
           <h2 className="text-2xl font-bold mb-1">
             What Are You Interested In?

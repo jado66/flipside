@@ -135,14 +135,14 @@ export function NextTricksSuggestions({
         <CardHeader>
           <CardTitle className="text-xl font-bold">Ready to Learn</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="!px-2 lg:px-6">
           <div className="space-y-4">
             {Array.from({ length: Math.min(maxSuggestions, 3) }).map((_, i) => (
               <div
                 key={i}
-                className="flex items-center justify-between p-4 border rounded-lg"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 lg:p-4 border rounded-lg"
               >
-                <div className="space-y-2 flex-1">
+                <div className="space-y-2 flex-1 w-full">
                   <div className="flex items-center gap-2">
                     <div className="h-4 bg-muted rounded w-1/3 animate-pulse" />
                     <div className="h-5 bg-muted rounded w-16 animate-pulse" />
@@ -150,9 +150,9 @@ export function NextTricksSuggestions({
                   <div className="h-3 bg-muted rounded w-2/3 animate-pulse" />
                   <div className="h-3 bg-muted rounded w-1/4 animate-pulse" />
                 </div>
-                <div className="flex gap-2">
-                  <div className="h-8 bg-muted rounded w-24 animate-pulse" />
-                  <div className="h-8 bg-muted rounded w-16 animate-pulse" />
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <div className="h-8 bg-muted rounded flex-1 sm:flex-initial sm:w-24 animate-pulse" />
+                  <div className="h-8 bg-muted rounded flex-1 sm:flex-initial sm:w-16 animate-pulse" />
                 </div>
               </div>
             ))}
@@ -196,11 +196,13 @@ export function NextTricksSuggestions({
           {calculatedSuggestions.map((trick) => (
             <div
               key={trick.id}
-              className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+              className="p-4 border rounded-lg hover:bg-muted/50 transition-colors"
             >
-              <div className="space-y-1 flex-1 min-w-0">
+              <div className="space-y-2">
                 <div className="flex items-center gap-2 flex-wrap">
-                  <h3 className="font-semibold">{trick.name}</h3>
+                  <h3 className="font-semibold break-words flex-1 min-w-0">
+                    {trick.name}
+                  </h3>
                   <Badge
                     className={getDifficultyColor(
                       trick.difficulty_level ?? undefined
@@ -209,7 +211,7 @@ export function NextTricksSuggestions({
                     {getDifficultyLabel(trick.difficulty_level ?? undefined)}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-sm text-muted-foreground line-clamp-3">
                   {trick.description || "Learn this exciting new trick!"}
                 </p>
                 <p className="text-xs text-muted-foreground">
@@ -222,24 +224,29 @@ export function NextTricksSuggestions({
                     {trick.missing_prerequisites.join(", ")}
                   </p>
                 )}
-              </div>
-              <div className="flex gap-2 flex-shrink-0">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => onMarkLearned(trick.id)}
-                  className="text-xs whitespace-nowrap"
-                >
-                  <CheckCircle2 className="h-3 w-3 mr-1" />
-                  Already Can Do
-                </Button>
-                <Link
-                  href={`/${trick.subcategory?.master_category?.slug}/${trick.subcategory?.slug}/${trick.slug}`}
-                >
-                  <Button variant="ghost" size="sm">
-                    Learn <ArrowRight className="w-4 h-4 ml-1" />
+                <div className="flex flex-col xs:flex-row sm:flex-row gap-2 pt-2 sm:pt-1 w-full max-sm:[&>*]:w-full">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onMarkLearned(trick.id)}
+                    className="text-xs whitespace-nowrap"
+                  >
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Already Can Do
                   </Button>
-                </Link>
+                  <Link
+                    className="sm:w-auto"
+                    href={`/${trick.subcategory?.master_category?.slug}/${trick.subcategory?.slug}/${trick.slug}`}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="w-full sm:w-auto"
+                    >
+                      Learn <ArrowRight className="w-4 h-4 ml-1" />
+                    </Button>
+                  </Link>
+                </div>
               </div>
             </div>
           ))}

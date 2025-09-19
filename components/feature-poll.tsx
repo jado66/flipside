@@ -92,12 +92,6 @@ export function FeaturePoll() {
 
       if (error) {
         console.error("Error loading user votes:", error);
-        // Fallback to localStorage
-        const existingVote = localStorage.getItem(`poll_vote_${userId}`);
-        if (existingVote) {
-          setSelectedOptions(JSON.parse(existingVote));
-          setHasVoted(true);
-        }
       } else if (data && data.length > 0) {
         const votes = data.map((vote) => vote.option_id);
         setSelectedOptions(votes);
@@ -105,12 +99,6 @@ export function FeaturePoll() {
       }
     } catch (error) {
       console.error("Error connecting to database:", error);
-      // Fallback to localStorage
-      const existingVote = localStorage.getItem(`poll_vote_${userId}`);
-      if (existingVote) {
-        setSelectedOptions(JSON.parse(existingVote));
-        setHasVoted(true);
-      }
     } finally {
       setIsLoading(false);
     }
@@ -159,22 +147,12 @@ export function FeaturePoll() {
 
       if (error) {
         console.error("Error saving votes:", error);
-        // Fallback to localStorage
-        localStorage.setItem(
-          `poll_vote_${userId}`,
-          JSON.stringify(selectedOptions)
-        );
       }
 
       setHasVoted(true);
       await loadTotalVotes(); // Refresh vote count
     } catch (error) {
       console.error("Error connecting to database:", error);
-      // Fallback to localStorage
-      localStorage.setItem(
-        `poll_vote_${userId}`,
-        JSON.stringify(selectedOptions)
-      );
       setHasVoted(true);
       setTotalVotes((prev) => prev + 1);
     } finally {
@@ -193,18 +171,11 @@ export function FeaturePoll() {
         console.error("Error deleting votes:", error);
       }
 
-      // Also clear localStorage as fallback
-      localStorage.removeItem(`poll_vote_${userId}`);
-      localStorage.removeItem(`poll_user_${userId}`);
-
       setHasVoted(false);
       setSelectedOptions([]);
       await loadTotalVotes(); // Refresh vote count
     } catch (error) {
       console.error("Error connecting to database:", error);
-      // Fallback to localStorage only
-      localStorage.removeItem(`poll_vote_${userId}`);
-      localStorage.removeItem(`poll_user_${userId}`);
       setHasVoted(false);
       setSelectedOptions([]);
       setTotalVotes((prev) => Math.max(0, prev - 1));
