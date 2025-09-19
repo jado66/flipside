@@ -42,6 +42,8 @@ export function UserDashboard() {
   });
   // Remain in selection mode until user explicitly continues
   const [selectingSports, setSelectingSports] = useState(false);
+  // Track when we've loaded and applied initial sports so we don't flash selection UI
+  const [sportsInitialized, setSportsInitialized] = useState(false);
 
   const { user, publicUser, updatePublicUser, refreshUser } = useAuth();
 
@@ -70,6 +72,8 @@ export function UserDashboard() {
         // User has sports, exit selection mode if we're in it
         setSelectingSports(false);
       }
+      // Mark initialization complete after first processing of public user
+      setSportsInitialized(true);
     }
   }, [publicUser?.users_sports_ids, user?.id]);
 
@@ -149,7 +153,8 @@ export function UserDashboard() {
           );
         } else {
           // Anonymous user: still compute base progress (all zeros) and allow selecting sports.
-          setSelectingSports(true);
+          // Do not force selection immediately; only show after initialized check below
+          setSelectingSports(false);
           calculateProgress(categoriesData || [], tricksData || [], []);
         }
       } catch (e) {
@@ -157,6 +162,8 @@ export function UserDashboard() {
         toast.error("Failed to load dashboard data");
       } finally {
         setLoading(false);
+        // For anonymous user we still want to mark sports initialized once data load completes
+        if (!userId) setSportsInitialized(true);
       }
     },
     [publicUser]
@@ -312,8 +319,9 @@ export function UserDashboard() {
     }
   };
 
+  // Show only if user intentionally managing sports OR after initialization we know there are none
   const showSportsSelection =
-    (userSportsIds.length === 0 && !loading) || selectingSports;
+    selectingSports || (sportsInitialized && userSportsIds.length === 0);
 
   // Keep draft in sync when entering selection mode or when base list changes while not selecting
   useEffect(() => {
