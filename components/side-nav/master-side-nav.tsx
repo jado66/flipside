@@ -22,12 +22,13 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-provider";
 import { useNavigation } from "@/contexts/navigation-provider";
 import { cn } from "@/lib/utils";
+import { Separator } from "@radix-ui/react-dropdown-menu";
 
 export function MasterSideNav({
   onItemClick,
 }: { onItemClick?: () => void } = {}) {
   const router = useRouter();
-  const { user, signOut } = useAuth();
+  const { user, publicUser, signOut } = useAuth();
 
   // Use the navigation context
   const {
@@ -112,7 +113,6 @@ export function MasterSideNav({
             <SidebarGroupContent>
               <SidebarMenu>
                 {/* Mobile-only links above categories */}
-
                 {/* Categories */}
                 <Link href="/sports-and-disciplines" className="w-full block">
                   <SidebarHeader className="text-2xl ">
@@ -387,6 +387,107 @@ export function MasterSideNav({
                       </SidebarMenuItem>
                     );
                   })
+                )}
+
+                {user && publicUser?.role === "moderator" && (
+                  <>
+                    {/* Moderator dropdown to match master category sizing */}
+                    <div className="px-2 my-2">
+                      <hr />
+                    </div>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        onClick={() => {
+                          const id = "moderator-tools";
+                          // toggle expanded state for moderator tools (allow only this as master-like)
+                          setExpandedItems((prev) => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(id)) {
+                              newSet.delete(id);
+                            } else {
+                              // close other master categories and open moderator-tools
+                              newSet.clear();
+                              newSet.add(id);
+                            }
+                            return newSet;
+                          });
+                          // if (onItemClick) onItemClick();
+                        }}
+                        className={cn(
+                          "text-2xl md:text-base group",
+                          "hover:text-muted"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 cursor-pointer">
+                          <span className="truncate">Moderator Tools</span>
+                          {expandedItems.has("moderator-tools") ? (
+                            <ChevronDown
+                              className={cn("h-3 w-3 ml-1", "hover:text-muted")}
+                            />
+                          ) : (
+                            <ChevronRight
+                              className={cn("h-3 w-3 ml-1", "hover:text-muted")}
+                            />
+                          )}
+                        </div>
+                      </SidebarMenuButton>
+
+                      {expandedItems.has("moderator-tools") && (
+                        <SidebarMenuSub>
+                          {/* <SidebarMenuSubItem>
+                          <SidebarMenuSubButton
+                            asChild
+                            onClick={() => {
+                              if (onItemClick) onItemClick();
+                            }}
+                            className="text-md md:text-sm hover:text-muted"
+                          >
+                            <Link
+                              href="/moderator/manage-categories"
+                              className="py-1 block"
+                            >
+                              Manage Categories
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem> */}
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                              asChild
+                              onClick={() => {
+                                if (onItemClick) onItemClick();
+                              }}
+                              className="text-md md:text-sm hover:text-muted"
+                            >
+                              <Link
+                                href="/moderator/manage-tricks"
+                                className="py-1 block"
+                              >
+                                Manage Tricks
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                              asChild
+                              onClick={() => {
+                                if (onItemClick) onItemClick();
+                              }}
+                              className="text-md md:text-sm hover:text-muted"
+                            >
+                              <Link
+                                href="/moderator/skill-trees"
+                                className="py-1 block"
+                              >
+                                Manage Skill Trees
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                      )}
+                    </SidebarMenuItem>
+                  </>
                 )}
 
                 {/* Mobile-only user nav or login/join buttons after categories */}

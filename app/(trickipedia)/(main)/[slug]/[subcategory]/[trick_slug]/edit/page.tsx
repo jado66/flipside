@@ -102,7 +102,6 @@ export default function TrickEditPage() {
       toast.success(
         "Trick updated successfully! Please wait a couple minutes to see your change take place."
       );
-      alert("Pushing");
       if (shouldNavigateAway !== false) {
         router.push(`/${category}/${subcategory}/${data.slug}`);
       }

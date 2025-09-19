@@ -153,35 +153,84 @@ export default function TrickNewPage() {
     router.push(`/${category}/${subcategorySlug}`);
   };
 
+  // Add this to your new/page.tsx handleSubmit function
+
   const handleSubmit = async (
     data: TrickData,
     shouldNavigateAway: boolean = true
   ): Promise<boolean> => {
+    console.log("=== STARTING TRICK CREATION ===");
+    console.log("User:", user);
+    console.log("Data being submitted:", data);
+    console.log("Should navigate away:", shouldNavigateAway);
+
     // Check if user is logged in when submitting
     if (!user) {
+      console.error("No user found - redirecting to login");
       toast.error("You must be logged in to create a trick");
       router.push(`/login?redirect=/${category}/${subcategorySlug}/new`);
       return false;
     }
 
     setLoading(true);
+    console.log("Loading state set to TRUE");
+
     try {
       if (!data.slug) {
+        console.error("Missing slug in data");
         throw new Error("Slug is required to create a trick");
       }
+
+      console.log("About to call createTrick with:", {
+        dataKeys: Object.keys(data),
+        subcategory_id: data.subcategory_id,
+        slug: data.slug,
+        name: data.name,
+      });
+
+      console.time("createTrick API call");
+
       // @ts-expect-error TODO come back
-      await createTrick(data);
+      const result = await createTrick(data);
+
+      console.timeEnd("createTrick API call");
+      console.log("createTrick result:", result);
+
       toast.success("Trick created successfully!");
+
       if (shouldNavigateAway) {
-        router.push(`/${category}/${subcategorySlug}/${data.slug}`);
+        const navigateTo = `/${category}/${subcategorySlug}/${data.slug}`;
+        console.log("Navigating to:", navigateTo);
+        router.push(navigateTo);
       }
+
+      console.log("=== TRICK CREATION SUCCESS ===");
       return true;
     } catch (error) {
-      console.error("Failed to create trick:", error);
-      toast.error("Failed to create trick. Please try again.");
+      console.error("=== TRICK CREATION FAILED ===");
+      console.error("Error type:", error?.constructor?.name);
+      console.error(
+        "Error message:",
+        error instanceof Error ? error.message : "Unknown error"
+      );
+      console.error("Full error object:", error);
+
+      // Log stack trace if available
+      if (error instanceof Error && error.stack) {
+        console.error("Stack trace:", error.stack);
+      }
+
+      // Check if it's a network error
+      if (error instanceof TypeError && error.message.includes("fetch")) {
+        console.error("Possible network error");
+      }
+
+      toast.error("Failed to create trick. Check console for details.");
       return false;
     } finally {
+      console.log("Loading state set to FALSE");
       setLoading(false);
+      console.log("=== END OF TRICK CREATION ATTEMPT ===");
     }
   };
 

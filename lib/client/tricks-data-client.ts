@@ -1,5 +1,9 @@
 import { Trick } from "@/types/trick";
-import { supabase } from "../supabase/supabase-client";
+import { createBrowserClient } from "@supabase/ssr";
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 
 // Create new trick
 export async function createTrick(
@@ -13,17 +17,39 @@ export async function createTrick(
     | "inventor"
   >
 ): Promise<Trick> {
+  console.log("=== createTrick START ===");
+  console.log("Timestamp:", new Date().toISOString());
+  console.log("Input data:", JSON.stringify(data, null, 2));
+  console.log("Data keys:", Object.keys(data));
+
+  // Check for required fields
+  console.log("Checking required fields:");
+  console.log("- name:", data.name);
+  console.log("- slug:", data.slug);
+  console.log("- subcategory_id:", data.subcategory_id);
+
   // Separate components
   const { components, ...trickData } = data;
+  console.log("Components extracted:", components);
+  console.log("Components length:", components?.length || 0);
+  console.log("Trick data (without components):", trickData);
+
+  // Prepare insert data
+  const insertData = {
+    ...trickData,
+    view_count: 0,
+  };
+  console.log(
+    "Data being inserted to Supabase:",
+    JSON.stringify(insertData, null, 2)
+  );
+
+  console.log("Calling Supabase insert...");
+  console.time("Supabase insert");
 
   const { data: newTrick, error: insertError } = await supabase
     .from("tricks")
-    .insert([
-      {
-        ...trickData,
-        view_count: 0,
-      },
-    ])
+    .insert([insertData])
     .select(
       `
       *,
@@ -37,35 +63,114 @@ export async function createTrick(
     )
     .single();
 
+  console.timeEnd("Supabase insert");
+
   if (insertError) {
-    console.error("Error creating trick:", insertError);
-    throw new Error("Failed to create trick");
+    console.error("=== SUPABASE INSERT FAILED ===");
+    console.error("Error object:", insertError);
+    console.error("Error code:", insertError.code);
+    console.error("Error message:", insertError.message);
+    console.error("Error details:", insertError.details);
+    console.error("Error hint:", insertError.hint);
+
+    // Common error interpretations
+    if (insertError.code === "23505") {
+      console.error(
+        "⚠️ DUPLICATE KEY ERROR - A trick with this slug may already exist"
+      );
+    } else if (insertError.code === "23503") {
+      console.error(
+        "⚠️ FOREIGN KEY ERROR - Invalid subcategory_id or other reference"
+      );
+    } else if (insertError.code === "23502") {
+      console.error("⚠️ NOT NULL VIOLATION - A required field is missing");
+    } else if (insertError.code === "42501") {
+      console.error("⚠️ PERMISSION ERROR - Check your RLS policies");
+    }
+
+    throw new Error(`Failed to create trick: ${insertError.message}`);
   }
+
+  console.log("✅ Trick inserted successfully!");
+  console.log("New trick ID:", newTrick.id);
+  console.log("New trick data:", newTrick);
 
   // Handle components if is_combo and components provided
   if (newTrick.is_combo && components && components.length > 0) {
-    const compInsert = components.map((comp) => ({
-      trick_id: newTrick.id,
-      component_trick_id: comp.component_trick_id,
-      sequence: comp.sequence,
-      component_details: comp.component_details || {},
-    }));
+    console.log("=== HANDLING COMPONENTS ===");
+    console.log("Trick is combo, inserting components...");
+    console.log("Number of components:", components.length);
+
+    const compInsert = components.map((comp, index) => {
+      const formatted = {
+        trick_id: newTrick.id,
+        component_trick_id: comp.component_trick_id,
+        sequence: comp.sequence,
+        component_details: comp.component_details || {},
+      };
+      console.log(`Component ${index}:`, formatted);
+      return formatted;
+    });
+
+    console.log("Components to insert:", compInsert);
+    console.time("Component insert");
 
     const { error: compError } = await supabase
       .from("trick_components")
       .insert(compInsert);
 
+    console.timeEnd("Component insert");
+
     if (compError) {
-      // Optional: rollback trick insert if components fail
-      await supabase.from("tricks").delete().eq("id", newTrick.id);
-      console.error("Error inserting components:", compError);
-      throw new Error("Failed to create trick components");
+      console.error("=== COMPONENT INSERT FAILED ===");
+      console.error("Component error:", compError);
+      console.error("Component error code:", compError.code);
+      console.error("Component error message:", compError.message);
+
+      // Rollback trick insert if components fail
+      console.log("⚠️ Rolling back trick creation due to component error...");
+      const { error: deleteError } = await supabase
+        .from("tricks")
+        .delete()
+        .eq("id", newTrick.id);
+
+      if (deleteError) {
+        console.error("Failed to rollback trick:", deleteError);
+      } else {
+        console.log("Trick rolled back successfully");
+      }
+
+      throw new Error(
+        `Failed to create trick components: ${compError.message}`
+      );
     }
+
+    console.log("✅ Components inserted successfully");
+  } else {
+    console.log("Not a combo trick or no components to insert");
+    console.log("- is_combo:", newTrick.is_combo);
+    console.log("- components provided:", components?.length || 0);
   }
 
-  // Fetch components to include in return (optional, but for consistency)
-  const compData = await getTrickComponents(newTrick.id);
-  newTrick.components = compData;
+  // Fetch components to include in return
+  console.log("Fetching trick components...");
+  console.time("Fetch components");
+
+  try {
+    const compData = await getTrickComponents(newTrick.id);
+    console.log("Components fetched:", compData);
+    newTrick.components = compData;
+  } catch (fetchError) {
+    console.error("Failed to fetch components:", fetchError);
+    newTrick.components = [];
+  }
+
+  console.timeEnd("Fetch components");
+
+  console.log("=== createTrick SUCCESS ===");
+  console.log("Final trick object:", newTrick);
+  console.log("Trick ID:", newTrick.id);
+  console.log("Trick slug:", newTrick.slug);
 
   return newTrick;
 }

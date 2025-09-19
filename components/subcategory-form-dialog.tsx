@@ -171,39 +171,6 @@ export function SubcategoryFormDialog({
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="sort_order">Sort Order</Label>
-              <Input
-                id="sort_order"
-                type="number"
-                min="1"
-                value={formData.sort_order}
-                onChange={(e) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    sort_order: Number.parseInt(e.target.value) || 1,
-                  }))
-                }
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="is_active">Status</Label>
-              <div className="flex items-center space-x-2 pt-2">
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) =>
-                    setFormData((prev) => ({ ...prev, is_active: checked }))
-                  }
-                />
-                <Label htmlFor="is_active" className="text-sm">
-                  {formData.is_active ? "Active" : "Inactive"}
-                </Label>
-              </div>
-            </div>
-          </div>
-
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               Cancel

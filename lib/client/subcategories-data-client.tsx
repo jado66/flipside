@@ -1,5 +1,8 @@
-import { supabase } from "../supabase/supabase-client";
-
+import { createBrowserClient } from "@supabase/ssr";
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 export interface Subcategory {
   id: string;
   master_category_id: string;
@@ -201,5 +204,20 @@ export async function deleteSubcategory(id: string): Promise<void> {
   } catch (err) {
     console.error("Unexpected error in deleteSubcategory:", err);
     throw err;
+  }
+}
+
+// Bulk update sort orders (expects array of {id, sort_order})
+export async function bulkUpdateSubcategoryOrder(
+  items: { id: string; sort_order: number; master_category_id: string }[]
+): Promise<void> {
+  if (items.length === 0) return;
+  const payload = items.map((i) => ({ id: i.id, sort_order: i.sort_order }));
+  const { error } = await supabase.rpc("bulk_reorder_subcategories", {
+    p: payload,
+  });
+  if (error) {
+    console.error("Error bulk updating subcategory order via RPC", error);
+    throw new Error("Failed to reorder subcategories");
   }
 }

@@ -448,7 +448,7 @@ export function SkillTreeAdmin() {
   return (
     <div className="w-full h-screen flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b p-4 shadow-sm">
+      <div className="bg-white border-b p-4 shadow-sm hidden lg:block">
         <div className="max-w-7xl mx-auto">
           <h1 className="text-2xl font-bold mb-4">Skill Tree Admin</h1>
           <div className="flex gap-2 flex-wrap">
@@ -500,7 +500,7 @@ export function SkillTreeAdmin() {
       )}
 
       {/* Tree View */}
-      <div className="flex-1 relative">
+      <div className="flex-1 relative hidden lg:block">
         {loading && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
             <div className="text-lg font-medium">Loading tricks...</div>
@@ -590,6 +590,14 @@ export function SkillTreeAdmin() {
             </Panel>
           </ReactFlow>
         )}
+      </div>
+
+      {/* Please view on desktop */}
+      <div className="lg:hidden p-8 text-center">
+        <p className="text-lg font-medium">
+          Please view the Skill Tree Admin on a desktop or laptop for the best
+          experience.
+        </p>
       </div>
     </div>
   );
