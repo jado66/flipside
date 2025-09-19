@@ -1,5 +1,8 @@
-import { supabase } from "../supabase/supabase-client";
-
+import { createBrowserClient } from "@supabase/ssr";
+const supabase = createBrowserClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
 export interface MasterCategory {
   id: string;
   name: string;
