@@ -241,7 +241,7 @@ export function FeaturePoll() {
           </div> */}
           <div className="flex items-center gap-1">
             <Calendar className="h-4 w-4" />
-            Poll closes October 15, 2024
+            Poll closes October 15, 2025
           </div>
         </div>
       </CardHeader>
