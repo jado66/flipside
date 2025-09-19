@@ -371,7 +371,9 @@ export function TricksDndManager() {
   const handleAddTrick = async () => {
     console.log("[TricksManager] handleAddTrick invoked", { formData });
     if (addingTrick) {
-      console.log("[TricksManager] Already adding a trick, ignoring duplicate click");
+      console.log(
+        "[TricksManager] Already adding a trick, ignoring duplicate click"
+      );
       return;
     }
     if (!formData.name.trim()) {
@@ -428,7 +430,10 @@ export function TricksDndManager() {
         console.log("[TricksManager] Insert success", { data });
 
         if (selectedCategory) {
-          console.log("[TricksManager] Refreshing tricks for category", selectedCategory);
+          console.log(
+            "[TricksManager] Refreshing tricks for category",
+            selectedCategory
+          );
           await fetchTricksByCategory(selectedCategory);
         }
       } else {
@@ -466,7 +471,11 @@ export function TricksDndManager() {
       setError("Failed to add trick");
     } finally {
       const end = performance.now();
-      console.log(`{TricksManager] handleAddTrick finished in ${Math.round(end - (performance as any).timeOrigin || end)}ms`);
+      console.log(
+        `{TricksManager] handleAddTrick finished in ${Math.round(
+          end - (performance as any).timeOrigin || end
+        )}ms`
+      );
       setAddingTrick(false);
     }
   };
