@@ -19,7 +19,7 @@ import { Trick, MasterCategory, TrickNodeData } from "./skill-tree.types";
 import { levenshtein } from "./levenshtein";
 import TrickNode from "./TrickNode";
 import { toast } from "sonner";
-import { Info } from "lucide-react";
+import { ArrowBigLeft, ArrowBigRight, ChevronLeft, Info } from "lucide-react";
 import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
@@ -440,6 +440,76 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
   // Initialize flow state with the computed nodes and edges
   const [flowNodes, setNodes, onNodesChange] = useNodesState(nodes);
   const [flowEdges, setEdges, onEdgesChange] = useEdgesState(edges);
+  // React Flow instance for programmatic viewport control
+  const [rfInstance, setRfInstance] = useState<any | null>(null);
+  const [initialZoomed, setInitialZoomed] = useState(false);
+  // Track list of incomplete node ids in render order & current focus index
+  const incompleteNodes = useMemo(
+    () => flowNodes.filter((n) => !n.data?.completed).map((n) => n.id),
+    [flowNodes]
+  );
+  const [focusIdx, setFocusIdx] = useState(0);
+
+  // When incomplete set changes, clamp focusIdx
+  useEffect(() => {
+    if (incompleteNodes.length === 0) {
+      setFocusIdx(0);
+    } else if (focusIdx >= incompleteNodes.length) {
+      setFocusIdx(incompleteNodes.length - 1);
+    }
+  }, [incompleteNodes, focusIdx]);
+
+  const centerOnNodeId = useCallback(
+    (nodeId: string, animate: boolean = true) => {
+      if (!rfInstance) return;
+      const node = flowNodes.find((n) => n.id === nodeId);
+      if (!node) return;
+      const NODE_WIDTH = 220;
+      const NODE_HEIGHT = 80;
+      const options = { zoom: 1.2, duration: animate ? 500 : 0 } as any;
+      try {
+        rfInstance.fitBounds(
+          {
+            x: node.position.x,
+            y: node.position.y,
+            width: NODE_WIDTH,
+            height: NODE_HEIGHT,
+          },
+          { padding: 0.6, duration: animate ? 1000 : 0 }
+        );
+      } catch (e) {
+        rfInstance.setCenter(
+          node.position.x + NODE_WIDTH / 2,
+          node.position.y + NODE_HEIGHT / 2,
+          options
+        );
+      }
+    },
+    [rfInstance, flowNodes]
+  );
+
+  const goPrev = useCallback(() => {
+    if (incompleteNodes.length === 0) return;
+    setFocusIdx((idx) => {
+      const next = idx === 0 ? incompleteNodes.length - 1 : idx - 1;
+      setTimeout(() => centerOnNodeId(incompleteNodes[next]), 0);
+      return next;
+    });
+  }, [incompleteNodes, centerOnNodeId]);
+
+  const goNext = useCallback(() => {
+    if (incompleteNodes.length === 0) return;
+    setFocusIdx((idx) => {
+      const next = idx === incompleteNodes.length - 1 ? 0 : idx + 1;
+      setTimeout(() => centerOnNodeId(incompleteNodes[next]), 0);
+      return next;
+    });
+  }, [incompleteNodes, centerOnNodeId]);
+
+  // Reset zoom flag when category changes
+  useEffect(() => {
+    setInitialZoomed(false);
+  }, [selectedCategory]);
 
   // Update flow when nodes/edges change - now with proper dependencies
   useEffect(() => {
@@ -449,6 +519,49 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
   useEffect(() => {
     setEdges(edges);
   }, [edges, setEdges]);
+
+  // Auto-zoom to the first incomplete trick (or fit all if all completed)
+  useEffect(() => {
+    if (!rfInstance || initialZoomed || flowNodes.length === 0) return;
+
+    // Prefer first incomplete node; fallback to first node
+    const targetNode =
+      flowNodes.find((n) => !n.data?.completed) || flowNodes[0];
+    if (!targetNode) return;
+
+    // These should match layout dimensions used for Dagre
+    const NODE_WIDTH = 220;
+    const NODE_HEIGHT = 80;
+
+    // Use fitBounds so it scales nicely; add some padding
+    try {
+      rfInstance.fitBounds(
+        {
+          x: targetNode.position.x,
+          y: targetNode.position.y,
+          width: NODE_WIDTH,
+          height: NODE_HEIGHT,
+        },
+        { padding: 5, duration: 800 }
+      );
+      setInitialZoomed(true);
+      // initialize focus index to first incomplete if available
+      if (incompleteNodes.length > 0) setFocusIdx(0);
+    } catch (e) {
+      // Fallback: simple center
+      try {
+        rfInstance.setCenter(
+          targetNode.position.x + NODE_WIDTH / 2,
+          targetNode.position.y + NODE_HEIGHT / 2,
+          { zoom: 1.2, duration: 800 }
+        );
+        setInitialZoomed(true);
+        if (incompleteNodes.length > 0) setFocusIdx(0);
+      } catch (_) {
+        // ignore
+      }
+    }
+  }, [rfInstance, flowNodes, initialZoomed, incompleteNodes]);
 
   const currentCategory = categories.find((c) => c.id === selectedCategory);
 
@@ -472,8 +585,38 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
         `}</style>
       )}
       {/* Floating Header with alert */}
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-white rounded-lg p-2 shadow-lg z-20 min-w-[320px] text-center flex flex-col items-center">
-        <h1 className="text-2xl font-bold">{formattedSlug} Skill Tree</h1>
+      <div className="absolute top-4 left-1/2 -translate-x-1/2  rounded-lg p-2 px-10  z-20 text-center flex flex-col items-center">
+        <div className="flex items-center gap-3 relative">
+          <div className="absolute -left-12 top-1/2 -translate-y-1/2 flex flex-col items-center">
+            <button
+              onClick={goPrev}
+              disabled={incompleteNodes.length === 0 || focusIdx === 0}
+              className="disabled:hidden w-10 h-10 rounded flex items-center justify-center font-bold "
+              aria-label="Previous unlearned trick"
+            >
+              <ArrowBigLeft className=" transition-colors w-10 h-10 text-yellow-500 fill-current stroke-gray-800 stroke-1 hover:text-yellow-600 transition-colors" />
+            </button>
+          </div>
+          <div className="bg-white px-4 py-2 rounded shadow-lg">
+            <h1 className="text-2xl font-bold whitespace-nowrap">
+              {formattedSlug} Skill Tree
+            </h1>
+          </div>
+          <div className="absolute -right-12 top-1/2 -translate-y-1/2 flex flex-col items-center">
+            <button
+              onClick={goNext}
+              disabled={
+                incompleteNodes.length === 0 ||
+                focusIdx === incompleteNodes.length - 1
+              }
+              className="w-10 h-10 rounded flex items-center justify-center font-bold disabled:hidden "
+              aria-label="Next unlearned trick"
+            >
+              <ArrowBigRight className=" transition-colors w-10 h-10 text-yellow-500 fill-current stroke-gray-800 stroke-1 hover:text-yellow-600 transition-colors" />
+            </button>
+          </div>
+        </div>
+
         {!user && (
           <div className=" text-yellow-700  px-4 rounded w-full mt-1 ">
             <p className="mb-1 flex items-center justify-center text-sm">
@@ -509,8 +652,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
             onNodesChange={onNodesChange}
             onEdgesChange={onEdgesChange}
             nodeTypes={nodeTypes}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
+            onInit={(instance) => setRfInstance(instance)}
             minZoom={0.1}
             nodesDraggable={false}
             nodesConnectable={false}
@@ -522,7 +664,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
           </ReactFlow>
         )}
         {/* Legend */}
-        <div className="absolute bottom-4 right-4 bg-white border rounded-lg p-3 shadow-lg">
+        <div className="absolute lg:bottom-4 bottom-10 right-4 bg-white border rounded-lg p-3 shadow-lg">
           <div className="text-sm font-semibold mb-2">Legend</div>
           <div className="space-y-1 text-xs">
             <div className="flex items-center gap-2">
