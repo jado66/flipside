@@ -35,8 +35,8 @@ import { CompactTrickCard } from "../subcategory/compact-trick-card";
 import { TrickCard } from "../subcategory/trick-card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-provider";
-import { supabase } from "@/lib/supabase/supabase-client";
 import { toast } from "sonner";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface EnhancedTricksBrowserProps {
   tricks: Trick[];
@@ -67,6 +67,9 @@ export function TricksBrowser({
   difficultyColors,
 }: EnhancedTricksBrowserProps) {
   const { user } = useAuth();
+
+  const supabase = useSupabase();
+
   const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(
     new Set()
   );
@@ -82,6 +85,11 @@ export function TricksBrowser({
 
   // Fetch user's can-do tricks on mount and when user changes
   useEffect(() => {
+    if (!supabase) {
+      // console.error("Supabase client not initialized");
+      return;
+    }
+
     const fetchUserCanDoTricks = async () => {
       if (!user) {
         setUserCanDoTricks(new Set());
@@ -110,7 +118,7 @@ export function TricksBrowser({
     };
 
     fetchUserCanDoTricks();
-  }, [user]);
+  }, [user, supabase]);
 
   // Merge server tricks with user's can-do status
   const tricksWithUserStatus = useMemo(() => {
@@ -212,7 +220,10 @@ export function TricksBrowser({
   };
 
   const hasActiveFilters =
-    searchTerm || selectedSubcategory !== "all" || selectedDifficulty !== "all" || showUnlearnedOnly;
+    searchTerm ||
+    selectedSubcategory !== "all" ||
+    selectedDifficulty !== "all" ||
+    showUnlearnedOnly;
 
   // Reset to page 1 when filters change
   useMemo(() => {
