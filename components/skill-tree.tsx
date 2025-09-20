@@ -9,8 +9,10 @@ import {
   Background,
   useNodesState,
   useEdgesState,
+  BackgroundVariant,
   Handle,
   Position,
+  MarkerType,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
@@ -370,6 +372,12 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
                 target: trick.id,
                 type: "smoothstep",
                 animated: isCompleted,
+                markerEnd: {
+                  type: MarkerType.ArrowClosed,
+                  color: isCompleted ? "#22c55e" : "#9ca3af",
+                  width: 20,
+                  height: 20,
+                },
                 style: {
                   stroke: isCompleted ? "#22c55e" : "#9ca3af", // Green for can do
                   strokeWidth: 2,
@@ -401,7 +409,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
       const rankdir = isMobile ? "TB" : "LR";
       dagreGraph.setGraph({ rankdir, nodesep: 50, ranksep: 150 });
 
-      const nodeWidth = 220;
+      const nodeWidth = 160;
       const nodeHeight = 80;
 
       nodes.forEach((node) => {
@@ -530,7 +538,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
     if (!targetNode) return;
 
     // These should match layout dimensions used for Dagre
-    const NODE_WIDTH = 220;
+    const NODE_WIDTH = 160;
     const NODE_HEIGHT = 80;
 
     // Use fitBounds so it scales nicely; add some padding
@@ -542,7 +550,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
           width: NODE_WIDTH,
           height: NODE_HEIGHT,
         },
-        { padding: 5, duration: 800 }
+        { padding: isMobile ? 2 : 5, duration: 800 }
       );
       setInitialZoomed(true);
       // initialize focus index to first incomplete if available
@@ -663,8 +671,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
             elementsSelectable={true}
           >
             <Controls showInteractive={false} />
-            {/* @ts-expect-error from <ReactFlow> */}
-            <Background variant="dots" gap={20} size={1} />
+            <Background variant={BackgroundVariant.Dots} gap={80} size={4} />
           </ReactFlow>
         )}
         {/* Legend */}
