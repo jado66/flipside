@@ -56,6 +56,8 @@ export async function getSubcategoriesByMasterCategory(
 
 // Get all subcategories
 export async function getAllSubcategories(): Promise<Subcategory[]> {
+  const supabaseServer = await createSupabaseServer();
+
   const { data, error } = await supabaseServer
     .from("subcategories")
     .select(
@@ -84,6 +86,8 @@ export async function getSubcategoryBySlug(
   masterCategorySlug: string,
   subcategorySlug: string
 ): Promise<Subcategory | null> {
+  const supabaseServer = await createSupabaseServer();
+
   const { data, error } = await supabaseServer
     .from("subcategories")
     .select(

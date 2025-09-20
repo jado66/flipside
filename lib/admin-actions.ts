@@ -1,10 +1,12 @@
 import type { DatabaseUser, UserRole } from "@/lib/types/database";
-import { supabase } from "./supabase/supabase-client";
+import { createSupabaseServer } from "./supabase/supabase-server";
 
 export type User = DatabaseUser;
 export type { UserRole };
 
 export async function getUsers(): Promise<User[]> {
+  const supabase = await createSupabaseServer();
+
   const { data, error } = await supabase
     .from("users")
     .select("*")
@@ -22,6 +24,7 @@ export async function updateUserRole(
   userId: string,
   newRole: UserRole
 ): Promise<void> {
+  const supabase = await createSupabaseServer();
   const { error } = await supabase
     .from("users")
     .update({
@@ -40,7 +43,8 @@ export async function updateMultipleUserRoles(
   userIds: string[],
   newRole: UserRole
 ): Promise<void> {
-  const { error } = await supabase
+  const supabaseServer = await createSupabaseServer();
+  const { error } = await supabaseServer
     .from("users")
     .update({
       role: newRole,
@@ -55,7 +59,8 @@ export async function updateMultipleUserRoles(
 }
 
 export async function getUserById(userId: string): Promise<User | null> {
-  const { data, error } = await supabase
+  const supabaseServer = await createSupabaseServer();
+  const { data, error } = await supabaseServer
     .from("users")
     .select("*")
     .eq("id", userId)
@@ -73,6 +78,7 @@ export async function searchUsers(
   searchTerm: string,
   roleFilter?: UserRole
 ): Promise<User[]> {
+  const supabase = await createSupabaseServer();
   let query = supabase.from("users").select("*");
 
   if (searchTerm) {

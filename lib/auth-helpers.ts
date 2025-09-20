@@ -1,9 +1,10 @@
 // lib/auth-helpers.ts
 
 import { redirect } from "next/navigation";
-import { supabase } from "./supabase/supabase-client";
-
+import { createSupabaseServer } from "./supabase/supabase-server";
 export async function checkAuth() {
+  const supabase = await createSupabaseServer();
+
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -42,6 +43,8 @@ export async function requireModerator() {
 }
 
 export async function canManageCategories(userId: string): Promise<boolean> {
+  const supabase = await createSupabaseServer();
+
   const { data: profile } = await supabase
     .from("users")
     .select("role")
@@ -55,6 +58,8 @@ export async function canEditTrick(
   userId: string,
   trickId: string
 ): Promise<boolean> {
+  const supabase = await createSupabaseServer();
+
   // Check if user is admin/moderator
   const { data: profile } = await supabase
     .from("users")
