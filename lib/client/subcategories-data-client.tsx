@@ -1,8 +1,3 @@
-import { createBrowserClient } from "@supabase/ssr";
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 export interface Subcategory {
   id: string;
   master_category_id: string;
@@ -22,10 +17,11 @@ export interface Subcategory {
 }
 
 export async function getSubcategoriesByMasterCategory(
+  supabaseClient: any,
   masterCategoryId: string,
   includeInactive = true
 ): Promise<Subcategory[]> {
-  let query = supabase
+  let query = supabaseClient
     .from("subcategories")
     .select(
       `
@@ -56,8 +52,10 @@ export async function getSubcategoriesByMasterCategory(
 }
 
 // Get all subcategories
-export async function getAllSubcategories(): Promise<Subcategory[]> {
-  const { data, error } = await supabase
+export async function getAllSubcategories(
+  supabaseClient: any
+): Promise<Subcategory[]> {
+  const { data, error } = await supabaseClient
     .from("subcategories")
     .select(
       `
@@ -82,10 +80,11 @@ export async function getAllSubcategories(): Promise<Subcategory[]> {
 
 // Get subcategory by master category slug and subcategory slug
 export async function getSubcategoryBySlug(
+  supabaseClient: any,
   masterCategorySlug: string,
   subcategorySlug: string
 ): Promise<Subcategory | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("subcategories")
     .select(
       `
@@ -115,12 +114,13 @@ export async function getSubcategoryBySlug(
 
 // Create new subcategory
 export async function createSubcategory(
+  supabaseClient: any,
   data: Omit<
     Subcategory,
     "id" | "created_at" | "updated_at" | "master_category" | "trick_count"
   >
 ): Promise<Subcategory> {
-  const { data: newSubcategory, error } = await supabase
+  const { data: newSubcategory, error } = await supabaseClient
     .from("subcategories")
     .insert([data])
     .select(
@@ -145,6 +145,7 @@ export async function createSubcategory(
 
 // Update subcategory
 export async function updateSubcategory(
+  supabaseClient: any,
   id: string,
   data: Partial<
     Omit<
@@ -158,7 +159,7 @@ export async function updateSubcategory(
     updated_at: new Date().toISOString(),
   };
 
-  const { data: updatedSubcategory, error } = await supabase
+  const { data: updatedSubcategory, error } = await supabaseClient
     .from("subcategories")
     .update(updateData)
     .eq("id", id)
@@ -184,11 +185,14 @@ export async function updateSubcategory(
 }
 
 // Delete subcategory
-export async function deleteSubcategory(id: string): Promise<void> {
+export async function deleteSubcategory(
+  supabaseClient: any,
+  id: string
+): Promise<void> {
   console.log("Attempting to delete subcategory with ID:", id);
 
   try {
-    const { data, error, status, statusText } = await supabase
+    const { data, error, status, statusText } = await supabaseClient
       .from("subcategories")
       .delete()
       .eq("id", id);
@@ -209,11 +213,12 @@ export async function deleteSubcategory(id: string): Promise<void> {
 
 // Bulk update sort orders (expects array of {id, sort_order})
 export async function bulkUpdateSubcategoryOrder(
+  supabaseClient: any,
   items: { id: string; sort_order: number; master_category_id: string }[]
 ): Promise<void> {
   if (items.length === 0) return;
   const payload = items.map((i) => ({ id: i.id, sort_order: i.sort_order }));
-  const { error } = await supabase.rpc("bulk_reorder_subcategories", {
+  const { error } = await supabaseClient.rpc("bulk_reorder_subcategories", {
     p: payload,
   });
   if (error) {

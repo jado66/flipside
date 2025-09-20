@@ -48,6 +48,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export default function ModeratorCategoriesPage() {
   const [categories, setCategories] = useState<MasterCategory[]>([]);
@@ -61,6 +62,8 @@ export default function ModeratorCategoriesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor));
+
+  const supabase = useSupabase();
 
   useEffect(() => {
     fetchCategories();
@@ -81,9 +84,15 @@ export default function ModeratorCategoriesPage() {
   };
 
   const loadSubcategories = async (masterCategoryId: string) => {
+    if (!supabase) {
+      console.error("Supabase client not initialized");
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await getSubcategoriesByMasterCategory(
+        supabase,
         masterCategoryId,
         true
       );
@@ -96,8 +105,13 @@ export default function ModeratorCategoriesPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!supabase) {
+      console.error("Supabase client not initialized");
+      return;
+    }
+
     try {
-      await deleteSubcategory(id);
+      await deleteSubcategory(supabase, id);
       if (selectedCategoryId) await loadSubcategories(selectedCategoryId);
     } catch (err) {
       console.error(err);
@@ -106,6 +120,11 @@ export default function ModeratorCategoriesPage() {
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
+    if (!supabase) {
+      console.error("Supabase client not initialized");
+      return;
+    }
+
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
@@ -128,6 +147,7 @@ export default function ModeratorCategoriesPage() {
     setSavingOrder(true);
     try {
       await bulkUpdateSubcategoryOrder(
+        supabase,
         changed.map((c) => ({
           id: c.id,
           sort_order: c.sort_order,

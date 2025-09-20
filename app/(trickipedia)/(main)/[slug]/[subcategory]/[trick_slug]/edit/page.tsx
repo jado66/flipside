@@ -11,6 +11,7 @@ import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
 import { TrickForm } from "@/components/trick-form";
 import { Trick, TrickData } from "@/types/trick";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export default function TrickEditPage() {
   const router = useRouter();
@@ -25,7 +26,13 @@ export default function TrickEditPage() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  const supabase = useSupabase();
+
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
     const loadTrick = async () => {
       // Wait for auth to load
       if (authLoading) return;
@@ -37,7 +44,7 @@ export default function TrickEditPage() {
       }
 
       try {
-        const data = await getTrickBySlug(slug);
+        const data = await getTrickBySlug(supabase, slug);
 
         if (!data) {
           toast.error("Trick not found");
@@ -66,7 +73,7 @@ export default function TrickEditPage() {
     };
 
     loadTrick();
-  }, [slug, user, authLoading, router, category, subcategory]);
+  }, [slug, user, authLoading, router, category, subcategory, supabase]);
 
   const handleCancel = () => {
     if (trick) {
@@ -98,7 +105,7 @@ export default function TrickEditPage() {
 
     setSubmitLoading(true);
     try {
-      await updateTrick(trick.id, data);
+      await updateTrick(supabase, trick.id, data);
       toast.success(
         "Trick updated successfully! Please wait a couple minutes to see your change take place."
       );

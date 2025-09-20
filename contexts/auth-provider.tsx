@@ -7,9 +7,9 @@ import React, {
   useState,
   useCallback,
 } from "react";
-import { createBrowserClient } from "@supabase/ssr";
 import { User, Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 // Types
 export type UserRole = "user" | "admin" | "moderator"; // Add other roles as needed
@@ -63,12 +63,6 @@ interface AccessRequirements {
 // Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Create Supabase client
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 // Provider component
 export function AuthProvider({
   children,
@@ -84,6 +78,8 @@ export function AuthProvider({
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+
+  const supabase = useSupabase();
 
   // Fetch public user data
   const fetchPublicUser = useCallback(async (userId: string) => {
@@ -109,6 +105,8 @@ export function AuthProvider({
 
   // Initialize auth state
   useEffect(() => {
+    if (!supabase) return;
+
     const initializeAuth = async () => {
       try {
         setLoading(true);
@@ -179,7 +177,7 @@ export function AuthProvider({
     return () => {
       subscription.unsubscribe();
     };
-  }, [fetchPublicUser, initialUser, initialAuthUser]);
+  }, [fetchPublicUser, initialUser, initialAuthUser, supabase]);
 
   // Sign in
   const signIn = async (email: string, password: string) => {

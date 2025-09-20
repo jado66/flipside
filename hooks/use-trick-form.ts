@@ -7,6 +7,7 @@ import { toKebabCase } from "@/lib/trick-form-utils";
 import { getAllTricks } from "@/lib/client/tricks-data-client"; // NEW: Import your client fetch function
 import { fetchPrerequisiteTricksByIds } from "@/lib/client/tricks-data-client"; // NEW: For fetching linked prerequisites
 import type { PrerequisiteTrick } from "@/types/trick"; // NEW: Import type
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export function useTrickForm(
   initialTrick: TrickData,
@@ -36,12 +37,18 @@ export function useTrickForm(
     PrerequisiteTrick[]
   >([]);
 
+  const supabase = useSupabase();
+
   // NEW: Fetch allTricks on mount
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
     const fetchTricks = async () => {
       try {
         setTricksLoading(true);
-        const tricks = await getAllTricks(); // Assume returns filtered list (e.g., published roots)
+        const tricks = await getAllTricks(supabase); // Assume returns filtered list (e.g., published roots)
         setAllTricks(tricks);
       } catch (error) {
         console.error("Failed to fetch tricks:", error);
@@ -52,15 +59,20 @@ export function useTrickForm(
     };
 
     fetchTricks();
-  }, []); // Empty dep array: Fetch once on mount
+  }, [supabase]); // Empty dep array: Fetch once on mount
 
   // NEW: Fetch prerequisiteTricks whenever prerequisite_ids change
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
     let isMounted = true;
     const fetchPrerequisites = async () => {
       try {
         if (formData.prerequisite_ids && formData.prerequisite_ids.length > 0) {
           const tricks = await fetchPrerequisiteTricksByIds(
+            supabase,
             formData.prerequisite_ids
           );
           if (isMounted) {
@@ -83,7 +95,7 @@ export function useTrickForm(
     return () => {
       isMounted = false;
     };
-  }, [formData.prerequisite_ids]);
+  }, [formData.prerequisite_ids, supabase]);
 
   // New handlers
   const handleDetailsChange = (key: string, value: any) => {

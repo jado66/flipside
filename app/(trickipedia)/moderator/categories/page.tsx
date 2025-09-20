@@ -31,6 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export default function ModeratorCategoriesPage() {
   const [categories, setCategories] = useState<MasterCategory[]>([]);
@@ -43,6 +44,7 @@ export default function ModeratorCategoriesPage() {
   const [editing, setEditing] = useState<Subcategory | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
+  const supabase = useSupabase();
   useEffect(() => {
     fetchCategories();
   }, []);
@@ -62,9 +64,15 @@ export default function ModeratorCategoriesPage() {
   };
 
   const loadSubcategories = async (masterCategoryId: string) => {
+    if (!supabase) {
+      console.error("Supabase client not initialized");
+      return;
+    }
+
     setLoading(true);
     try {
       const data = await getSubcategoriesByMasterCategory(
+        supabase,
         masterCategoryId,
         true
       );
@@ -77,8 +85,13 @@ export default function ModeratorCategoriesPage() {
   };
 
   const handleDelete = async (id: string) => {
+    if (!supabase) {
+      console.error("Supabase client not initialized");
+      return;
+    }
+
     try {
-      await deleteSubcategory(id);
+      await deleteSubcategory(supabase, id);
       if (selectedCategoryId) await loadSubcategories(selectedCategoryId);
     } catch (err) {
       console.error(err);

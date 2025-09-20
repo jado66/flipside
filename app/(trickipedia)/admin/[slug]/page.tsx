@@ -32,6 +32,7 @@ import { SubcategoryFormDialog } from "@/components/subcategory-form-dialog";
 import { getMasterCategoryBySlug } from "@/lib/client/categories-data-client";
 import Link from "next/link";
 import { deleteSubcategory } from "@/lib/client/subcategories-data-client";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface MasterCategory {
   id: string;
@@ -55,11 +56,17 @@ export default function AdminSubcategoriesPage() {
     useState<Subcategory | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
+  const supabase = useSupabase();
+
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
     if (slug) {
       loadData();
     }
-  }, [slug]);
+  }, [slug, supabase]);
 
   const loadData = async () => {
     try {
@@ -76,6 +83,7 @@ export default function AdminSubcategoriesPage() {
 
       // Load subcategories for this category
       const subcategoriesData = await getSubcategoriesByMasterCategory(
+        supabase,
         categoryData.id
       );
       setSubcategories(subcategoriesData);
@@ -89,8 +97,16 @@ export default function AdminSubcategoriesPage() {
   const loadSubcategories = async () => {
     if (!masterCategory) return;
 
+    if (!supabase) {
+      console.error("Supabase client not initialized");
+      return;
+    }
+
     try {
-      const data = await getSubcategoriesByMasterCategory(masterCategory.id);
+      const data = await getSubcategoriesByMasterCategory(
+        supabase,
+        masterCategory.id
+      );
       setSubcategories(data);
     } catch (error) {
       console.error("Failed to load subcategories:", error);
@@ -102,7 +118,7 @@ export default function AdminSubcategoriesPage() {
     console.log("handleDelete called with ID:", id);
 
     try {
-      await deleteSubcategory(id);
+      await deleteSubcategory(supabase, id);
       console.log("Delete completed, reloading subcategories...");
       await loadSubcategories();
       console.log("Subcategories reloaded");

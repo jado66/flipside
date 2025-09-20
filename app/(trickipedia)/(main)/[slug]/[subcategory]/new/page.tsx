@@ -15,6 +15,7 @@ import {
   getSubcategoryBySlug,
   Subcategory,
 } from "@/lib/client/subcategories-data-client";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export default function TrickNewPage() {
   const router = useRouter();
@@ -33,6 +34,8 @@ export default function TrickNewPage() {
   const loadAttempted = useRef(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const supabase = useSupabase();
+
   useEffect(() => {
     // Cleanup timeout on unmount
     return () => {
@@ -43,6 +46,10 @@ export default function TrickNewPage() {
   }, []);
 
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
     const loadSubcategory = async () => {
       // Wait for auth to finish loading before proceeding
       if (authLoading) {
@@ -76,7 +83,11 @@ export default function TrickNewPage() {
       }, 10000); // 10 second timeout
 
       try {
-        const data = await getSubcategoryBySlug(category, subcategorySlug);
+        const data = await getSubcategoryBySlug(
+          supabase,
+          category,
+          subcategorySlug
+        );
 
         // Clear timeout if successful
         if (timeoutRef.current) {
@@ -147,7 +158,7 @@ export default function TrickNewPage() {
     };
 
     loadSubcategory();
-  }, [subcategorySlug, authLoading, category, router]);
+  }, [subcategorySlug, authLoading, category, router, supabase]);
 
   const handleCancel = () => {
     router.push(`/${category}/${subcategorySlug}`);
@@ -159,6 +170,12 @@ export default function TrickNewPage() {
     data: TrickData,
     shouldNavigateAway: boolean = true
   ): Promise<boolean> => {
+    if (!supabase) {
+      console.error("Supabase client is not initialized");
+      toast.error("Internal error: Supabase client not available");
+      return false;
+    }
+
     console.log("=== STARTING TRICK CREATION ===");
     console.log("User:", user);
     console.log("Data being submitted:", data);
@@ -191,7 +208,7 @@ export default function TrickNewPage() {
       console.time("createTrick API call");
 
       // @ts-expect-error TODO come back
-      const result = await createTrick(data);
+      const result = await createTrick(supabase, data);
 
       console.timeEnd("createTrick API call");
       console.log("createTrick result:", result);

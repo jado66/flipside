@@ -22,6 +22,7 @@ import {
   updateSubcategory,
   type Subcategory,
 } from "@/lib/client/subcategories-data-client";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface SubcategoryFormDialogProps {
   subcategory: Subcategory | null;
@@ -45,6 +46,8 @@ export function SubcategoryFormDialog({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const supabase = useSupabase();
 
   useEffect(() => {
     if (subcategory) {
@@ -93,10 +96,10 @@ export function SubcategoryFormDialog({
 
     try {
       if (subcategory) {
-        await updateSubcategory(subcategory.id, formData);
+        await updateSubcategory(supabase, subcategory.id, formData);
       } else {
         // Include the master_category_id from the prop when creating
-        await createSubcategory({
+        await createSubcategory(supabase, {
           ...formData,
           master_category_id: masterCategoryId || "",
         });

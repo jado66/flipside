@@ -23,6 +23,7 @@ import { supabase } from "@/lib/supabase/supabase-client";
 import { incrementTrickViews } from "@/lib/client/tricks-data-client";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { MoveTrickDialog } from "./move-trick-dialog";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface ClientInteractionsProps {
   trick: TrickWithLinkedPrerequisites;
@@ -34,6 +35,8 @@ export function ClientInteractions({ trick }: ClientInteractionsProps) {
   const [canDo, setCanDo] = useState(false);
   const [canDoCount, setCanDoCount] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);
+
+  const supabase = useSupabase();
 
   const handleShare = async () => {
     try {
@@ -47,9 +50,13 @@ export function ClientInteractions({ trick }: ClientInteractionsProps) {
   };
 
   useEffect(() => {
-    const initializeInteractions = async () => {
+    if (!supabase) {
+      return;
+    }
+
+    const initializeInteractions = async (supabase: any) => {
       // Increment view count
-      await incrementTrickViews(trick.id);
+      await incrementTrickViews(supabase, trick.id);
 
       // Check if user can do this trick and get the count
       if (user) {
@@ -73,8 +80,8 @@ export function ClientInteractions({ trick }: ClientInteractionsProps) {
       setCanDoCount(count || 0);
     };
 
-    initializeInteractions();
-  }, [trick.id, user]);
+    initializeInteractions(supabase);
+  }, [trick.id, user, supabase]);
 
   const handleToggleCanDo = async () => {
     if (!user) {

@@ -32,7 +32,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { createBrowserClient } from "@supabase/ssr";
 import {
   MasterCategory,
   Subcategory,
@@ -43,12 +42,7 @@ import { DifficultyZone } from "./difficulty-zone";
 import { TrickItem } from "./trick-item";
 import { SortableTrickItem } from "./sortable-trick-item";
 import { toast } from "sonner";
-
-// Create Supabase client
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export function TricksDndManager() {
   const [categories, setCategories] = useState<MasterCategory[]>([]);
@@ -77,6 +71,7 @@ export function TricksDndManager() {
     "youtube" | "image" | "unknown"
   >("unknown");
   const [activeId, setActiveId] = useState<string | null>(null);
+  // Inline difficulty select now always visible (removed toggle state)
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -85,13 +80,15 @@ export function TricksDndManager() {
     })
   );
 
+  const supabase = useSupabase();
+
   useEffect(() => {
     if (supabase) {
       fetchCategories();
     } else {
       setCategories([]);
     }
-  }, []);
+  }, [supabase]);
 
   useEffect(() => {
     if (selectedCategory) {
@@ -105,7 +102,7 @@ export function TricksDndManager() {
         setOriginalTricks([]);
       }
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, supabase]);
 
   const fetchCategories = async () => {
     if (!supabase) return;
@@ -554,10 +551,67 @@ export function TricksDndManager() {
                   <DialogHeader>
                     <DialogTitle>Add New Trick</DialogTitle>
                     {/* difficulty and subategory */}
-                    {subcategories.find(
-                      (sub) => sub.id === formData.subcategory_id
-                    )?.name || "Unassigned"}{" "}
-                    - Difficulty {formData.difficulty_level}
+                    <div className="mt-1 inline-flex items-center gap-2 text-sm font-medium flex-wrap">
+                      <Select
+                        /* Use 'unassigned' sentinel instead of empty string (empty disallowed by SelectItem) */
+                        value={
+                          formData.subcategory_id
+                            ? formData.subcategory_id
+                            : "unassigned"
+                        }
+                        onValueChange={(val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            subcategory_id: val === "unassigned" ? "" : val,
+                          }))
+                        }
+                      >
+                        <SelectTrigger
+                          className="h-auto px-1 py-0 border-none shadow-none bg-transparent hover:bg-transparent focus:ring-0 focus:outline-none w-auto text-gray-700 [&>svg]:hidden"
+                          aria-label="Select subcategory"
+                        >
+                          <SelectValue placeholder="Unassigned" />
+                        </SelectTrigger>
+                        <SelectContent side="bottom" align="start">
+                          <SelectItem value="unassigned">Unassigned</SelectItem>
+                          {[...subcategories]
+                            .sort((a, b) => a.name.localeCompare(b.name))
+                            .map((sub) => (
+                              <SelectItem key={sub.id} value={sub.id}>
+                                {sub.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                      -
+                      <Select
+                        value={String(formData.difficulty_level)}
+                        onValueChange={(val) =>
+                          setFormData((prev) => ({
+                            ...prev,
+                            difficulty_level: Number(val),
+                          }))
+                        }
+                      >
+                        <SelectTrigger
+                          className="h-auto px-1 py-0 border-none shadow-none bg-transparent hover:bg-transparent focus:ring-0 focus:outline-none text-sm text-gray-700 w-auto [&>svg]:hidden"
+                          aria-label="Select difficulty level"
+                        >
+                          <SelectValue
+                            placeholder={`Difficulty ${formData.difficulty_level}`}
+                          />
+                        </SelectTrigger>
+                        <SelectContent side="bottom" align="start">
+                          {Array.from({ length: 10 }, (_, i) => i + 1).map(
+                            (n) => (
+                              <SelectItem key={n} value={String(n)}>
+                                Difficulty {n}
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
@@ -778,8 +832,21 @@ export function TricksDndManager() {
                           {/* Show empty state when no tricks */}
                           {getTricksForSubcategory(subcategory.id).length ===
                             0 && (
-                            <div className="text-center text-gray-400 py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                              Drop tricks here
+                            <div className="text-center text-gray-500 py-6 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center gap-3">
+                              <span className="text-sm">No tricks yet</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="flex items-center gap-1 "
+                                onClick={() =>
+                                  openAddTrickAt(subcategory.id, 1)
+                                }
+                              >
+                                <Plus size={16} /> Add first trick
+                              </Button>
+                              <span className="text-xs text-gray-400">
+                                or drop an existing trick here
+                              </span>
                             </div>
                           )}
                         </div>
@@ -826,8 +893,21 @@ export function TricksDndManager() {
 
                         {/* Show empty state when no tricks and not dragging */}
                         {getUnassignedTricks().length === 0 && !activeId && (
-                          <div className="text-center text-gray-400 py-8 border-2 border-dashed border-gray-200 rounded-lg">
-                            Drop tricks here
+                          <div className="text-center text-gray-500 py-6 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center gap-3">
+                            <span className="text-sm">
+                              No unassigned tricks
+                            </span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="flex items-center gap-1 text-gray-600 hover:text-gray-800"
+                              onClick={() => openAddTrickAt(null, 1)}
+                            >
+                              <Plus size={16} /> Add new (Diff 1)
+                            </Button>
+                            <span className="text-xs text-gray-400">
+                              or drop an existing trick here
+                            </span>
                           </div>
                         )}
                       </div>

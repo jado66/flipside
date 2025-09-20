@@ -32,6 +32,7 @@ import {
 import { searchPotentialPrerequisites } from "@/lib/client/tricks-data-client";
 import { PrerequisitesDisplay } from "./prerequisites-display"; // NEW: Import for display
 import { PrerequisiteTrick } from "@/types/trick";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface PrerequisitesFormFieldProps {
   prerequisite_ids: string[];
@@ -69,8 +70,14 @@ export function PrerequisitesFormField({
   const [searchOnlyInCategory, setSearchOnlyInCategory] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>(null);
 
+  const supabase = useSupabase();
+
   // Fetch trick suggestions when input changes with better debouncing
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
     // Clear existing timeout
     if (debounceRef.current) {
       clearTimeout(debounceRef.current);
@@ -90,6 +97,7 @@ export function PrerequisitesFormField({
     debounceRef.current = setTimeout(async () => {
       try {
         const data = await searchPotentialPrerequisites(
+          supabase,
           inputValue,
           subcategoryId,
           currentTrickId,
@@ -116,6 +124,7 @@ export function PrerequisitesFormField({
     currentTrickId,
     searchOnlyInCategory,
     currentCategorySlug,
+    supabase,
   ]);
 
   // Only allow adding by UUID from suggestions

@@ -1,12 +1,8 @@
 import { Trick } from "@/types/trick";
-import { createBrowserClient } from "@supabase/ssr";
-const supabase = createBrowserClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
 
 // Create new trick
 export async function createTrick(
+  supabaseClient,
   data: Omit<
     Trick,
     | "id"
@@ -47,7 +43,7 @@ export async function createTrick(
   console.log("Calling Supabase insert...");
   console.time("Supabase insert");
 
-  const { data: newTrick, error: insertError } = await supabase
+  const { data: newTrick, error: insertError } = await supabaseClient
     .from("tricks")
     .insert([insertData])
     .select(
@@ -115,7 +111,7 @@ export async function createTrick(
     console.log("Components to insert:", compInsert);
     console.time("Component insert");
 
-    const { error: compError } = await supabase
+    const { error: compError } = await supabaseClient
       .from("trick_components")
       .insert(compInsert);
 
@@ -129,7 +125,7 @@ export async function createTrick(
 
       // Rollback trick insert if components fail
       console.log("⚠️ Rolling back trick creation due to component error...");
-      const { error: deleteError } = await supabase
+      const { error: deleteError } = await supabaseClient
         .from("tricks")
         .delete()
         .eq("id", newTrick.id);
@@ -157,7 +153,7 @@ export async function createTrick(
   console.time("Fetch components");
 
   try {
-    const compData = await getTrickComponents(newTrick.id);
+    const compData = await getTrickComponents(supabaseClient, newTrick.id);
     console.log("Components fetched:", compData);
     newTrick.components = compData;
   } catch (fetchError) {
@@ -175,11 +171,11 @@ export async function createTrick(
   return newTrick;
 }
 
-export async function getAllTricks() {
+export async function getAllTricks(supabaseClient) {
   // Example with fetch (assume API endpoint)
 
   // OR with Supabase:
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("tricks")
     .select("id, name, slug")
     .eq("is_published", true)
@@ -190,6 +186,7 @@ export async function getAllTricks() {
 
 // Update trick
 export async function updateTrick(
+  supabaseClient: any,
   id: string,
   data: Partial<Trick>
 ): Promise<Trick> {
@@ -201,7 +198,7 @@ export async function updateTrick(
     updated_at: new Date().toISOString(),
   };
 
-  const { data: updatedTrick, error: updateError } = await supabase
+  const { data: updatedTrick, error: updateError } = await supabaseClient
     .from("tricks")
     .update(updateData)
     .eq("id", id)
@@ -224,7 +221,7 @@ export async function updateTrick(
   }
 
   // Handle components: always delete existing first
-  const { error: deleteError } = await supabase
+  const { error: deleteError } = await supabaseClient
     .from("trick_components")
     .delete()
     .eq("trick_id", id);
@@ -243,7 +240,7 @@ export async function updateTrick(
       component_details: comp.component_details || {},
     }));
 
-    const { error: insertError } = await supabase
+    const { error: insertError } = await supabaseClient
       .from("trick_components")
       .insert(compInsert);
 
@@ -254,15 +251,15 @@ export async function updateTrick(
   }
 
   // Fetch components to include in return (optional)
-  const compData = await getTrickComponents(id);
+  const compData = await getTrickComponents(supabaseClient, id);
   updatedTrick.components = compData;
 
   return updatedTrick;
 }
 
 // Delete trick
-export async function deleteTrick(id: string): Promise<void> {
-  const { error } = await supabase.from("tricks").delete().eq("id", id);
+export async function deleteTrick(supabaseClient, id: string): Promise<void> {
+  const { error } = await supabaseClient.from("tricks").delete().eq("id", id);
 
   if (error) {
     console.error("Error deleting trick:", error);
@@ -271,8 +268,8 @@ export async function deleteTrick(id: string): Promise<void> {
 }
 
 // Get navigation data with hierarchical structure for side nav
-export async function getNavigationData() {
-  const { data, error } = await supabase
+export async function getNavigationData(supabaseClient) {
+  const { data, error } = await supabaseClient
     .from("master_categories")
     .select(
       `
@@ -320,7 +317,7 @@ export async function getNavigationData() {
 }
 
 // Get all users for inventor selection in forms
-export async function getUsers(): Promise<
+export async function getUsers(supabaseClient): Promise<
   {
     id: string;
     first_name: string;
@@ -328,7 +325,7 @@ export async function getUsers(): Promise<
     username?: string | null;
   }[]
 > {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("users")
     .select("id, first_name, last_name, username")
     .order("first_name");
@@ -341,8 +338,8 @@ export async function getUsers(): Promise<
   return data || [];
 }
 
-export async function getTrickComponents(trickId: string) {
-  const { data, error } = await supabase
+export async function getTrickComponents(supabaseClient, trickId: string) {
+  const { data, error } = await supabaseClient
     .from("trick_components")
     .select("component_trick_id, sequence, component_details")
     .eq("trick_id", trickId)
@@ -358,6 +355,7 @@ export async function getTrickComponents(trickId: string) {
 
 // Get tricks by inventor (both user and name inventors)
 export async function getTricksByInventor(
+  supabaseClient: any,
   inventorType: "user" | "name",
   inventorId: string,
   filters?: {
@@ -365,7 +363,7 @@ export async function getTricksByInventor(
     offset?: number;
   }
 ): Promise<{ tricks: Trick[]; total: number }> {
-  let query = supabase
+  let query = supabaseClient
     .from("tricks")
     .select(
       `
@@ -413,7 +411,7 @@ export async function getTricksByInventor(
 }
 
 // Get unique inventors from all tricks (for filtering/search)
-export async function getInventors(): Promise<{
+export async function getInventors(supabaseClient): Promise<{
   users: {
     id: string;
     name: string;
@@ -424,7 +422,7 @@ export async function getInventors(): Promise<{
   names: string[];
 }> {
   // Get user inventors
-  const { data: userInventors, error: userError } = await supabase
+  const { data: userInventors, error: userError } = await supabaseClient
     .from("tricks")
     .select(
       `
@@ -440,7 +438,7 @@ export async function getInventors(): Promise<{
   }
 
   // Get name inventors
-  const { data: nameInventors, error: nameError } = await supabase
+  const { data: nameInventors, error: nameError } = await supabaseClient
     .from("tricks")
     .select("inventor_name")
     .not("inventor_name", "is", null)
@@ -505,10 +503,11 @@ export interface TrickWithLinkedPrerequisites extends Trick {
  * @returns Array of prerequisite trick data
  */
 export async function fetchPrerequisiteTricksByIds(
+  supabaseClient,
   ids: string[]
 ): Promise<PrerequisiteTrick[]> {
   if (!ids || ids.length === 0) return [];
-  const { data, error } = await supabase
+  const { data, error } = await supabaseClient
     .from("tricks")
     .select(
       `id, name, slug, subcategory:subcategories(slug, master_category:master_categories(slug))`
@@ -519,12 +518,14 @@ export async function fetchPrerequisiteTricksByIds(
     console.error("Error fetching prerequisite tricks:", error);
     return [];
   }
-  // @ts-expect-error FIX ME
   return data || [];
 }
 // Get trick by slug
-export async function getTrickBySlug(slug: string): Promise<Trick | null> {
-  const { data, error } = await supabase
+export async function getTrickBySlug(
+  supabaseClient,
+  slug: string
+): Promise<Trick | null> {
+  const { data, error } = await supabaseClient
     .from("tricks")
     .select(
       `
@@ -545,7 +546,7 @@ export async function getTrickBySlug(slug: string): Promise<Trick | null> {
     .eq("slug", slug)
     .eq("is_published", true)
     .single()
-    // @ts-expect-error FIX ME
+
     .order("sequence", { foreignTable: "trick_components", ascending: true });
 
   if (error) {
@@ -568,9 +569,10 @@ export async function getTrickBySlug(slug: string): Promise<Trick | null> {
  * Enhanced getTrickBySlug that includes linked prerequisite tricks
  */
 export async function getTrickBySlugWithLinks(
+  supabaseClient,
   slug: string
 ): Promise<TrickWithLinkedPrerequisites | null> {
-  const trick = await getTrickBySlug(slug);
+  const trick = await getTrickBySlug(supabaseClient, slug);
 
   if (
     !trick ||
@@ -582,6 +584,7 @@ export async function getTrickBySlugWithLinks(
 
   // Fetch linked tricks for prerequisites by IDs
   const prerequisiteTricks = await fetchPrerequisiteTricksByIds(
+    supabaseClient,
     trick.prerequisite_ids
   );
 
@@ -592,6 +595,7 @@ export async function getTrickBySlugWithLinks(
 }
 
 export async function toggleUserCanDoTrick(
+  supabaseClient,
   trickId: string,
   userId: string,
   canDo: boolean
@@ -599,7 +603,7 @@ export async function toggleUserCanDoTrick(
   try {
     if (canDo) {
       // User can now do this trick - upsert the record
-      const { error } = await supabase.from("user_tricks").upsert(
+      const { error } = await supabaseClient.from("user_tricks").upsert(
         {
           user_id: userId,
           trick_id: trickId,
@@ -614,7 +618,7 @@ export async function toggleUserCanDoTrick(
       if (error) throw error;
     } else {
       // User can't do this trick anymore - remove the record
-      const { error } = await supabase
+      const { error } = await supabaseClient
         .from("user_tricks")
         .delete()
         .eq("user_id", userId)
@@ -624,7 +628,7 @@ export async function toggleUserCanDoTrick(
     }
 
     // Get updated count
-    const { count } = await supabase
+    const { count } = await supabaseClient
       .from("user_tricks")
       .select("*", { count: "exact", head: true })
       .eq("trick_id", trickId)
@@ -647,12 +651,13 @@ export async function toggleUserCanDoTrick(
  * Get user's progress statistics for a category
  */
 export async function getUserProgressStats(
+  supabaseClient: any,
   userId: string,
   categorySlug?: string,
   subcategorySlug?: string
 ) {
   try {
-    let query = supabase
+    let query = supabaseClient
       .from("user_tricks")
       .select(
         `
@@ -731,11 +736,12 @@ export async function getUserProgressStats(
  * Check if user can do a specific trick
  */
 export async function checkUserCanDoTrick(
+  supabaseClient,
   userId: string,
   trickId: string
 ): Promise<boolean> {
   try {
-    const { data } = await supabase
+    const { data } = await supabaseClient
       .from("user_tricks")
       .select("can_do")
       .eq("user_id", userId)
@@ -753,12 +759,13 @@ export async function checkUserCanDoTrick(
  * Get all tricks a user can do
  */
 export async function getUserCanDoTricks(
+  supabaseClient: any,
   userId: string,
   limit?: number,
   offset?: number
 ) {
   try {
-    let query = supabase
+    let query = supabaseClient
       .from("user_tricks")
       .select(
         `
@@ -816,6 +823,7 @@ export function getPrerequisiteLink(
 }
 
 export async function searchPotentialPrerequisites(
+  supabaseClient: any,
   search: string,
   subcategoryId?: string,
   excludeTrickId?: string,
@@ -837,7 +845,7 @@ export async function searchPotentialPrerequisites(
   }
 
   // Build the base query with category and subcategory info
-  let query = supabase
+  let query = supabaseClient
     .from("tricks")
     .select(
       `
@@ -899,11 +907,12 @@ export async function searchPotentialPrerequisites(
 
 // Increment trick view count
 export async function incrementTrickViews(
+  supabaseClient,
   trickId: string
 ): Promise<{ success: boolean; view_count?: number }> {
   try {
     // First, check if the trick exists and is published
-    const { data: trick, error: fetchError } = await supabase
+    const { data: trick, error: fetchError } = await supabaseClient
       .from("tricks")
       .select("id, view_count")
       .eq("id", trickId)
@@ -915,7 +924,7 @@ export async function incrementTrickViews(
     }
 
     // Update the view count
-    const { error: updateError } = await supabase
+    const { error: updateError } = await supabaseClient
       .from("tricks")
       .update({
         view_count: (trick.view_count || 0) + 1,
@@ -928,7 +937,7 @@ export async function incrementTrickViews(
     }
 
     // Get the updated view count
-    const { data: updatedTrick, error: getError } = await supabase
+    const { data: updatedTrick, error: getError } = await supabaseClient
       .from("tricks")
       .select("view_count")
       .eq("id", trickId)

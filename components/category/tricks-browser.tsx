@@ -278,19 +278,27 @@ export function TricksBrowser({
   const userStats = useMemo(() => {
     if (!user) return null;
 
-    const canDoCount = userCanDoTricks.size;
+    // Count only tricks from THIS category the user can do (not global total)
     const totalInCategory = serverTricks.length;
-    const cannotDoCount = totalInCategory - canDoCount;
+    const canDoCountInCategory = serverTricks.reduce(
+      (acc, trick) => (userCanDoTricks.has(trick.id) ? acc + 1 : acc),
+      0
+    );
+
+    const cannotDoCount = Math.max(
+      0,
+      totalInCategory - canDoCountInCategory
+    );
 
     return {
-      canDo: canDoCount,
+      canDo: canDoCountInCategory,
       cannotDo: cannotDoCount,
       percentage:
         totalInCategory > 0
-          ? Math.round((canDoCount / totalInCategory) * 100)
+          ? Math.round((canDoCountInCategory / totalInCategory) * 100)
           : 0,
     };
-  }, [serverTricks.length, userCanDoTricks, user]);
+  }, [serverTricks, userCanDoTricks, user]);
 
   return (
     <div className="space-y-6">
