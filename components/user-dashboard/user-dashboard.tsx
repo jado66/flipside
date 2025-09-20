@@ -1,9 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { supabase } from "@/lib/supabase/supabase-client";
 import { useAuth } from "@/contexts/auth-provider";
-import { useStableUser } from "@/hooks/use-stable-user";
 import { SportsSelection } from "./sports-selection";
 import { NextTricksSuggestions } from "./new-trick-suggestions";
 import { UserProgressOverview } from "./user-progress-overview";
@@ -20,8 +18,11 @@ import { Button } from "../ui/button";
 import { Plus, Settings } from "lucide-react";
 import { Wishlist } from "../wishlist";
 import { FeaturePoll } from "../feature-poll";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export function UserDashboard() {
+  const supabase = useSupabase();
+
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<MasterCategory[]>([]);
   const [allTricks, setAllTricks] = useState<Trick[]>([]);
@@ -49,15 +50,25 @@ export function UserDashboard() {
 
   // Load data when user changes
   useEffect(() => {
+    if (!supabase) {
+      // console.error("Supabase client not initialized");
+      return;
+    }
+
     if (user) {
       loadData(user.id);
     } else {
       loadData(null);
     }
-  }, [user?.id]);
+  }, [user?.id, supabase]);
 
   // Update sports when publicUser data becomes available
   useEffect(() => {
+    if (!supabase) {
+      // console.error("Supabase client not initialized");
+      return;
+    }
+
     if (publicUser && user) {
       console.log("Public user data loaded:", publicUser.users_sports_ids);
       setUserSportsIds(publicUser.users_sports_ids || []);
@@ -75,7 +86,7 @@ export function UserDashboard() {
       // Mark initialization complete after first processing of public user
       setSportsInitialized(true);
     }
-  }, [publicUser?.users_sports_ids, user?.id]);
+  }, [publicUser?.users_sports_ids, user?.id, supabase]);
 
   const loadData = useCallback(
     async (userId?: string | null) => {

@@ -78,6 +78,7 @@ export function TricksBrowser({
   const [selectedDifficulty, setSelectedDifficulty] = useState<string>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("compact");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showUnlearnedOnly, setShowUnlearnedOnly] = useState(false);
 
   // Fetch user's can-do tricks on mount and when user changes
   useEffect(() => {
@@ -155,6 +156,11 @@ export function TricksBrowser({
       }
     }
 
+    // Filter by unlearned status
+    if (showUnlearnedOnly && user) {
+      filtered = filtered.filter((trick: any) => !trick.user_can_do);
+    }
+
     // Sort tricks
     const sorted = [...filtered].sort((a, b) => {
       let comparison = 0;
@@ -179,6 +185,8 @@ export function TricksBrowser({
     selectedDifficulty,
     sortBy,
     sortOrder,
+    showUnlearnedOnly,
+    user,
   ]);
 
   const totalPages = Math.ceil(
@@ -200,15 +208,16 @@ export function TricksBrowser({
     setSortBy("difficulty");
     setSortOrder("asc");
     setCurrentPage(1);
+    setShowUnlearnedOnly(false);
   };
 
   const hasActiveFilters =
-    searchTerm || selectedSubcategory !== "all" || selectedDifficulty !== "all";
+    searchTerm || selectedSubcategory !== "all" || selectedDifficulty !== "all" || showUnlearnedOnly;
 
   // Reset to page 1 when filters change
   useMemo(() => {
     setCurrentPage(1);
-  }, [searchTerm, selectedSubcategory, selectedDifficulty]);
+  }, [searchTerm, selectedSubcategory, selectedDifficulty, showUnlearnedOnly]);
 
   const handleSubcategoryFilter = (subcategorySlug: string) => {
     setSelectedSubcategory((prev) =>
@@ -285,10 +294,7 @@ export function TricksBrowser({
       0
     );
 
-    const cannotDoCount = Math.max(
-      0,
-      totalInCategory - canDoCountInCategory
-    );
+    const cannotDoCount = Math.max(0, totalInCategory - canDoCountInCategory);
 
     return {
       canDo: canDoCountInCategory,
@@ -505,7 +511,7 @@ export function TricksBrowser({
       </div>
 
       {/* Results Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
           <h3 className="text-lg font-semibold">
             {filteredAndSortedTricks.length} Trick
@@ -523,6 +529,28 @@ export function TricksBrowser({
             </Badge>
           )}
         </div>
+        {user && (
+          <div className="flex items-center gap-2">
+            <Button
+              variant={showUnlearnedOnly ? "default" : "outline"}
+              size="sm"
+              onClick={() => setShowUnlearnedOnly((p) => !p)}
+              className="h-8"
+            >
+              {showUnlearnedOnly ? "Showing Unlearned" : "Show Unlearned"}
+            </Button>
+            {showUnlearnedOnly && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowUnlearnedOnly(false)}
+                className="h-8"
+              >
+                Show All
+              </Button>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Tricks Grid */}
