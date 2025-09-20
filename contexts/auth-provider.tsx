@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { createBrowserClient } from "@supabase/ssr";
 
 // Types
 export type UserRole = "user" | "admin" | "moderator"; // Add other roles as needed
@@ -79,36 +79,48 @@ export function AuthProvider({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const supabase = useSupabase();
+  const [supabase] = useState(() =>
+    createBrowserClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    )
+  );
 
   // Fetch public user data
-  const fetchPublicUser = useCallback(async (userId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", userId)
-        .single();
+  const fetchPublicUser = useCallback(
+    async (userId: string) => {
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", userId)
+          .single();
 
-      if (error) throw error;
+        if (error) throw error;
 
-      setPublicUser(data);
-      return data;
-    } catch (err) {
-      console.error("Error fetching public user:", err);
-      setError(
-        err instanceof Error ? err : new Error("Failed to fetch user data")
-      );
-      return null;
-    }
-  }, []);
+        setPublicUser(data);
+        return data;
+      } catch (err) {
+        console.error("Error fetching public user:", err);
+        setError(
+          err instanceof Error ? err : new Error("Failed to fetch user data")
+        );
+        return null;
+      }
+    },
+    [supabase]
+  );
 
   // Initialize auth state
   useEffect(() => {
-    if (!supabase) return;
-
     const initializeAuth = async () => {
       try {
+        // Skip if we already have initial data
+        if (initialAuthUser && initialUser) {
+          setLoading(false);
+          return;
+        }
+
         setLoading(true);
         setError(null);
 
@@ -122,12 +134,10 @@ export function AuthProvider({
 
         if (session) {
           setSession(session);
-          // Only set user if we don't already have initial data
           if (!initialAuthUser) {
             setUser(session.user);
           }
 
-          // Only fetch public user data if we don't already have it
           if (!initialUser) {
             await fetchPublicUser(session.user.id);
           }
@@ -161,7 +171,6 @@ export function AuthProvider({
         setPublicUser(null);
       }
 
-      // Handle specific events
       switch (event) {
         case "SIGNED_OUT":
           setPublicUser(null);
@@ -178,7 +187,6 @@ export function AuthProvider({
       subscription.unsubscribe();
     };
   }, [fetchPublicUser, initialUser, initialAuthUser, supabase]);
-
   // Sign in
   const signIn = async (email: string, password: string) => {
     try {
@@ -285,32 +293,43 @@ export function AuthProvider({
   };
 
   // Update public user data
-  const updatePublicUser = async (updates: Partial<PublicUser>) => {
-    try {
-      setError(null);
+  const updatePublicUser = useCallback(
+    async (updates: Partial<PublicUser>) => {
+      try {
+        setError(null);
 
-      if (!user) throw new Error("No user logged in");
+        if (!user) throw new Error("No user logged in");
 
-      const { data, error } = await supabase
-        .from("users")
-        .update({
-          ...updates,
-          updated_at: new Date().toISOString(),
-        })
-        .eq("id", user.id)
-        .select()
-        .single();
+        console.log("AuthProvider updatePublicUser called with:", updates);
 
-      if (error) throw error;
+        const { data, error } = await supabase
+          .from("users")
+          .update({
+            ...updates,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", user.id)
+          .select()
+          .single();
 
-      setPublicUser(data);
-      return data;
-    } catch (err) {
-      console.error("Update user error:", err);
-      setError(err instanceof Error ? err : new Error("Failed to update user"));
-      throw err;
-    }
-  };
+        if (error) {
+          console.error("Supabase update error:", error);
+          throw error;
+        }
+
+        console.log("Update successful, data:", data);
+        setPublicUser(data);
+        return data;
+      } catch (err) {
+        console.error("Update user error:", err);
+        setError(
+          err instanceof Error ? err : new Error("Failed to update user")
+        );
+        throw err;
+      }
+    },
+    [user, supabase]
+  );
 
   // Permission helper functions
   const isAuthenticated = useCallback(() => {
