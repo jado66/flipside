@@ -1,5 +1,5 @@
 "use client";
-import { supabase } from "@/lib/supabase/supabase-client";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 import { useEffect, useState } from "react";
 // Adjust import path as needed
 
@@ -14,7 +14,11 @@ export function TrickipediaHeroSection() {
   const [stats, setStats] = useState<HeroStats | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const supabase = useSupabase();
+
   useEffect(() => {
+    if (!supabase) return;
+
     const fetchHeroStats = async () => {
       try {
         // Fetch all stats in parallel
@@ -69,7 +73,7 @@ export function TrickipediaHeroSection() {
     };
 
     fetchHeroStats();
-  }, []);
+  }, [supabase]);
 
   // Format numbers for display
   const formatNumber = (num: number): string => {

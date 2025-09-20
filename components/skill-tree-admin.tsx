@@ -16,9 +16,9 @@ import {
   type EdgeMouseHandler,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { supabase } from "@/lib/supabase/supabase-client";
 import dagre from "dagre";
 import { Save, RefreshCw, Trash2, Info } from "lucide-react";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 // Types
 interface Trick {
@@ -117,17 +117,23 @@ export function SkillTreeAdmin() {
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
 
+  const supabase = useSupabase();
+
   // Fetch master categories on mount
   useEffect(() => {
+    if (!supabase) return;
+
     fetchCategories();
-  }, []);
+  }, [supabase]);
 
   // Fetch tricks when category changes
   useEffect(() => {
+    if (!supabase) return;
+
     if (selectedCategory) {
       fetchTricksByCategory(selectedCategory);
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, supabase]);
 
   const fetchCategories = async () => {
     try {

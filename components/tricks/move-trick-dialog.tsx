@@ -15,12 +15,12 @@ import {
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { MoveIcon, ChevronLeft, ChevronRight, FolderIcon } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase/supabase-client";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import type {
   NavigationCategory,
   NavigationSubcategory,
 } from "@/components/side-nav/types";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface MoveTrickDialogProps {
   trick: TrickWithLinkedPrerequisites;
@@ -28,6 +28,9 @@ interface MoveTrickDialogProps {
 
 export function MoveTrickDialog({ trick }: MoveTrickDialogProps) {
   const router = useRouter();
+
+  const supabase = useSupabase();
+
   const [open, setOpen] = useState(false);
   const [navigationData, setNavigationData] = useState<NavigationCategory[]>(
     []
@@ -42,13 +45,17 @@ export function MoveTrickDialog({ trick }: MoveTrickDialogProps) {
 
   // Fetch navigation data when dialog opens
   useEffect(() => {
+    if (!supabase) return;
+
     if (open && navigationData.length === 0) {
       fetchNavigationData();
     }
-  }, [open, navigationData.length]);
+  }, [open, navigationData.length, supabase]);
 
   // Preselect current category when navigation data is loaded
   useEffect(() => {
+    if (!supabase) return;
+
     if (
       navigationData.length > 0 &&
       !selectedCategory &&
@@ -67,6 +74,7 @@ export function MoveTrickDialog({ trick }: MoveTrickDialogProps) {
     selectedCategory,
     shouldAutoPreselect,
     trick.subcategory?.master_category.slug,
+    supabase,
   ]);
 
   const fetchNavigationData = async () => {

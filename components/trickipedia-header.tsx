@@ -18,7 +18,7 @@ import { UserNav } from "@/components/user-nav";
 import { TrickipediaLogo } from "@/components/trickipedia-logo";
 
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase/supabase-client";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export function TrickipediaHeader({
   onMobileMenuClick,
@@ -27,9 +27,13 @@ export function TrickipediaHeader({
   onMobileMenuClick?: () => void;
   user?: User | null;
 }) {
+  const supabase = useSupabase();
+
   const [userState, setUserState] = useState<User | null>(null);
 
   useEffect(() => {
+    if (!supabase) return;
+
     if (userProp !== undefined) {
       setUserState(userProp);
       return; // Don't fetch if user is provided by prop
@@ -51,7 +55,7 @@ export function TrickipediaHeader({
     });
 
     return () => subscription.unsubscribe();
-  }, [userProp]);
+  }, [userProp, supabase]);
 
   const user = userProp !== undefined ? userProp : userState;
 

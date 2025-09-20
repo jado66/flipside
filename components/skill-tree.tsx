@@ -13,7 +13,6 @@ import {
   Position,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
-import { supabase } from "@/lib/supabase/supabase-client";
 import dagre from "dagre";
 import { useAuth } from "@/contexts/auth-provider";
 import { Trick, MasterCategory, TrickNodeData } from "./skill-tree.types";
@@ -21,8 +20,10 @@ import { levenshtein } from "./levenshtein";
 import TrickNode from "./TrickNode";
 import { toast } from "sonner";
 import { Info } from "lucide-react";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
+  const supabase = useSupabase();
   // Confetti burst function
   const triggerConfetti = useCallback(() => {
     const count = 200;
@@ -96,6 +97,8 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
 
   // Fetch master categories on mount
   useEffect(() => {
+    if (!supabase) return;
+
     const fetchCategoriesAndTricks = async () => {
       try {
         // Fetch all categories
@@ -127,10 +130,12 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
     if (selectedCategory) {
       fetchCategoriesAndTricks();
     }
-  }, [selectedCategory]);
+  }, [selectedCategory, supabase]);
 
   // Fetch user's can-do tricks on mount and when user changes
   useEffect(() => {
+    if (!supabase) return;
+
     const fetchUserCanDoTricks = async () => {
       if (!user) {
         setUserCanDoTricks(new Set());
@@ -153,7 +158,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
       }
     };
     fetchUserCanDoTricks();
-  }, [user]);
+  }, [user, supabase]);
 
   const fetchTricksByCategory = async (categoryId: string) => {
     setLoading(true);

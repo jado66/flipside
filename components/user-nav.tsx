@@ -12,13 +12,15 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase/supabase-client";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface UserNavProps {
   user: User;
 }
 
 export function UserNav({ user }: UserNavProps) {
+  const supabase = useSupabase();
+
   const router = useRouter();
 
   const handleSignOut = async () => {

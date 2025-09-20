@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase/supabase-client";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -57,6 +56,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface SocialLink {
   id?: string;
@@ -107,6 +107,8 @@ export default function ProfilePage() {
     loading: authLoading,
     updatePublicUser,
   } = useAuth();
+
+  const supabase = useSupabase();
 
   // Initialize with current user data or defaults
   const [profileData, setProfileData] = useState<ProfileData>({

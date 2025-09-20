@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Athlete, SkillLevel, AthleteStatus } from "@/lib/types/athlete";
-import { supabase } from "@/lib/supabase/supabase-client";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface AthleteFormProps {
   athlete?: Athlete;
@@ -28,6 +28,9 @@ interface AthleteFormProps {
 
 export function AthleteForm({ athlete }: AthleteFormProps) {
   const router = useRouter();
+
+  const supabase = useSupabase();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form state

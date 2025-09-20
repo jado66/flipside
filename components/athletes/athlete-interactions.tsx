@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 // @ts-expect-error TODO
 import type { Athlete } from "@/types/athlete";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase/supabase-client";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 interface AthleteInteractionsProps {
   athlete: Athlete;
@@ -34,6 +34,8 @@ export function AthleteInteractions({ athlete }: AthleteInteractionsProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const router = useRouter();
+
+  const supabase = useSupabase();
 
   const handleShare = async () => {
     if (navigator.share) {

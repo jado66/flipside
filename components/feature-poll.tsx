@@ -11,8 +11,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle, Calendar, Users } from "lucide-react";
-import { supabase } from "@/lib/supabase/supabase-client";
 import { useAuth } from "@/contexts/auth-provider";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 const pollOptions = [
   {
@@ -77,6 +77,8 @@ export function FeaturePoll() {
 
   const [totalVotes, setTotalVotes] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+
+  const supabase = useSupabase();
 
   useEffect(() => {
     loadUserVotes();

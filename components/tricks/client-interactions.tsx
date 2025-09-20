@@ -19,7 +19,6 @@ import { Eye, CheckCircle2, Share2, Edit, Trash2, Circle } from "lucide-react";
 import { useAuth } from "@/contexts/auth-provider";
 import { PermissionGate } from "@/components/permission-gate";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabase/supabase-client";
 import { incrementTrickViews } from "@/lib/client/tricks-data-client";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { MoveTrickDialog } from "./move-trick-dialog";
