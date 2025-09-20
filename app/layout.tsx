@@ -12,6 +12,7 @@ import {
   generateWebsiteStructuredData,
   generateOrganizationStructuredData,
 } from "@/lib/structured-data-utils";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -117,7 +118,15 @@ export default function RootLayout({
         <PWARegister />
         <StructuredData data={generateWebsiteStructuredData()} />
         <StructuredData data={generateOrganizationStructuredData()} />
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="trickipedia"
+            themes={["trickipedia"]}
+          >
+            {children}
+          </ThemeProvider>
+        </AuthProvider>
         <Analytics />
       </body>
     </html>
