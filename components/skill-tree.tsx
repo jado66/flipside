@@ -577,10 +577,14 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
       `}</style>
       {isMobile && (
         <style>{`
+          .react-flow__panel.bottom {
+            bottom: 80px !important;
+          }
+          .react-flow__controls {
           .react-flow__controls-button {
             width: 48px !important;
             height: 48px !important;
-            font-size: 1.5rem !important;
+            bottom: 80px !important;
           }
         `}</style>
       )}
@@ -664,7 +668,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
           </ReactFlow>
         )}
         {/* Legend */}
-        <div className="absolute lg:bottom-4 bottom-10 right-4 bg-white border rounded-lg p-3 shadow-lg">
+        <div className="absolute lg:bottom-4 bottom-[80px] right-4 bg-white border rounded-lg p-3 shadow-lg">
           <div className="text-sm font-semibold mb-2">Legend</div>
           <div className="space-y-1 text-xs">
             <div className="flex items-center gap-2">
