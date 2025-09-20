@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/lib/supabase/supabase-client";
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -32,7 +32,13 @@ export function MainNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
 
+  const supabase = useSupabase();
+
   useEffect(() => {
+    if (!supabase) {
+      return;
+    }
+
     const getUser = async () => {
       const {
         data: { user },
@@ -49,7 +55,7 @@ export function MainNav() {
     });
 
     return () => subscription.unsubscribe();
-  }, [supabase.auth]);
+  }, [supabase.auth, supabase]);
 
   return (
     <nav className="bg-background border-b">

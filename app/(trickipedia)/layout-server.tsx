@@ -1,9 +1,8 @@
 //app\(trickipedia)\layout-server.tsx
-import { supabaseServer } from "@/lib/supabase/supabase-server";
-import { createSupabaseServerClient } from "@/lib/supabase/supabase-auth-server";
 import { TrickipediaLayoutClient } from "./TrickipediaLayoutClient";
 import { AuthProvider } from "@/contexts/auth-provider";
 import type { NavigationCategory } from "@/components/side-nav/types";
+import { createSupabaseServer } from "@/lib/supabase/supabase-server";
 
 export const revalidate = 60;
 // // Or for on-demand revalidation, use:
@@ -13,6 +12,7 @@ export const revalidate = 60;
 // revalidatePath('/', 'layout');
 
 async function getNavigationData(): Promise<NavigationCategory[]> {
+  const supabaseServer = await createSupabaseServer();
   try {
     const { data, error } = await supabaseServer
       .from("master_categories")
@@ -98,7 +98,7 @@ export async function TrickipediaLayoutServer({
   children: React.ReactNode;
 }) {
   const navigationData = await getNavigationData();
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServer();
   const {
     data: { user: authUser },
     error,

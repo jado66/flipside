@@ -1,4 +1,4 @@
-import { supabaseServer } from "../supabase/supabase-server";
+import { createSupabaseServer } from "../supabase/supabase-server";
 
 export interface Subcategory {
   id: string;
@@ -22,6 +22,8 @@ export async function getSubcategoriesByMasterCategory(
   masterCategoryId: string,
   includeInactive = true
 ): Promise<Subcategory[]> {
+  const supabaseServer = await createSupabaseServer();
+
   let query = supabaseServer
     .from("subcategories")
     .select(

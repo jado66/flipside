@@ -10,8 +10,8 @@ import {
 } from "@/components/ui/select";
 import { Plus, Search, Filter } from "lucide-react";
 import Link from "next/link";
-import { supabaseServer } from "@/lib/supabase/supabase-server";
 import { Athlete } from "@/lib/types/athlete";
+import { createSupabaseServer } from "@/lib/supabase/supabase-server";
 
 async function getAthletes(searchParams: {
   search?: string;
@@ -19,6 +19,8 @@ async function getAthletes(searchParams: {
   skill_level?: string;
   country?: string;
 }) {
+  const supabaseServer = await createSupabaseServer();
+
   let query = supabaseServer
     .from("athletes")
     .select("*")
@@ -52,6 +54,8 @@ async function getAthletes(searchParams: {
 }
 
 async function getSports() {
+  const supabaseServer = await createSupabaseServer();
+
   const { data } = await supabaseServer
     .from("athletes")
     .select("sport")
@@ -62,6 +66,8 @@ async function getSports() {
 }
 
 async function getCountries() {
+  const supabaseServer = await createSupabaseServer();
+
   const { data } = await supabaseServer
     .from("athletes")
     .select("country")

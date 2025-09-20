@@ -1,12 +1,32 @@
-import { createClient } from "@supabase/supabase-js";
+// lib/supabase/supabase-server.ts
+// REMOVE any module-level client like:
+// export const supabaseServer = createServerClient(...)
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+// INSTEAD, create a function that returns a new client:
+import { createServerClient } from "@supabase/ssr";
+import { cookies } from "next/headers";
 
-if (!supabaseUrl || !supabaseServiceKey) {
-  throw new Error(
-    "Supabase URL or Service Key is missing in environment variables."
+export async function createSupabaseServer() {
+  const cookieStore = await cookies();
+
+  return createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet) {
+          try {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              cookieStore.set(name, value, options);
+            });
+          } catch {
+            // Server Component - can't set cookies
+          }
+        },
+      },
+    }
   );
 }
-
-export const supabaseServer = createClient(supabaseUrl, supabaseServiceKey);

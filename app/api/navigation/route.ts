@@ -1,11 +1,12 @@
+import { createSupabaseServer } from "@/lib/supabase/supabase-server";
 import { NextRequest, NextResponse } from "next/server";
 
-import { supabaseServer } from "@/lib/supabase/supabase-server";
 // Use the singleton Supabase server client
-const supabase = supabaseServer;
 
 export async function GET(request: NextRequest) {
   try {
+    const supabaseServer = await createSupabaseServer();
+
     const { data, error } = await supabaseServer
       .from("master_categories")
       .select(

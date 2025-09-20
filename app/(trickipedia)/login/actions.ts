@@ -1,11 +1,11 @@
 "use server";
 
-import { createSupabaseServerClient } from "@/lib/supabase/supabase-auth-server";
+import { createSupabaseServer } from "@/lib/supabase/supabase-server";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export async function login(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServer();
 
   // type-casting here for convenience
   // in practice, you should validate your inputs
@@ -25,7 +25,7 @@ export async function login(formData: FormData) {
 }
 
 export async function signup(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
+  const supabase = await createSupabaseServer();
 
   // type-casting here for convenience
   // in practice, you should validate your inputs

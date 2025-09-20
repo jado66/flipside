@@ -1,9 +1,11 @@
 import { AthleteForm } from "@/components/athletes/athlete-form";
 import { notFound } from "next/navigation";
-import { supabaseServer } from "@/lib/supabase/supabase-server";
 import { Athlete } from "@/lib/types/athlete";
+import { createSupabaseServer } from "@/lib/supabase/supabase-server";
 
 async function getAthlete(slug: string): Promise<Athlete | null> {
+  const supabaseServer = await createSupabaseServer();
+
   const { data: athlete, error } = await supabaseServer
     .from("athletes")
     .select("*")
