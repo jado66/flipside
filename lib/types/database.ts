@@ -83,4 +83,5 @@ export interface MasterCategory {
   created_at: string;
   updated_at: string;
   trick_count?: number;
+  status?: "active" | "inactive" | "hidden";
 }

@@ -77,6 +77,9 @@ export default function ModeratorCategoriesPage() {
     try {
       const data = await getAllMasterCategories();
       setCategories(data);
+
+      console.log("Fetched categories:", data);
+
       if (data.length > 0) setSelectedCategoryId(data[0].id);
     } catch (err) {
       console.error(err);

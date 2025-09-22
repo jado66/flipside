@@ -8,6 +8,13 @@ export default async function CategoriesPage() {
 
   try {
     categories = await getMasterCategories();
+
+    console.log("Fetched categories:", categories);
+
+    // Exclude hidden or inactive categories from the list
+    categories = categories.filter(
+      (c) => c.status !== "hidden" && c.is_active !== false
+    );
   } catch (error) {
     console.error("Failed to load categories:", error);
     // For SSR, we'll return empty array on error and let the client component handle the empty state

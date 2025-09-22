@@ -59,6 +59,8 @@ export async function generateMetadata({
   const category = await getMasterCategoryBySlug(slug);
 
   if (!category) {
+    console.error("Category not found for metadata generation:", slug);
+
     return {
       title: "Category Not Found - Trickipedia",
       description: "The requested category could not be found on Trickipedia.",
