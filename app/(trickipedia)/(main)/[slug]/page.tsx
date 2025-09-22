@@ -153,14 +153,14 @@ export default async function CategoryPage({ params }: PageProps) {
             {category.description}
           </p>
           <Badge variant="secondary" className="text-sm">
-            {category.trick_count} total tricks
+            {category.trick_count} total {category.move_name + "s"}
           </Badge>
         </div>
 
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold">
-              Explore {category.name} Tricks
+            <h2 className="text-2xl font-bold capitalize">
+              Explore {category.name} {category.move_name + "s"}
             </h2>
           </div>
 
@@ -177,6 +177,7 @@ export default async function CategoryPage({ params }: PageProps) {
               }))}
               difficultyLabels={DIFFICULTY_LABELS}
               difficultyColors={DIFFICULTY_COLORS}
+              moveName={category.move_name}
             />
           ) : (
             <div className="text-center py-12 bg-muted/30 rounded-lg">

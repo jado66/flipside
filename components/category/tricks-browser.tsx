@@ -50,6 +50,7 @@ interface EnhancedTricksBrowserProps {
   }>;
   difficultyLabels: Record<number, string>;
   difficultyColors: Record<number, string>;
+  moveName: string;
 }
 
 type SortOption = "difficulty" | "alphabetical";
@@ -65,7 +66,8 @@ export function TricksBrowser({
   subcategories,
   difficultyLabels,
   difficultyColors,
-}: EnhancedTricksBrowserProps) {
+  moveName,
+}: EnhancedTricksBrowserProps & { moveName: string }) {
   const { user } = useAuth();
 
   const supabase = useSupabase();
@@ -265,7 +267,7 @@ export function TricksBrowser({
         });
 
         if (error) throw error;
-        toast.success("Trick marked as learned!");
+        toast.success(`${moveName} marked as learned!`);
       } else {
         // Remove can do status
         const { error } = await supabase
@@ -275,7 +277,7 @@ export function TricksBrowser({
           .eq("trick_id", trickId);
 
         if (error) throw error;
-        toast.info("Trick removed from learned tricks");
+        toast.info(`${moveName} removed from learned ${moveName}s`);
       }
     } catch (error) {
       console.error("Failed to toggle can-do status:", error);
@@ -425,7 +427,7 @@ export function TricksBrowser({
           <div className="relative flex-1">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
             <Input
-              placeholder={`Search ${categoryName} tricks...`}
+              placeholder={`Search ${categoryName} ${moveName}s...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -524,9 +526,12 @@ export function TricksBrowser({
       {/* Results Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h3 className="text-lg font-semibold">
-            {filteredAndSortedTricks.length} Trick
-            {filteredAndSortedTricks.length !== 1 ? "s" : ""}
+          <h3 className="text-lg font-semibold ">
+            <span className=" capitalize">
+              {filteredAndSortedTricks.length} {moveName}
+              {filteredAndSortedTricks.length !== 1 ? "s" : ""}
+            </span>
+
             {totalPages > 1 && (
               <span className="text-muted-foreground font-normal">
                 {" "}
@@ -548,18 +553,8 @@ export function TricksBrowser({
               onClick={() => setShowUnlearnedOnly((p) => !p)}
               className="h-8"
             >
-              {showUnlearnedOnly ? "Showing Unlearned" : "Show Unlearned"}
+              {showUnlearnedOnly ? "Show All" : "Show Unlearned"}
             </Button>
-            {showUnlearnedOnly && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setShowUnlearnedOnly(false)}
-                className="h-8"
-              >
-                Show All
-              </Button>
-            )}
           </div>
         )}
       </div>
@@ -665,8 +660,8 @@ export function TricksBrowser({
         <div className="text-center py-12 bg-muted/30 rounded-lg">
           <p className="text-muted-foreground text-lg mb-4">
             {hasActiveFilters
-              ? `No tricks found matching your filters`
-              : `No tricks found in ${categoryName}`}
+              ? `No ${moveName}s found matching your filters`
+              : `No ${moveName}s found in ${categoryName}`}
           </p>
           {hasActiveFilters && (
             <Button variant="outline" onClick={clearFilters}>

@@ -1,6 +1,5 @@
 "use client";
 import { useState, useCallback, useMemo, useEffect } from "react";
-import confetti from "canvas-confetti";
 import {
   ReactFlow,
   type Node,
@@ -23,49 +22,12 @@ import TrickNode from "./TrickNode";
 import { toast } from "sonner";
 import { ArrowBigLeft, ArrowBigRight, ChevronLeft, Info } from "lucide-react";
 import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useConfetti } from "@/contexts/confetti-provider";
 
 export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
   const supabase = useSupabase();
-  // Confetti burst function
-  const triggerConfetti = useCallback(() => {
-    const count = 200;
-    const defaults = { origin: { y: 0.7 } };
-    function fire(particleRatio: number, opts: confetti.Options) {
-      confetti({
-        ...defaults,
-        ...opts,
-        particleCount: Math.floor(count * particleRatio),
-      });
-    }
-    fire(0.25, { spread: 26, startVelocity: 55 });
-    fire(0.2, { spread: 60 });
-    fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
-    fire(0.1, { spread: 120, startVelocity: 25, decay: 0.92, scalar: 1.2 });
-    fire(0.1, { spread: 120, startVelocity: 45 });
-    setTimeout(() => {
-      confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: [
-          "#ff0000",
-          "#00ff00",
-          "#0000ff",
-          "#ffff00",
-          "#ff00ff",
-          "#00ffff",
-        ],
-      });
-    }, 300);
-    setTimeout(() => {
-      confetti({
-        particleCount: 50,
-        spread: 50,
-        origin: { y: 0.8 },
-        colors: ["#ffd700", "#ff6347", "#98fb98", "#87ceeb"],
-      });
-    }, 600);
-  }, []);
+  // Global confetti via provider
+  const { celebrate: triggerConfetti } = useConfetti();
   // Format slug for display (capitalize, replace dashes)
   const formattedSlug = useMemo(() => {
     if (!selectedCategory) return "Skill Tree";
@@ -606,7 +568,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
               className="disabled:hidden w-10 h-10 rounded flex items-center justify-center font-bold "
               aria-label="Previous unlearned trick"
             >
-              <ArrowBigLeft className=" transition-colors w-10 h-10 text-yellow-500 fill-current stroke-gray-800 stroke-1 hover:text-yellow-600 transition-colors" />
+              <ArrowBigLeft className=" transition-colors w-10 h-10 text-accent/80 fill-current hover:text-accent transition-colors" />
             </button>
           </div>
           <div className="bg-white px-4 py-2 rounded shadow-lg">
@@ -624,7 +586,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
               className="w-10 h-10 rounded flex items-center justify-center font-bold disabled:hidden "
               aria-label="Next unlearned trick"
             >
-              <ArrowBigRight className=" transition-colors w-10 h-10 text-yellow-500 fill-current stroke-gray-800 stroke-1 hover:text-yellow-600 transition-colors" />
+              <ArrowBigRight className=" transition-colors w-10 h-10 text-accent/80 fill-current hover:text-accent transition-colors" />
             </button>
           </div>
         </div>

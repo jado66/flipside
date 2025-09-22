@@ -20,6 +20,7 @@ import { useAuth } from "@/contexts/auth-provider";
 import { PermissionGate } from "@/components/permission-gate";
 import { toast } from "sonner";
 import { incrementTrickViews } from "@/lib/client/tricks-data-client";
+import { useConfetti } from "@/contexts/confetti-provider";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { MoveTrickDialog } from "./move-trick-dialog";
 import { useSupabase } from "@/utils/supabase/useSupabase";
@@ -82,6 +83,8 @@ export function ClientInteractions({ trick }: ClientInteractionsProps) {
     initializeInteractions(supabase);
   }, [trick.id, user, supabase]);
 
+  const { celebrate } = useConfetti();
+
   const handleToggleCanDo = async () => {
     if (!user) {
       toast.error("Please login to track your progress");
@@ -113,6 +116,7 @@ export function ClientInteractions({ trick }: ClientInteractionsProps) {
         setCanDo(true);
         setCanDoCount((prev) => prev + 1);
         toast.success("Great job! You've marked this trick as learned!");
+        celebrate();
       } else {
         // User can't do this trick anymore - remove the record
         const { error } = await supabase

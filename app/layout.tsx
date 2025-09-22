@@ -13,6 +13,7 @@ import {
   generateOrganizationStructuredData,
 } from "@/lib/structured-data-utils";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ConfettiProvider } from "@/contexts/confetti-provider";
 
 export const metadata: Metadata = {
   metadataBase: new URL(
@@ -124,7 +125,7 @@ export default function RootLayout({
             defaultTheme="trickipedia"
             themes={["trickipedia"]}
           >
-            {children}
+            <ConfettiProvider>{children}</ConfettiProvider>
           </ThemeProvider>
         </AuthProvider>
         <Analytics />

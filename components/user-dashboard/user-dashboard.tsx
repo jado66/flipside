@@ -19,9 +19,11 @@ import { Plus, Settings } from "lucide-react";
 import { Wishlist } from "../wishlist";
 import { FeaturePoll } from "../feature-poll";
 import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useConfetti } from "@/contexts/confetti-provider";
 
 export function UserDashboard() {
   const supabase = useSupabase();
+  const { celebrate } = useConfetti();
 
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<MasterCategory[]>([]);
@@ -322,6 +324,7 @@ export function UserDashboard() {
       }));
       calculateProgress(categories, allTricks as any, userTricksData);
       toast.success("Trick marked as learned");
+      celebrate();
     } catch (e) {
       toast.error("Failed to update trick");
       const reverted = new Set(optimistic);
