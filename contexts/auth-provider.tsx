@@ -9,7 +9,7 @@ import React, {
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { getSupabaseClient } from "@/utils/supabase/client"; // Import singleton
+import { useSupabase } from "@/utils/supabase/useSupabase";
 
 // Types
 export type UserRole = "user" | "admin" | "moderator";
@@ -77,7 +77,7 @@ export function AuthProvider({
   const [error, setError] = useState<Error | null>(null);
 
   // Use the singleton client
-  const supabase = getSupabaseClient();
+  const supabase = useSupabase();
 
   // Fetch public user data
   const fetchPublicUser = useCallback(
