@@ -477,6 +477,23 @@ export function MasterSideNav({
                               className="text-md md:text-sm hover:text-muted"
                             >
                               <Link
+                                href="/moderator/manage-subcategories"
+                                className="py-1 block"
+                              >
+                                Manage Subcategories
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                              asChild
+                              onClick={() => {
+                                if (onItemClick) onItemClick();
+                              }}
+                              className="text-md md:text-sm hover:text-muted"
+                            >
+                              <Link
                                 href="/moderator/skill-trees"
                                 className="py-1 block"
                               >
