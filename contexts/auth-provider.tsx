@@ -9,10 +9,10 @@ import React, {
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
-import { createBrowserClient } from "@supabase/ssr";
+import { getSupabaseClient } from "@/utils/supabase/client"; // Import singleton
 
 // Types
-export type UserRole = "user" | "admin" | "moderator"; // Add other roles as needed
+export type UserRole = "user" | "admin" | "moderator";
 
 export interface PublicUser {
   id: string;
@@ -45,7 +45,6 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
   updatePublicUser: (updates: Partial<PublicUser>) => Promise<void>;
-  // Permission helpers
   isAuthenticated: () => boolean;
   hasAdminAccess: () => boolean;
   hasModeratorAccess: () => boolean;
@@ -60,10 +59,8 @@ interface AccessRequirements {
   allowedRoles?: UserRole[];
 }
 
-// Create context
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Provider component
 export function AuthProvider({
   children,
   initialUser = null,
@@ -79,12 +76,8 @@ export function AuthProvider({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const [supabase] = useState(() =>
-    createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-  );
+  // Use the singleton client
+  const supabase = getSupabaseClient();
 
   // Fetch public user data
   const fetchPublicUser = useCallback(
@@ -113,6 +106,8 @@ export function AuthProvider({
 
   // Initialize auth state
   useEffect(() => {
+    let mounted = true;
+
     const initializeAuth = async () => {
       try {
         // Skip if we already have initial data
@@ -132,7 +127,7 @@ export function AuthProvider({
 
         if (sessionError) throw sessionError;
 
-        if (session) {
+        if (mounted && session) {
           setSession(session);
           if (!initialAuthUser) {
             setUser(session.user);
@@ -143,14 +138,18 @@ export function AuthProvider({
           }
         }
       } catch (err) {
-        console.error("Error initializing auth:", err);
-        setError(
-          err instanceof Error
-            ? err
-            : new Error("Failed to initialize authentication")
-        );
+        if (mounted) {
+          console.error("Error initializing auth:", err);
+          setError(
+            err instanceof Error
+              ? err
+              : new Error("Failed to initialize authentication")
+          );
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
       }
     };
 
@@ -160,6 +159,8 @@ export function AuthProvider({
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (!mounted) return;
+
       console.log("Auth state change:", event);
 
       setSession(session);
@@ -184,9 +185,11 @@ export function AuthProvider({
     });
 
     return () => {
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [fetchPublicUser, initialUser, initialAuthUser, supabase]);
+
   // Sign in
   const signIn = async (email: string, password: string) => {
     try {
@@ -197,8 +200,6 @@ export function AuthProvider({
       });
 
       if (error) throw error;
-
-      // Public user will be fetched automatically via onAuthStateChange
     } catch (err) {
       console.error("Sign in error:", err);
       setError(err instanceof Error ? err : new Error("Failed to sign in"));
@@ -215,7 +216,6 @@ export function AuthProvider({
     try {
       setError(null);
 
-      // Create auth user
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -224,7 +224,6 @@ export function AuthProvider({
       if (authError) throw authError;
       if (!authData.user) throw new Error("Failed to create user");
 
-      // Create public user record
       const publicUserData = {
         id: authData.user.id,
         email,
@@ -237,12 +236,9 @@ export function AuthProvider({
         .insert(publicUserData);
 
       if (publicError) {
-        // If public user creation fails, clean up auth user
         await supabase.auth.admin.deleteUser(authData.user.id);
         throw publicError;
       }
-
-      // Public user will be fetched automatically via onAuthStateChange
     } catch (err) {
       console.error("Sign up error:", err);
       setError(err instanceof Error ? err : new Error("Failed to sign up"));
@@ -257,7 +253,6 @@ export function AuthProvider({
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      // Clear state
       setUser(null);
       setPublicUser(null);
       setSession(null);
@@ -341,7 +336,6 @@ export function AuthProvider({
   }, [publicUser]);
 
   const hasModeratorAccess = useCallback(() => {
-    // Admin also has moderator access
     return publicUser?.role === "moderator" || publicUser?.role === "admin";
   }, [publicUser]);
 
@@ -349,14 +343,11 @@ export function AuthProvider({
     (role: UserRole) => {
       if (!publicUser) return false;
 
-      // Handle role hierarchy
       if (role === "user") {
-        // All authenticated users have at least user role
         return true;
       }
 
       if (role === "moderator") {
-        // Admin also satisfies moderator requirement
         return hasModeratorAccess();
       }
 
@@ -364,7 +355,6 @@ export function AuthProvider({
         return hasAdminAccess();
       }
 
-      // Direct role match for any custom roles
       return publicUser.role === role;
     },
     [publicUser, hasAdminAccess, hasModeratorAccess]
@@ -372,22 +362,18 @@ export function AuthProvider({
 
   const canAccess = useCallback(
     (requirements: AccessRequirements) => {
-      // Check authentication requirement
       if (requirements.requireAuth && !isAuthenticated()) {
         return false;
       }
 
-      // Check admin requirement
       if (requirements.requireAdmin && !hasAdminAccess()) {
         return false;
       }
 
-      // Check moderator requirement
       if (requirements.requireModerator && !hasModeratorAccess()) {
         return false;
       }
 
-      // Check allowed roles
       if (requirements.allowedRoles && requirements.allowedRoles.length > 0) {
         return requirements.allowedRoles.some((role) => hasRole(role));
       }
@@ -408,7 +394,6 @@ export function AuthProvider({
     signOut,
     refreshUser,
     updatePublicUser,
-    // Add permission helpers
     isAuthenticated,
     hasAdminAccess,
     hasModeratorAccess,
@@ -419,7 +404,6 @@ export function AuthProvider({
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// Hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

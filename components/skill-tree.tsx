@@ -615,7 +615,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
         {!loading && tricks.length === 0 && selectedCategory && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="text-gray-500">
-              No tricks found in this category
+              Try reloading the page. No tricks found in this category.
             </div>
           </div>
         )}
