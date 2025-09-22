@@ -50,7 +50,7 @@ interface EnhancedTricksBrowserProps {
   }>;
   difficultyLabels: Record<number, string>;
   difficultyColors: Record<number, string>;
-  moveName: string;
+  moveName?: string | null;
 }
 
 type SortOption = "difficulty" | "alphabetical";

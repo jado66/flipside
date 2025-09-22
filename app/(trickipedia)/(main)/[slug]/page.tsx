@@ -177,7 +177,7 @@ export default async function CategoryPage({ params }: PageProps) {
               }))}
               difficultyLabels={DIFFICULTY_LABELS}
               difficultyColors={DIFFICULTY_COLORS}
-              moveName={category.move_name}
+              moveName={category.move_name ?? "trick"}
             />
           ) : (
             <div className="text-center py-12 bg-muted/30 rounded-lg">
