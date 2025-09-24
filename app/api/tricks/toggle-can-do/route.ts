@@ -1,10 +1,10 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { createClient } from "@/utils/supabase/server";
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies });
+    // Create a server-side Supabase client (SSR) with cookie management
+    const supabase = await createClient();
 
     // Get the authenticated user
     const {
@@ -29,21 +29,35 @@ export async function POST(request: Request) {
     }
 
     if (canDo) {
-      // User can now do this trick - upsert the record
-      const { error } = await supabase.from("user_tricks").upsert(
+      // Check if a record already exists to preserve original achieved_at
+      const { data: existing, error: fetchError } = await supabase
+        .from("user_tricks")
+        .select("achieved_at")
+        .eq("user_id", user.id)
+        .eq("trick_id", trickId)
+        .maybeSingle();
+
+      if (fetchError) {
+        console.error(
+          "Error fetching existing user_tricks record:",
+          fetchError
+        );
+      }
+
+      const achievedAt = existing?.achieved_at || new Date().toISOString();
+
+      const { error: upsertError } = await supabase.from("user_tricks").upsert(
         {
           user_id: user.id,
           trick_id: trickId,
           can_do: true,
-          achieved_at: new Date().toISOString(),
+          achieved_at: achievedAt,
         },
-        {
-          onConflict: "user_id,trick_id",
-        }
+        { onConflict: "user_id,trick_id" }
       );
 
-      if (error) {
-        console.error("Error updating user_tricks:", error);
+      if (upsertError) {
+        console.error("Error updating user_tricks:", upsertError);
         return NextResponse.json(
           { error: "Failed to update trick status" },
           { status: 500 }
@@ -51,14 +65,14 @@ export async function POST(request: Request) {
       }
     } else {
       // User can't do this trick anymore - remove the record
-      const { error } = await supabase
+      const { error: deleteError } = await supabase
         .from("user_tricks")
         .delete()
         .eq("user_id", user.id)
         .eq("trick_id", trickId);
 
-      if (error) {
-        console.error("Error deleting user_tricks record:", error);
+      if (deleteError) {
+        console.error("Error deleting user_tricks record:", deleteError);
         return NextResponse.json(
           { error: "Failed to update trick status" },
           { status: 500 }

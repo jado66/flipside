@@ -1,6 +1,5 @@
 // app/auth/callback/route.ts
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs";
-import { cookies } from "next/headers";
+import { createClient } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -27,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     try {
-      const supabase = createRouteHandlerClient({ cookies });
+      const supabase = await createClient();
 
       console.log("Exchanging code for session...");
       const { data, error: exchangeError } =
@@ -65,5 +64,5 @@ export async function GET(request: NextRequest) {
   }
 
   // Redirect to dashboard or home page after successful authentication
-  return NextResponse.redirect(`${requestUrl.origin}/`);
+  return NextResponse.redirect(`${requestUrl.origin}/dashboard`);
 }
