@@ -230,7 +230,7 @@ export function EventUpsertDialog(props: EventUpsertDialogProps) {
             name="title"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>What's your event called? *</FormLabel>
+                <FormLabel>What&apos;s your event called? *</FormLabel>
                 <FormControl>
                   <Input
                     key="title-input"
