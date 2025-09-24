@@ -1,3 +1,6 @@
+/**
+ * @deprecated Use 'createClient' from '/utils/supabase/client' instead.
+ */
 import { createBrowserClient } from "@supabase/ssr";
 
 export const supabaseBrowserClient = createBrowserClient(

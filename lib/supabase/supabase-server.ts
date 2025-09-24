@@ -1,8 +1,6 @@
-// lib/supabase/supabase-server.ts
-// REMOVE any module-level client like:
-// export const supabaseServer = createServerClient(...)
-
-// INSTEAD, create a function that returns a new client:
+/**
+ * @deprecated Use 'createClient' from '/utils/supabase/server' instead.
+ */
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 

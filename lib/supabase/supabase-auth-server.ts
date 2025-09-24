@@ -1,3 +1,6 @@
+/**
+ * @deprecated you shouldn't use this anywhere, use client or server client creators instead.
+ */
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
