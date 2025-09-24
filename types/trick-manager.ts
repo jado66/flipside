@@ -23,6 +23,7 @@ export interface MasterCategory {
   slug: string;
   color: string | null;
   icon_name: string | null;
+  move_name: string;
 }
 
 export interface Subcategory {

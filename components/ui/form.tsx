@@ -29,12 +29,15 @@ const FormFieldContext = React.createContext<FormFieldContextValue>(
   {} as FormFieldContextValue
 );
 
+// Updated to align with react-hook-form >=7.60 which adds extra generic params
+// ControllerProps<TFieldValues, TName, TContext, TTransformedValues>
 const FormField = <
   TFieldValues extends FieldValues = FieldValues,
-  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>
->({
-  ...props
-}: ControllerProps<TFieldValues, TName>) => {
+  TName extends FieldPath<TFieldValues> = FieldPath<TFieldValues>,
+  TTransformedValues extends FieldValues = TFieldValues
+>(
+  props: ControllerProps<TFieldValues, TName, TTransformedValues>
+) => {
   return (
     <FormFieldContext.Provider value={{ name: props.name }}>
       <Controller {...props} />

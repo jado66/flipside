@@ -115,7 +115,9 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
           console.error("Error fetching user tricks:", error);
           return;
         }
-        const canDoSet = new Set(data?.map((record) => record.trick_id) || []);
+        const canDoSet = new Set<string>(
+          (data || []).map((record) => record.trick_id as string)
+        );
         setUserCanDoTricks(canDoSet);
       } catch (error) {
         console.error("Failed to fetch user's tricks:", error);
@@ -155,7 +157,6 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
         .order("difficulty_level", { ascending: true, nullsFirst: true });
 
       if (error) throw error;
-      // @ts-expect-error fix me
       setTricks(data || []);
     } catch (err) {
       console.error("Error fetching tricks:", err);

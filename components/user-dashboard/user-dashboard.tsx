@@ -137,7 +137,6 @@ export function UserDashboard() {
           console.error("Error fetching tricks", tricksError);
           throw tricksError;
         }
-        // @ts-expect-error complex nested type
         setAllTricks(tricksData || []);
 
         if (userId) {

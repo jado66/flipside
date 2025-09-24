@@ -18,6 +18,10 @@ import * as Icons from "lucide-react";
 import { PermissionGate } from "@/components/permission-gate";
 import { TricksBrowser } from "@/components/category/tricks-browser";
 import { iconMap } from "@/components/side-nav";
+import NotFoundComponent from "@/components/not-found";
+
+// Allow on-demand rendering so hidden/unlisted categories that are not part of any static paths still resolve.
+export const dynamic = "force-dynamic";
 
 const DIFFICULTY_LABELS = {
   1: "Beginner",
@@ -115,7 +119,11 @@ export default async function CategoryPage({ params }: PageProps) {
   ]);
 
   if (!category) {
-    notFound();
+    return (
+      <div className="min-h-screen bg-background">
+        <NotFoundComponent />
+      </div>
+    );
   }
 
   const tricks = tricksResponse?.tricks || [];
@@ -139,6 +147,24 @@ export default async function CategoryPage({ params }: PageProps) {
             Back to Sports &amp; Disciplines
           </Link>
         </div>
+
+        {/* Hidden / Unlisted Notice */}
+        {!category.is_active && (
+          <div className="mb-10 rounded-lg border border-amber-300/60 bg-amber-50 dark:border-amber-400/30 dark:bg-amber-950/30 p-4 flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+            <Badge
+              variant="outline"
+              className="bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-200 border-amber-300/70 dark:border-amber-700/60"
+            >
+              Unlisted
+            </Badge>
+            <p className="text-sm text-amber-900 dark:text-amber-100/80 leading-relaxed">
+              This {category.move_name || "category"} is currently hidden from
+              public listings. You can access it directly via URL, but it
+              won&apos;t appear in navigation or search until it&apos;s
+              published.
+            </p>
+          </div>
+        )}
 
         {/* Category Header */}
         <div className="text-center mb-12">

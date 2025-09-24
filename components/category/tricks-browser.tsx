@@ -112,7 +112,9 @@ export function TricksBrowser({
         }
 
         // Create a Set of trick IDs for fast lookup
-        const canDoSet = new Set(data?.map((record) => record.trick_id) || []);
+        const canDoSet = new Set<string>(
+          data?.map((record) => record.trick_id as string) || []
+        );
         setUserCanDoTricks(canDoSet);
       } catch (error) {
         console.error("Failed to fetch user's tricks:", error);

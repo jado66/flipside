@@ -83,5 +83,6 @@ export interface MasterCategory {
   created_at: string;
   updated_at: string;
   trick_count?: number;
+  move_name?: string | null;
   status?: "active" | "inactive" | "hidden";
 }
