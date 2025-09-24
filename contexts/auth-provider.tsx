@@ -11,7 +11,6 @@ import { User, Session } from "@supabase/supabase-js";
 import { useRouter } from "next/navigation";
 import { useSupabase } from "@/utils/supabase/useSupabase";
 
-// Types
 export type UserRole = "user" | "admin" | "moderator";
 
 export interface PublicUser {
@@ -49,34 +48,17 @@ interface AuthContextType {
   hasAdminAccess: () => boolean;
   hasModeratorAccess: () => boolean;
   hasRole: (role: UserRole) => boolean;
-  canAccess: (requirements: AccessRequirements) => boolean;
-}
-
-interface AccessRequirements {
-  requireAuth?: boolean;
-  requireAdmin?: boolean;
-  requireModerator?: boolean;
-  allowedRoles?: UserRole[];
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({
-  children,
-  initialUser = null,
-  initialAuthUser = null,
-}: {
-  children: React.ReactNode;
-  initialUser?: PublicUser | null;
-  initialAuthUser?: User | null;
-}) {
-  const [user, setUser] = useState<User | null>(initialAuthUser);
-  const [publicUser, setPublicUser] = useState<PublicUser | null>(initialUser);
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [publicUser, setPublicUser] = useState<PublicUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  // Use the singleton client
   const supabase = useSupabase();
 
   // Fetch public user data
@@ -104,42 +86,27 @@ export function AuthProvider({
     [supabase]
   );
 
-  // Initialize auth state
+  // Initialize auth state - simplified
   useEffect(() => {
     let mounted = true;
 
     const initializeAuth = async () => {
       try {
-        // Skip if we already have initial data
-        if (initialAuthUser && initialUser) {
-          setLoading(false);
-          return;
-        }
-
         setLoading(true);
-        setError(null);
 
-        // Get initial session
+        // Get session first
         const {
           data: { session },
-          error: sessionError,
         } = await supabase.auth.getSession();
 
-        if (sessionError) throw sessionError;
-
-        if (mounted && session) {
+        if (session?.user && mounted) {
           setSession(session);
-          if (!initialAuthUser) {
-            setUser(session.user);
-          }
-
-          if (!initialUser) {
-            await fetchPublicUser(session.user.id);
-          }
+          setUser(session.user);
+          await fetchPublicUser(session.user.id);
         }
       } catch (err) {
+        console.error("Error initializing auth:", err);
         if (mounted) {
-          console.error("Error initializing auth:", err);
           setError(
             err instanceof Error
               ? err
@@ -163,24 +130,19 @@ export function AuthProvider({
 
       console.log("Auth state change:", event);
 
-      setSession(session);
-      setUser(session?.user ?? null);
-
-      if (session?.user) {
-        await fetchPublicUser(session.user.id);
-      } else {
+      if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        if (session?.user) {
+          setSession(session);
+          setUser(session.user);
+          await fetchPublicUser(session.user.id);
+        }
+      } else if (event === "SIGNED_OUT") {
+        setSession(null);
+        setUser(null);
         setPublicUser(null);
-      }
-
-      switch (event) {
-        case "SIGNED_OUT":
-          setPublicUser(null);
-          break;
-        case "USER_UPDATED":
-          if (session?.user) {
-            await fetchPublicUser(session.user.id);
-          }
-          break;
+      } else if (event === "USER_UPDATED" && session?.user) {
+        setUser(session.user);
+        await fetchPublicUser(session.user.id);
       }
     });
 
@@ -188,7 +150,7 @@ export function AuthProvider({
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [fetchPublicUser, initialUser, initialAuthUser, supabase]);
+  }, [fetchPublicUser, supabase]);
 
   // Sign in
   const signIn = async (email: string, password: string) => {
@@ -200,6 +162,7 @@ export function AuthProvider({
       });
 
       if (error) throw error;
+      // Auth state change will handle setting user/session
     } catch (err) {
       console.error("Sign in error:", err);
       setError(err instanceof Error ? err : new Error("Failed to sign in"));
@@ -236,7 +199,8 @@ export function AuthProvider({
         .insert(publicUserData);
 
       if (publicError) {
-        await supabase.auth.admin.deleteUser(authData.user.id);
+        console.error("Failed to create public user profile:", publicError);
+        // Don't delete the auth user - let them retry
         throw publicError;
       }
     } catch (err) {
@@ -252,10 +216,7 @@ export function AuthProvider({
       setError(null);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-
-      setUser(null);
-      setPublicUser(null);
-      setSession(null);
+      // Auth state change will handle clearing state
     } catch (err) {
       console.error("Sign out error:", err);
       setError(err instanceof Error ? err : new Error("Failed to sign out"));
@@ -267,17 +228,14 @@ export function AuthProvider({
   const refreshUser = async () => {
     try {
       setError(null);
-
       const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (authError) throw authError;
-      if (!user) throw new Error("No user found");
-
-      setUser(user);
-      await fetchPublicUser(user.id);
+      if (session?.user) {
+        setUser(session.user);
+        await fetchPublicUser(session.user.id);
+      }
     } catch (err) {
       console.error("Refresh user error:", err);
       setError(
@@ -295,8 +253,6 @@ export function AuthProvider({
 
         if (!user) throw new Error("No user logged in");
 
-        console.log("AuthProvider updatePublicUser called with:", updates);
-
         const { data, error } = await supabase
           .from("users")
           .update({
@@ -307,12 +263,8 @@ export function AuthProvider({
           .select()
           .single();
 
-        if (error) {
-          console.error("Supabase update error:", error);
-          throw error;
-        }
+        if (error) throw error;
 
-        console.log("Update successful, data:", data);
         setPublicUser(data);
         return data;
       } catch (err) {
@@ -326,7 +278,7 @@ export function AuthProvider({
     [user, supabase]
   );
 
-  // Permission helper functions
+  // Permission helpers
   const isAuthenticated = useCallback(() => {
     return !!user && !!publicUser;
   }, [user, publicUser]);
@@ -342,45 +294,12 @@ export function AuthProvider({
   const hasRole = useCallback(
     (role: UserRole) => {
       if (!publicUser) return false;
-
-      if (role === "user") {
-        return true;
-      }
-
-      if (role === "moderator") {
-        return hasModeratorAccess();
-      }
-
-      if (role === "admin") {
-        return hasAdminAccess();
-      }
-
+      if (role === "user") return true;
+      if (role === "moderator") return hasModeratorAccess();
+      if (role === "admin") return hasAdminAccess();
       return publicUser.role === role;
     },
     [publicUser, hasAdminAccess, hasModeratorAccess]
-  );
-
-  const canAccess = useCallback(
-    (requirements: AccessRequirements) => {
-      if (requirements.requireAuth && !isAuthenticated()) {
-        return false;
-      }
-
-      if (requirements.requireAdmin && !hasAdminAccess()) {
-        return false;
-      }
-
-      if (requirements.requireModerator && !hasModeratorAccess()) {
-        return false;
-      }
-
-      if (requirements.allowedRoles && requirements.allowedRoles.length > 0) {
-        return requirements.allowedRoles.some((role) => hasRole(role));
-      }
-
-      return true;
-    },
-    [isAuthenticated, hasAdminAccess, hasModeratorAccess, hasRole]
   );
 
   const value = {
@@ -398,7 +317,6 @@ export function AuthProvider({
     hasAdminAccess,
     hasModeratorAccess,
     hasRole,
-    canAccess,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
@@ -410,63 +328,4 @@ export function useAuth() {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
-
-// Optional: HOC for protected routes
-export function withAuth<P extends object>(
-  Component: React.ComponentType<P>,
-  options?: {
-    redirectTo?: string;
-    allowedRoles?: UserRole[];
-  }
-) {
-  return function ProtectedComponent(props: P) {
-    const { user, publicUser, loading } = useAuth();
-    const router = useRouter();
-
-    useEffect(() => {
-      if (!loading && !user && options?.redirectTo && router) {
-        router.push(options.redirectTo);
-      }
-
-      if (!loading && publicUser && options?.allowedRoles) {
-        const hasRole = options.allowedRoles.includes(publicUser.role);
-        if (!hasRole && options.redirectTo && router) {
-          router.push(options.redirectTo);
-        }
-      }
-    }, [loading, user, publicUser, router]);
-
-    if (loading) {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
-      );
-    }
-
-    if (!user) {
-      return null;
-    }
-
-    if (options?.allowedRoles && publicUser) {
-      const hasRole = options.allowedRoles.includes(publicUser.role);
-      if (!hasRole) {
-        return (
-          <div className="flex items-center justify-center min-h-screen">
-            <div className="text-center">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Access Denied
-              </h2>
-              <p className="text-gray-600">
-                You don&apos;t have permission to access this page.
-              </p>
-            </div>
-          </div>
-        );
-      }
-    }
-
-    return <Component {...props} />;
-  };
 }

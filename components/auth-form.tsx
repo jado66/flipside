@@ -1,4 +1,4 @@
-import { login, signup } from "@/app/(trickipedia)/login/actions";
+import { login, signup } from "@/app/login/actions";
 import {
   Card,
   CardContent,

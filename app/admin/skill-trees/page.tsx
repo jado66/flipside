@@ -55,14 +55,6 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen">
-      <div className="fixed top-4 left-4 z-50 lg:block hidden">
-        <Button variant="outline" size="sm" asChild>
-          <Link href="/" className="flex items-center gap-2">
-            <ArrowLeft size={16} />
-            Back to View Mode
-          </Link>
-        </Button>
-      </div>
       <SkillTreeAdmin />
     </main>
   );

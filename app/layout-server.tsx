@@ -1,20 +1,14 @@
-//app\(trickipedia)\layout-server.tsx
 import { TrickipediaLayoutClient } from "./TrickipediaLayoutClient";
-import { AuthProvider } from "@/contexts/auth-provider";
 import type { NavigationCategory } from "@/components/side-nav/types";
 import { createSupabaseServer } from "@/lib/supabase/supabase-server";
 
 export const revalidate = 60;
-// // Or for on-demand revalidation, use:
-// import { revalidatePath } from 'next/cache';
-
-// In your API routes or server actions that modify navigation data:
-// revalidatePath('/', 'layout');
 
 async function getNavigationData(): Promise<NavigationCategory[]> {
-  const supabaseServer = await createSupabaseServer();
+  const supabase = await createSupabaseServer();
+
   try {
-    const { data, error } = await supabaseServer
+    const { data, error } = await supabase
       .from("master_categories")
       .select(
         `
@@ -51,7 +45,7 @@ async function getNavigationData(): Promise<NavigationCategory[]> {
       return [];
     }
 
-    // Transform the data to match NavigationCategory type
+    // Transform the data
     const transformedCategories: NavigationCategory[] = (data || []).map(
       (category: any) => ({
         id: category.id,
@@ -91,57 +85,19 @@ async function getNavigationData(): Promise<NavigationCategory[]> {
     return [];
   }
 }
-// app/(trickipedia)/layout-server.tsx
+
+// Server component - only fetch navigation data, no auth checks
 export async function TrickipediaLayoutServer({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const navigationData = await getNavigationData();
-  const supabase = await createSupabaseServer();
-  const {
-    data: { user: authUser },
-    error,
-  } = await supabase.auth.getUser();
 
-  let hydratedUser: any = null;
-  let userSportsIds: string[] = [];
-  if (authUser) {
-    const { data: profile } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", authUser.id)
-      .single();
-    if (profile) {
-      hydratedUser = {
-        id: profile.id,
-        email: profile.email,
-        role: profile.role || "user",
-        first_name: profile.first_name,
-        last_name: profile.last_name,
-        users_sports_ids: profile.users_sports_ids || [],
-      };
-      userSportsIds = profile.users_sports_ids || [];
-    }
-  }
-
-  // Filter navigation data based on user's selected sports
-  // Note: We'll do this filtering on the client side to allow real-time updates
-  // when user changes their sports selection
-  const filteredNavigationData = navigationData;
-
-  if (error) {
-    console.error("Server auth error (layout):", error);
-  }
-
+  // Don't try to get user in server component - let client handle it
   return (
-    <AuthProvider initialUser={hydratedUser} initialAuthUser={authUser}>
-      <TrickipediaLayoutClient
-        initialNavigationData={filteredNavigationData}
-        user={authUser}
-      >
-        {children}
-      </TrickipediaLayoutClient>
-    </AuthProvider>
+    <TrickipediaLayoutClient initialNavigationData={navigationData}>
+      {children}
+    </TrickipediaLayoutClient>
   );
 }

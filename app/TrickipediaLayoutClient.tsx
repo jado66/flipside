@@ -1,8 +1,8 @@
+// 3. app/(trickipedia)/TrickipediaLayoutClient.tsx - UPDATED
 "use client";
 
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
-import { ThemeProvider } from "@/components/theme-provider";
 import { TrickipediaHeader } from "@/components/trickipedia-header";
 import {
   SidebarProvider,
@@ -12,19 +12,17 @@ import {
 import { MasterSideNav } from "@/components/side-nav";
 import { NavigationProvider } from "@/contexts/navigation-provider";
 import type { NavigationCategory } from "@/components/side-nav/types";
-
-import type { User } from "@supabase/supabase-js";
+import { useAuth } from "@/contexts/auth-provider";
 
 export function TrickipediaLayoutClient({
   children,
   initialNavigationData,
-  user,
 }: {
   children: React.ReactNode;
   initialNavigationData: NavigationCategory[];
-  user?: User | null;
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { user } = useAuth(); // Get user from context
 
   return (
     <NavigationProvider initialData={initialNavigationData}>
@@ -50,7 +48,6 @@ export function TrickipediaLayoutClient({
                 />
               </div>
             </div>
-            {/* Click outside to close */}
             <div
               className="flex-1"
               onClick={() => setMobileSidebarOpen(false)}
