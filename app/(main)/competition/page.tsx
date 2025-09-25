@@ -3,7 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Users, Zap, Crown, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-export default function HomePage() {
+export default function CompetitionPage() {
+  // Calculate weeks remaining until end of November 2025
+  const getWeeksRemaining = () => {
+    const now = new Date();
+    const endOfNov2025 = new Date(2025, 10, 30); // November 30, 2025 (month is 0-indexed)
+    const diffInMs = endOfNov2025.getTime() - now.getTime();
+    const diffInWeeks = Math.ceil(diffInMs / (1000 * 60 * 60 * 24 * 7));
+    return Math.max(0, diffInWeeks); // Ensure it doesn't go negative
+  };
+
+  const weeksRemaining = getWeeksRemaining();
+
   return (
     <div className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -19,10 +30,11 @@ export default function HomePage() {
               </span>
             </h1>
           </div>
-          <p className="text-2xl text-muted-foreground max-w-3xl mx-auto text-balance leading-relaxed mb-8">
-            Join the ultimate 8-week competition to become a Trickipedia legend.
-            Earn XP, refer friends, and compete for eternal recognition in our
-            Hall of Fame.
+          <p className="text-2xl text-muted-foreground max-w-4xl mx-auto text-balance leading-relaxed mb-8">
+            Join our {weeksRemaining}-week founding competition to become
+            remembered as an essential Trickipedia contributor. Earn XP, refer
+            friends, and compete to be added to a permanent founding member on
+            our acknowledgment&apos;s page.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
             <Button asChild size="lg" className="text-lg px-8 py-6">
@@ -71,10 +83,6 @@ export default function HomePage() {
                   <div className="w-2 h-2 bg-chart-2 rounded-full"></div>
                   Share valuable sports insights
                 </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-chart-2 rounded-full"></div>
-                  Participate in community discussions
-                </li>
               </ul>
             </CardContent>
           </Card>
@@ -105,10 +113,6 @@ export default function HomePage() {
                   <div className="w-2 h-2 bg-primary rounded-full"></div>
                   Help new users get started
                 </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-primary rounded-full"></div>
-                  Build lasting community connections
-                </li>
               </ul>
             </CardContent>
           </Card>
@@ -121,9 +125,9 @@ export default function HomePage() {
               <Crown className="h-12 w-12 text-primary mx-auto mb-4" />
               <h3 className="text-2xl font-bold mb-4">Ready to Compete?</h3>
               <p className="text-muted-foreground mb-6">
-                Join the competition now and start earning your way to the Hall
-                of Fame. The top 5 contributors will be forever remembered as
-                Trickipedia legends.
+                Join the competition now and in {weeksRemaining} weeks the top 5
+                contributors will be forever remembered as a founding
+                contributor. Good luck!
               </p>
               <Button asChild size="lg" className="text-lg px-8 py-6">
                 <Link href="/competition/scoreboard">
