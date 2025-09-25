@@ -14,11 +14,11 @@ import { TrickInfoSidebar } from "@/components/tricks/trick-info-sidebar";
 import { ExternalLink } from "lucide-react";
 
 interface TrickDetailPageProps {
-  params: {
+  params: Promise<{
     trick_slug: string;
     slug: string;
     subcategory: string;
-  };
+  }>;
 }
 
 // Generate metadata for SEO
