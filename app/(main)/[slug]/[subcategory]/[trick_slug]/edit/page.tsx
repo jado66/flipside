@@ -11,7 +11,7 @@ import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
 import { TrickForm } from "@/components/trick-form";
 import { Trick, TrickData } from "@/types/trick";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 export default function TrickEditPage() {
   const router = useRouter();

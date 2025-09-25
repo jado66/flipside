@@ -9,8 +9,10 @@ export function TrickItem({
   categoryColor: string;
 }) {
   return (
-    <div className="p-3 rounded-lg border-2 bg-white border-gray-300 shadow-lg">
-      <div className="font-semibold text-sm mb-1">{trick.name}</div>
+    <div className="p-3 rounded-lg border-2 bg-card border-border shadow-lg">
+      <div className="font-semibold text-sm mb-1 text-foreground">
+        {trick.name}
+      </div>
       {trick.difficulty_level && (
         <div
           className="text-xs font-medium mb-1"
@@ -20,7 +22,7 @@ export function TrickItem({
         </div>
       )}
       {trick.description && (
-        <div className="text-xs text-gray-500 line-clamp-2">
+        <div className="text-xs text-muted-foreground line-clamp-2">
           {trick.description}
         </div>
       )}

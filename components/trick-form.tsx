@@ -42,7 +42,7 @@ import {
   CardDescription,
   CardContent,
 } from "@/components/ui/card";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 export function TrickForm({
   mode,

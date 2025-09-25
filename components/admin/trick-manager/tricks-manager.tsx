@@ -42,9 +42,33 @@ import { DifficultyZone } from "./difficulty-zone";
 import { TrickItem } from "./trick-item";
 import { SortableTrickItem } from "./sortable-trick-item";
 import { toast } from "sonner";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
+import { useTheme } from "next-themes";
 
 export function TricksDndManager() {
+  const { theme } = useTheme();
+
+  // Utility function to adjust color brightness for dark mode
+  const adjustColorForTheme = (color: string) => {
+    if (theme !== "dark" || !color) return color;
+
+    // Convert hex to RGB
+    const hex = color.replace("#", "");
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    // Lighten the color for dark mode (increase brightness by 40%)
+    const lighten = (c: number) =>
+      Math.min(255, Math.floor(c + (255 - c) * 0.4));
+
+    const newR = lighten(r).toString(16).padStart(2, "0");
+    const newG = lighten(g).toString(16).padStart(2, "0");
+    const newB = lighten(b).toString(16).padStart(2, "0");
+
+    return `#${newR}${newG}${newB}`;
+  };
+
   const [categories, setCategories] = useState<MasterCategory[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -505,6 +529,7 @@ export function TricksDndManager() {
 
   const currentCategory = categories.find((c) => c.id === selectedCategory);
   const categoryColor = currentCategory?.color || "#3b82f6";
+  const themeAdjustedCategoryColor = adjustColorForTheme(categoryColor);
   const difficultyLevels = Array.from({ length: 10 }, (_, i) => i + 1);
   const activeTrick = activeId ? tricks.find((t) => t.id === activeId) : null;
 
@@ -520,13 +545,15 @@ export function TricksDndManager() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-gray-50">
+    <div className="w-full min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b p-4 shadow-sm sticky top-0 z-40 hidden lg:block">
+      <div className="bg-card border-b p-4 shadow-sm sticky top-0 z-40 hidden lg:block">
         <div className=" mx-auto">
           <div className="flex items-center justify-between mb-4 ">
-            <h1 className="text-2xl font-bold">Tricks Manager</h1>
-            <span className="text-sm text-gray-600">
+            <h1 className="text-2xl font-bold text-foreground">
+              Tricks Manager
+            </h1>
+            <span className="text-sm text-muted-foreground">
               <Info className="inline-block mr-1" size={14} />
               As an admin, you can manage tricks by dragging and dropping them
               between difficulty zones or subcategories.
@@ -568,7 +595,7 @@ export function TricksDndManager() {
                         }
                       >
                         <SelectTrigger
-                          className="h-auto px-1 py-0 border-none shadow-none bg-transparent hover:bg-transparent focus:ring-0 focus:outline-none w-auto text-gray-700 [&>svg]:hidden"
+                          className="h-auto px-1 py-0 border-none shadow-none bg-transparent hover:bg-transparent focus:ring-0 focus:outline-none w-auto text-foreground [&>svg]:hidden"
                           aria-label="Select subcategory"
                         >
                           <SelectValue placeholder="Unassigned" />
@@ -595,7 +622,7 @@ export function TricksDndManager() {
                         }
                       >
                         <SelectTrigger
-                          className="h-auto px-1 py-0 border-none shadow-none bg-transparent hover:bg-transparent focus:ring-0 focus:outline-none text-sm text-gray-700 w-auto [&>svg]:hidden"
+                          className="h-auto px-1 py-0 border-none shadow-none bg-transparent hover:bg-transparent focus:ring-0 focus:outline-none text-sm text-foreground w-auto [&>svg]:hidden"
                           aria-label="Select difficulty level"
                         >
                           <SelectValue
@@ -660,12 +687,12 @@ export function TricksDndManager() {
                       />
                       <p className="text-xs mt-1">
                         {detectedMediaType === "youtube" && (
-                          <span className="text-green-600">
+                          <span className="text-success">
                             Detected: YouTube video ✔
                           </span>
                         )}
                         {detectedMediaType === "image" && (
-                          <span className="text-green-600">
+                          <span className="text-success">
                             Detected: Image ✔
                           </span>
                         )}
@@ -725,21 +752,25 @@ export function TricksDndManager() {
                   ${
                     selectedCategory === category.id
                       ? "border-primary bg-primary/10 text-primary"
-                      : "border-gray-300 bg-white hover:border-gray-400"
+                      : "border-border bg-card hover:border-muted-foreground"
                   }
                 `}
                 style={{
                   borderColor:
                     selectedCategory === category.id
-                      ? category.color || undefined
+                      ? adjustColorForTheme(category.color || "#3b82f6") ||
+                        undefined
                       : undefined,
                   backgroundColor:
                     selectedCategory === category.id
-                      ? `${category.color}15` || undefined
+                      ? `${adjustColorForTheme(
+                          category.color || "#3b82f6"
+                        )}15` || undefined
                       : undefined,
                   color:
                     selectedCategory === category.id
-                      ? category.color || undefined
+                      ? adjustColorForTheme(category.color || "#3b82f6") ||
+                        undefined
                       : undefined,
                 }}
               >
@@ -752,13 +783,13 @@ export function TricksDndManager() {
 
       {/* Notifications */}
       {error && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded z-50">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-destructive/10 border border-destructive text-destructive-foreground px-4 py-2 rounded z-50">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded z-50">
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-success/10 border border-success text-success-foreground px-4 py-2 rounded z-50">
           {success}
         </div>
       )}
@@ -792,7 +823,7 @@ export function TricksDndManager() {
                       key={subcategory.id}
                       className={`h-fit flex-shrink-0 w-72 scroll-snap-align-start px-2 pb-2 ${
                         subcategories[0].id !== subcategory.id
-                          ? "border-l border-gray-200 pl-4"
+                          ? "border-l border-border pl-4"
                           : ""
                       }`}
                       style={{ scrollSnapAlign: "start" }}
@@ -800,7 +831,7 @@ export function TricksDndManager() {
                       <div className="pb-3 pt-3">
                         <h3
                           className="text-lg font-semibold text-center tracking-tight"
-                          style={{ color: categoryColor }}
+                          style={{ color: themeAdjustedCategoryColor }}
                         >
                           {subcategory.name}
                         </h3>
@@ -823,7 +854,7 @@ export function TricksDndManager() {
                                 subcategoryId={subcategory.id}
                                 difficulty={difficulty}
                                 tricks={difficultyTricks}
-                                categoryColor={categoryColor}
+                                categoryColor={themeAdjustedCategoryColor}
                                 modifiedTricks={modifiedTricks}
                                 onAddTrick={openAddTrickAt}
                               />
@@ -833,7 +864,7 @@ export function TricksDndManager() {
                           {/* Show empty state when no tricks */}
                           {getTricksForSubcategory(subcategory.id).length ===
                             0 && (
-                            <div className="text-center text-gray-500 py-6 border-2 border-dashed border-gray-200 rounded-lg flex flex-col items-center gap-3">
+                            <div className="text-center text-muted-foreground py-6 border-2 border-dashed border-border rounded-lg flex flex-col items-center gap-3">
                               <span className="text-sm">No tricks yet</span>
                               <Button
                                 variant="ghost"
@@ -845,7 +876,7 @@ export function TricksDndManager() {
                               >
                                 <Plus size={16} /> Add first trick
                               </Button>
-                              <span className="text-xs text-gray-400">
+                              <span className="text-xs text-muted-foreground">
                                 or drop an existing trick here
                               </span>
                             </div>
@@ -863,7 +894,7 @@ export function TricksDndManager() {
                     style={{ scrollSnapAlign: "start" }}
                   >
                     <CardHeader className="pb-3">
-                      <CardTitle className="text-lg font-semibold text-center text-gray-500">
+                      <CardTitle className="text-lg font-semibold text-center text-muted-foreground">
                         Unassigned
                       </CardTitle>
                     </CardHeader>
@@ -952,7 +983,10 @@ export function TricksDndManager() {
 
             <DragOverlay>
               {activeTrick ? (
-                <TrickItem trick={activeTrick} categoryColor={categoryColor} />
+                <TrickItem
+                  trick={activeTrick}
+                  categoryColor={themeAdjustedCategoryColor}
+                />
               ) : null}
             </DragOverlay>
           </DndContext>

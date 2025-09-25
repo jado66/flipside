@@ -4,8 +4,7 @@ import {
   TrickData,
   TrickWithLinkedPrerequisites,
 } from "@/types/trick";
-import { createSupabaseServer } from "../supabase/supabase-server";
-
+import { createServer } from "@/utils/supabase/server";
 // Get tricks with filters
 export async function getTricks(filters?: {
   category?: string;
@@ -25,8 +24,7 @@ export async function getTricks(filters?: {
 
   sortOrder?: "asc" | "desc";
 }): Promise<{ tricks: Trick[]; total: number }> {
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   let query = supabaseServer
     .from("tricks")
     .select(
@@ -105,7 +103,7 @@ export async function getTrickBySlug(
   categorySlug?: string,
   subcategorySlug?: string
 ): Promise<TrickData | null> {
-  const supabaseServer = await createSupabaseServer();
+  const supabaseServer = await createServer();
   let query = supabaseServer
     .from("tricks")
     .select(
@@ -200,8 +198,7 @@ export async function fetchPrerequisiteTricksByIds(
 ): Promise<PrerequisiteTrick[]> {
   if (!ids || ids.length === 0) return [];
 
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   let query = supabaseServer
     .from("tricks")
     .select(
@@ -253,8 +250,7 @@ export async function fetchPrerequisiteTricks(
   // Clean up prerequisite_ids for matching (case-insensitive)
   const cleanedPrerequisites = prerequisite_ids.map((p) => p.trim());
 
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   // Build query to find matching tricks
   let query = supabaseServer
     .from("tricks")
@@ -308,8 +304,7 @@ export async function fetchPrerequisiteTricks(
 
 // Get navigation data with hierarchical structure for side nav (server-side)
 export async function getNavigationData() {
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   const { data, error } = await supabaseServer
     .from("master_categories")
     .select(
@@ -359,7 +354,7 @@ export async function getNavigationData() {
 
 // Get master categories with counts (server-side)
 export async function getMasterCategories() {
-  const supabaseServer = await createSupabaseServer();
+  const supabaseServer = await createServer();
   try {
     const { data, error } = await supabaseServer.rpc(
       "get_master_categories_with_counts"

@@ -10,6 +10,7 @@ export default function PasswordInput({
   placeholder,
   minLength,
   className,
+  disabled,
 }: {
   id: string;
   name: string;
@@ -17,6 +18,7 @@ export default function PasswordInput({
   placeholder?: string;
   minLength?: number;
   className?: string;
+  disabled?: boolean;
 }) {
   const [show, setShow] = useState(false);
   return (
@@ -29,13 +31,15 @@ export default function PasswordInput({
         placeholder={placeholder}
         minLength={minLength}
         className={className}
+        disabled={disabled}
       />
       <button
         type="button"
         tabIndex={-1}
         aria-label={show ? "Hide password" : "Show password"}
         onClick={() => setShow((v) => !v)}
-        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none"
+        disabled={disabled}
+        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {show ? <EyeOff size={20} /> : <Eye size={20} />}
       </button>

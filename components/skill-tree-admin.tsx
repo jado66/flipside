@@ -18,7 +18,8 @@ import {
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { Save, RefreshCw, Trash2, Info } from "lucide-react";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
+import { useTheme } from "next-themes";
 
 // Types
 interface Trick {
@@ -63,8 +64,8 @@ const AdminTrickNode = ({ data }: { data: TrickNodeData }) => {
         min-w-[180px] max-w-[220px] text-center relative
         ${
           isModified
-            ? "bg-yellow-50 border-yellow-400 shadow-lg"
-            : "bg-white border-gray-300 hover:border-gray-400 shadow-md"
+            ? "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-400 dark:border-yellow-500 shadow-lg"
+            : "bg-card border-border hover:border-muted-foreground shadow-md"
         }
       `}
     >
@@ -80,14 +81,16 @@ const AdminTrickNode = ({ data }: { data: TrickNodeData }) => {
         </div>
       )}
 
-      <div className="font-semibold text-sm mb-1">{trick.name}</div>
+      <div className="font-semibold text-sm mb-1 text-foreground">
+        {trick.name}
+      </div>
       {trick.difficulty_level && (
-        <div className="text-xs text-gray-500">
+        <div className="text-xs text-muted-foreground">
           Difficulty: {trick.difficulty_level}/10
         </div>
       )}
       {trick.prerequisite_ids && trick.prerequisite_ids.length > 0 && (
-        <div className="text-xs text-gray-400 mt-1">
+        <div className="text-xs text-muted-foreground mt-1">
           {trick.prerequisite_ids.length} prerequisite
           {trick.prerequisite_ids.length > 1 ? "s" : ""}
         </div>
@@ -104,6 +107,29 @@ const AdminTrickNode = ({ data }: { data: TrickNodeData }) => {
 
 // Main Admin Component
 export function SkillTreeAdmin() {
+  const { theme } = useTheme();
+
+  // Utility function to adjust color brightness for dark mode
+  const adjustColorForTheme = (color: string) => {
+    if (theme !== "dark" || !color) return color;
+
+    // Convert hex to RGB
+    const hex = color.replace("#", "");
+    const r = parseInt(hex.substr(0, 2), 16);
+    const g = parseInt(hex.substr(2, 2), 16);
+    const b = parseInt(hex.substr(4, 2), 16);
+
+    // Lighten the color for dark mode (increase brightness by 40%)
+    const lighten = (c: number) =>
+      Math.min(255, Math.floor(c + (255 - c) * 0.4));
+
+    const newR = lighten(r).toString(16).padStart(2, "0");
+    const newG = lighten(g).toString(16).padStart(2, "0");
+    const newB = lighten(b).toString(16).padStart(2, "0");
+
+    return `#${newR}${newG}${newB}`;
+  };
+
   const [categories, setCategories] = useState<MasterCategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [tricks, setTricks] = useState<Trick[]>([]);
@@ -348,6 +374,7 @@ export function SkillTreeAdmin() {
 
     const currentCategory = categories.find((c) => c.id === selectedCategory);
     const categoryColor = currentCategory?.color || "#3b82f6";
+    const themeAdjustedCategoryColor = adjustColorForTheme(categoryColor);
 
     const trickById = new Map<string, Trick>();
     tricks.forEach((trick) => {
@@ -388,7 +415,7 @@ export function SkillTreeAdmin() {
                 style: {
                   stroke: modifiedTricks.has(trick.id)
                     ? "#f59e0b"
-                    : categoryColor,
+                    : themeAdjustedCategoryColor,
                   strokeWidth: 2,
                   cursor: "pointer",
                 },
@@ -396,7 +423,7 @@ export function SkillTreeAdmin() {
                   type: MarkerType.ArrowClosed,
                   color: modifiedTricks.has(trick.id)
                     ? "#f59e0b"
-                    : categoryColor,
+                    : themeAdjustedCategoryColor,
                 },
                 className: "hover:stroke-red-500 transition-colors",
               });
@@ -452,11 +479,13 @@ export function SkillTreeAdmin() {
   const currentCategory = categories.find((c) => c.id === selectedCategory);
 
   return (
-    <div className="w-full h-screen flex flex-col bg-gray-50">
+    <div className="w-full h-screen flex flex-col bg-background">
       {/* Header */}
-      <div className="bg-white border-b p-4 shadow-sm hidden lg:block">
+      <div className="bg-card border-b p-4 shadow-sm hidden lg:block">
         <div className="max-w-7xl mx-auto">
-          <h1 className="text-2xl font-bold mb-4">Skill Tree Admin</h1>
+          <h1 className="text-2xl font-bold mb-4 text-foreground">
+            Skill Tree Admin
+          </h1>
           <div className="flex gap-2 flex-wrap">
             {categories.map((category) => (
               <button
@@ -466,22 +495,26 @@ export function SkillTreeAdmin() {
                   px-4 py-2 rounded-lg border-2 transition-all font-medium
                   ${
                     selectedCategory === category.id
-                      ? "border-blue-500 bg-blue-50 text-blue-700"
-                      : "border-gray-300 bg-white hover:border-gray-400"
+                      ? "border-primary bg-primary/10 text-primary"
+                      : "border-border bg-card hover:border-muted-foreground"
                   }
                 `}
                 style={{
                   borderColor:
                     selectedCategory === category.id
-                      ? category.color || undefined
+                      ? adjustColorForTheme(category.color || "#3b82f6") ||
+                        undefined
                       : undefined,
                   backgroundColor:
                     selectedCategory === category.id
-                      ? `${category.color}15` || undefined
+                      ? `${adjustColorForTheme(
+                          category.color || "#3b82f6"
+                        )}15` || undefined
                       : undefined,
                   color:
                     selectedCategory === category.id
-                      ? category.color || undefined
+                      ? adjustColorForTheme(category.color || "#3b82f6") ||
+                        undefined
                       : undefined,
                 }}
               >
@@ -494,13 +527,13 @@ export function SkillTreeAdmin() {
 
       {/* Notifications */}
       {error && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded z-50">
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-destructive/10 border border-destructive text-destructive-foreground px-4 py-2 rounded z-50">
           {error}
         </div>
       )}
 
       {success && (
-        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-green-100 border border-green-400 text-green-700 px-4 py-2 rounded z-50">
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 bg-green-100 dark:bg-green-900/20 border border-green-400 dark:border-green-500 text-green-700 dark:text-green-300 px-4 py-2 rounded z-50">
           {success}
         </div>
       )}
@@ -508,8 +541,10 @@ export function SkillTreeAdmin() {
       {/* Tree View */}
       <div className="flex-1 relative hidden lg:block">
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-            <div className="text-lg font-medium">Loading tricks...</div>
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+            <div className="text-lg font-medium text-foreground">
+              Loading tricks...
+            </div>
           </div>
         )}
 
@@ -523,6 +558,7 @@ export function SkillTreeAdmin() {
             onEdgesDelete={onEdgesDelete}
             onEdgeContextMenu={onEdgeContextMenu}
             nodeTypes={nodeTypes}
+            colorMode={theme === "dark" ? "dark" : "light"}
             fitView
             fitViewOptions={{ padding: 0.2 }}
             deleteKeyCode={["Delete", "Backspace"]}
@@ -537,9 +573,11 @@ export function SkillTreeAdmin() {
             {/* Control Panel */}
             <Panel
               position="top-right"
-              className="bg-white border rounded-lg p-4 shadow-lg space-y-3"
+              className="bg-card border rounded-lg p-4 shadow-lg space-y-3"
             >
-              <div className="text-sm font-semibold">Admin Controls</div>
+              <div className="text-sm font-semibold text-foreground">
+                Admin Controls
+              </div>
 
               <div className="space-y-2">
                 <button
@@ -577,7 +615,7 @@ export function SkillTreeAdmin() {
                 </button>
               </div>
 
-              <div className="text-xs text-gray-500 space-y-1 border-t pt-2">
+              <div className="text-xs text-muted-foreground space-y-1 border-t pt-2">
                 <div className="flex items-center gap-1">
                   <Info size={12} />
                   <span>Instructions:</span>

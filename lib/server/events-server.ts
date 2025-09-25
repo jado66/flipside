@@ -1,11 +1,10 @@
 import { Event } from "@/types/event";
 import { geocodeAddress } from "../services/geocoding";
-import { createSupabaseServer } from "../supabase/supabase-server";
-
+import { createServer } from "@/utils/supabase/server";
 export async function getEventsByCategory(
   categorySlug: string
 ): Promise<Event[]> {
-  const supabaseServer = await createSupabaseServer();
+  const supabaseServer = await createServer();
   const { data, error } = await supabaseServer
     .from("events")
     .select(
@@ -27,8 +26,7 @@ export async function getEventsByCategory(
 }
 
 export async function getEventById(eventId: string): Promise<Event | null> {
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   const { data, error } = await supabaseServer
     .from("events")
     .select(

@@ -39,17 +39,19 @@ export function SortableTrickItem({
         ${isDragging ? "opacity-50 z-50" : ""}
         ${
           isModified
-            ? "bg-yellow-50 border-yellow-400 shadow-lg"
-            : "bg-white border-gray-200 hover:border-gray-300 shadow-sm hover:shadow-md"
+            ? "bg-warning/10 border-warning shadow-lg"
+            : "bg-card border-border hover:border-muted-foreground shadow-sm hover:shadow-md"
         }
       `}
     >
       {isModified && (
-        <div className="absolute -top-2 -right-2 bg-yellow-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+        <div className="absolute -top-2 -right-2 bg-warning text-warning-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
           !
         </div>
       )}
-      <div className="font-semibold text-sm mb-1">{trick.name}</div>
+      <div className="font-semibold text-sm mb-1 text-foreground">
+        {trick.name}
+      </div>
     </div>
   );
 }

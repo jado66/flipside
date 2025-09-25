@@ -23,12 +23,14 @@ import { useAuth } from "@/contexts/auth-provider";
 import { useNavigation } from "@/contexts/navigation-provider";
 import { cn } from "@/lib/utils";
 import { Separator } from "@radix-ui/react-dropdown-menu";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export function MasterSideNav({
   onItemClick,
 }: { onItemClick?: () => void } = {}) {
   const router = useRouter();
-  const { user, publicUser, signOut } = useAuth();
+  const { user, publicUser, signOut, hasModeratorAccess, hasAdminAccess } =
+    useAuth();
 
   // Use the navigation context
   const {
@@ -389,7 +391,7 @@ export function MasterSideNav({
                   })
                 )}
 
-                {user && publicUser?.role === "moderator" && (
+                {user && hasModeratorAccess() && (
                   <>
                     {/* Moderator dropdown to match master category sizing */}
                     <div className="px-2 my-2">
@@ -507,9 +509,81 @@ export function MasterSideNav({
                   </>
                 )}
 
+                {user && hasAdminAccess() && (
+                  <>
+                    {/* Moderator dropdown to match master category sizing */}
+
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        onClick={() => {
+                          const id = "admin-tools";
+                          // toggle expanded state for moderator tools (allow only this as master-like)
+                          setExpandedItems((prev) => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(id)) {
+                              newSet.delete(id);
+                            } else {
+                              // close other master categories and open moderator-tools
+                              newSet.clear();
+                              newSet.add(id);
+                            }
+                            return newSet;
+                          });
+                          // if (onItemClick) onItemClick();
+                        }}
+                        className={cn(
+                          "text-2xl md:text-base group",
+                          "hover:text-muted"
+                        )}
+                      >
+                        <div className="flex items-center gap-2 cursor-pointer">
+                          <span className="truncate">Admin Tools</span>
+                          {expandedItems.has("moderator-tools") ? (
+                            <ChevronDown
+                              className={cn("h-3 w-3 ml-1", "hover:text-muted")}
+                            />
+                          ) : (
+                            <ChevronRight
+                              className={cn("h-3 w-3 ml-1", "hover:text-muted")}
+                            />
+                          )}
+                        </div>
+                      </SidebarMenuButton>
+
+                      {expandedItems.has("admin-tools") && (
+                        <SidebarMenuSub>
+                          <SidebarMenuSubItem>
+                            <SidebarMenuSubButton
+                              asChild
+                              onClick={() => {
+                                if (onItemClick) onItemClick();
+                              }}
+                              className="text-md md:text-sm hover:text-muted"
+                            >
+                              <Link
+                                href="/admin/user-management"
+                                className="py-1 block"
+                              >
+                                Manage Users
+                              </Link>
+                            </SidebarMenuSubButton>
+                          </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                      )}
+                    </SidebarMenuItem>
+                  </>
+                )}
+
                 {/* Mobile-only user nav or login/join buttons after categories */}
                 <div className="block sm:hidden">
                   <div className="my-4 border-t border-border" />
+                  {publicUser && (publicUser.referrals ?? 0) >= 2 && (
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="text-sm font-medium">Theme</span>
+                      <ThemeToggle />
+                    </div>
+                  )}
                   <CloseSideBarLink href="/about" className="w-full block">
                     <SidebarHeader className="text-md ">About</SidebarHeader>
                   </CloseSideBarLink>
@@ -569,7 +643,7 @@ export function MasterSideNav({
                       </CloseSideBarLink>
 
                       <CloseSideBarLink
-                        href={`/login`}
+                        href={`/signup`}
                         className=" block truncate bg-primary text-primary-foreground"
                       >
                         <SidebarHeader>Join Now</SidebarHeader>

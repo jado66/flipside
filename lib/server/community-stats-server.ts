@@ -1,5 +1,4 @@
-import { createSupabaseServer } from "../supabase/supabase-server";
-
+import { createServer } from "@/utils/supabase/server";
 export interface CommunityStats {
   totalUsers: number;
   totalTricks: number;
@@ -12,8 +11,7 @@ export interface CommunityStats {
  * @returns Promise<CommunityStats>
  */
 export async function getCommunityStats(): Promise<CommunityStats> {
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   try {
     // Fetch all stats in parallel
     const [

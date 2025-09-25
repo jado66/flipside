@@ -1,11 +1,11 @@
+import { createServer } from "@/utils/supabase/server";
 import { TrickipediaLayoutClient } from "./TrickipediaLayoutClient";
 import type { NavigationCategory } from "@/components/side-nav/types";
-import { createSupabaseServer } from "@/lib/supabase/supabase-server";
 
 export const revalidate = 60;
 
 async function getNavigationData(): Promise<NavigationCategory[]> {
-  const supabase = await createSupabaseServer();
+  const supabase = await createServer();
 
   try {
     const { data, error } = await supabase

@@ -1,10 +1,10 @@
 // app/api/tricks/route.ts
-import { createSupabaseServer } from "@/lib/supabase/supabase-server";
+import { createServer } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
     const searchParams = request.nextUrl.searchParams;
 
     // Parse filters from query params

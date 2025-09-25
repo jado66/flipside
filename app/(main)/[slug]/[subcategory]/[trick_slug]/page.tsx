@@ -1,6 +1,5 @@
 // app/[categorySlug]/[subcategorySlug]/[trickSlug]/page.tsx (updated)
 import type { Metadata } from "next";
-import { getTrickBySlugWithLinks } from "@/lib/server/tricks-data-server";
 import type { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { notFound } from "next/navigation";
 import { ClientInteractions } from "@/components/tricks/client-interactions";
@@ -12,6 +11,7 @@ import { ViewPrerequisitesSection } from "@/components/tricks/view-prerequisites
 import { VideoTutorials } from "@/components/tricks/video-tutorials";
 import { TrickInfoSidebar } from "@/components/tricks/trick-info-sidebar";
 import { ExternalLink } from "lucide-react";
+import { getTrickBySlugWithLinks } from "@/lib/server/tricks-data-server";
 
 interface TrickDetailPageProps {
   params: Promise<{

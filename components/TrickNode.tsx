@@ -13,7 +13,7 @@ const TrickNode = ({ data }: { data: TrickNodeData }) => {
         ${
           completed
             ? "border-green-800 border-2 bg-green-800 shadow-xl text-white"
-            : "bg-white border-gray-300 hover:border-gray-400 shadow-md"
+            : "bg-white border-gray-300 hover:border-gray-400 shadow-md text-black"
         }
       `}
       style={

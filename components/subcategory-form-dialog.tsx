@@ -22,7 +22,7 @@ import {
   updateSubcategory,
   type Subcategory,
 } from "@/lib/client/subcategories-data-client";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 interface SubcategoryFormDialogProps {
   subcategory: Subcategory | null;

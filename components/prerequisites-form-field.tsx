@@ -32,7 +32,7 @@ import {
 import { searchPotentialPrerequisites } from "@/lib/client/tricks-data-client";
 import { PrerequisitesDisplay } from "./prerequisites-display"; // NEW: Import for display
 import { PrerequisiteTrick } from "@/types/trick";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 interface PrerequisitesFormFieldProps {
   prerequisite_ids: string[];

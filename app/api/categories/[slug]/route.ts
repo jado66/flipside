@@ -1,13 +1,13 @@
 // app/api/categories/[slug]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 
-import { createSupabaseServer } from "@/lib/supabase/supabase-server";
+import { createServer } from "@/utils/supabase/server";
 
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ slug: string }> }
 ) {
-  const supabase = await createSupabaseServer();
+  const supabase = await createServer();
   try {
     const { slug } = await params;
 

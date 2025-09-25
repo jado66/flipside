@@ -21,11 +21,13 @@ import { levenshtein } from "./levenshtein";
 import TrickNode from "./TrickNode";
 import { toast } from "sonner";
 import { ArrowBigLeft, ArrowBigRight, ChevronLeft, Info } from "lucide-react";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 import { useConfetti } from "@/contexts/confetti-provider";
+import { useTheme } from "next-themes";
 
 export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
   const supabase = useSupabase();
+  const { theme } = useTheme();
   // Global confetti via provider
   const { celebrate: triggerConfetti } = useConfetti();
   // Format slug for display (capitalize, replace dashes)
@@ -538,7 +540,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
   const currentCategory = categories.find((c) => c.id === selectedCategory);
 
   return (
-    <div className="w-full h-full flex flex-col bg-gray-50">
+    <div className="w-full h-full flex flex-col bg-background">
       {/* Hide lock button on all devices (robust selector) */}
       <style>{`
         .react-flow__controls [aria-label="lock"],
@@ -573,8 +575,8 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
               <ArrowBigLeft className=" transition-colors w-10 h-10 text-accent/80 fill-current hover:text-accent transition-colors" />
             </button>
           </div>
-          <div className="bg-white px-4 py-2 rounded shadow-lg">
-            <h1 className="text-2xl font-bold whitespace-nowrap">
+          <div className="bg-card border px-4 py-2 rounded shadow-lg">
+            <h1 className="text-2xl font-bold whitespace-nowrap text-foreground">
               {formattedSlug} Skill Tree
             </h1>
           </div>
@@ -594,7 +596,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
         </div>
 
         {!user && (
-          <div className=" text-yellow-700  px-4 rounded w-full mt-1 ">
+          <div className="text-warning-foreground bg-warning/10 border border-warning/20 px-4 rounded w-full mt-1">
             <p className="mb-1 flex items-center justify-center text-sm">
               <Info className="mr-2 h-4 w-4" />
               Progress won&apos;t be saved without being logged into an account.{" "}
@@ -605,18 +607,20 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
       {/* Tree View */}
       <div className="flex-1 relative">
         {loading && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/80 z-10">
-            <div className="text-lg font-medium">Loading tricks...</div>
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 z-10">
+            <div className="text-lg font-medium text-foreground">
+              Loading tricks...
+            </div>
           </div>
         )}
         {error && (
-          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-red-100 border border-red-400 text-red-700 px-4 py-2 rounded z-10">
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 bg-destructive/10 border border-destructive text-destructive-foreground px-4 py-2 rounded z-10">
             {error}
           </div>
         )}
         {!loading && tricks.length === 0 && selectedCategory && (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className="text-gray-500">
+            <div className="text-muted-foreground">
               Try reloading the page. No tricks found in this category.
             </div>
           </div>
@@ -633,15 +637,18 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
             nodesDraggable={false}
             nodesConnectable={false}
             elementsSelectable={true}
+            colorMode={theme === "dark" ? "dark" : "light"}
           >
             <Controls showInteractive={false} />
             <Background variant={BackgroundVariant.Dots} gap={80} size={4} />
           </ReactFlow>
         )}
         {/* Legend */}
-        <div className="absolute lg:bottom-4 bottom-[80px] right-4 bg-white border rounded-lg p-3 shadow-lg">
-          <div className="text-sm font-semibold mb-2">Legend</div>
-          <div className="space-y-1 text-xs">
+        <div className="absolute lg:bottom-4 bottom-[80px] right-4 bg-card border rounded-lg p-3 shadow-lg">
+          <div className="text-sm font-semibold mb-2 text-foreground">
+            Legend
+          </div>
+          <div className="space-y-1 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
               <div
                 className="w-4 h-4 border-2 rounded"
@@ -655,15 +662,15 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
               <span>Completed</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-4 h-4 bg-white border-2 border-gray-300 rounded" />
+              <div className="w-4 h-4 bg-background border-2 border-border rounded" />
               <span>Not completed</span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-8 border-t-2 border-dashed border-gray-400" />
+              <div className="w-8 border-t-2 border-dashed border-muted-foreground" />
               <span>Prerequisites</span>
             </div>
             <div className="flex items-center gap-2 mt-2">
-              <span className="font-semibold">Completed:</span>
+              <span className="font-semibold text-foreground">Completed:</span>
               <span>
                 {flowNodes.filter((n) => n.data?.completed).length} /{" "}
                 {flowNodes.length}

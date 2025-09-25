@@ -23,7 +23,7 @@ import { incrementTrickViews } from "@/lib/client/tricks-data-client";
 import { useConfetti } from "@/contexts/confetti-provider";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { MoveTrickDialog } from "./move-trick-dialog";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 interface ClientInteractionsProps {
   trick: TrickWithLinkedPrerequisites;

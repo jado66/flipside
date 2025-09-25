@@ -48,7 +48,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 export default function ModeratorCategoriesPage() {
   const [categories, setCategories] = useState<MasterCategory[]>([]);
@@ -208,8 +208,8 @@ export default function ModeratorCategoriesPage() {
                 onClick={() => setSelectedCategoryId(c.id)}
                 className={`px-4 py-2 rounded-lg border-2 transition-all font-medium ${
                   selectedCategoryId === c.id
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-300 bg-white hover:border-gray-400"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card hover:border-muted-foreground text-foreground"
                 }`}
                 style={{
                   borderColor:

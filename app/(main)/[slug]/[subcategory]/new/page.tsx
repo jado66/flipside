@@ -15,7 +15,7 @@ import {
   getSubcategoryBySlug,
   Subcategory,
 } from "@/lib/client/subcategories-data-client";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 export default function TrickNewPage() {
   const router = useRouter();

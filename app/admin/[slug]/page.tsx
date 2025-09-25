@@ -32,7 +32,7 @@ import { SubcategoryFormDialog } from "@/components/subcategory-form-dialog";
 import { getMasterCategoryBySlug } from "@/lib/client/categories-data-client";
 import Link from "next/link";
 import { deleteSubcategory } from "@/lib/client/subcategories-data-client";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 interface MasterCategory {
   id: string;

@@ -7,7 +7,7 @@ import { toKebabCase } from "@/lib/trick-form-utils";
 import { getAllTricks } from "@/lib/client/tricks-data-client"; // NEW: Import your client fetch function
 import { fetchPrerequisiteTricksByIds } from "@/lib/client/tricks-data-client"; // NEW: For fetching linked prerequisites
 import type { PrerequisiteTrick } from "@/types/trick"; // NEW: Import type
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 export function useTrickForm(
   initialTrick: TrickData,

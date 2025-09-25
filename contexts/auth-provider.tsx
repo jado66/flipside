@@ -1,3 +1,4 @@
+// ===== /contexts/auth-provider.tsx =====
 "use client";
 
 import React, {
@@ -6,12 +7,13 @@ import React, {
   useEffect,
   useState,
   useCallback,
+  useRef,
 } from "react";
 import { User, Session } from "@supabase/supabase-js";
-import { useRouter } from "next/navigation";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useRouter, usePathname } from "next/navigation";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
-export type UserRole = "user" | "admin" | "moderator";
+export type UserRole = "user" | "administrator" | "moderator";
 
 export interface PublicUser {
   id: string;
@@ -27,6 +29,8 @@ export interface PublicUser {
   updated_at?: string;
   username?: string;
   users_sports_ids?: string[];
+  referrals?: number;
+  xp?: number;
 }
 
 interface AuthContextType {
@@ -43,7 +47,7 @@ interface AuthContextType {
   ) => Promise<void>;
   signOut: () => Promise<void>;
   refreshUser: () => Promise<void>;
-  updatePublicUser: (updates: Partial<PublicUser>) => Promise<void>;
+  updatePublicUser: (updates: Partial<PublicUser>) => Promise<PublicUser>;
   isAuthenticated: () => boolean;
   hasAdminAccess: () => boolean;
   hasModeratorAccess: () => boolean;
@@ -59,6 +63,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  const mountedRef = useRef(true);
+  const pathname = usePathname();
   const supabase = useSupabase();
 
   // Fetch public user data
@@ -71,9 +77,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           .eq("id", userId)
           .single();
 
-        if (error) throw error;
+        if (error) {
+          // Handle case where user profile doesn't exist yet
+          if (error.code === "PGRST116") {
+            console.log("Public user profile not found, will be created");
+            return null;
+          }
+          throw error;
+        }
 
-        setPublicUser(data);
         return data;
       } catch (err) {
         console.error("Error fetching public user:", err);
@@ -86,35 +98,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [supabase]
   );
 
-  // Initialize auth state - simplified
+  // Core session refresh function
+  const refreshSession = useCallback(async () => {
+    try {
+      const {
+        data: { session },
+        error,
+      } = await supabase.auth.getSession();
+
+      if (error) {
+        throw error;
+      }
+
+      if (session?.user && mountedRef.current) {
+        setSession(session);
+        setUser(session.user);
+        const userData = await fetchPublicUser(session.user.id);
+        if (mountedRef.current) {
+          setPublicUser(userData);
+        }
+        return true;
+      } else if (mountedRef.current) {
+        setSession(null);
+        setUser(null);
+        setPublicUser(null);
+        return false;
+      }
+    } catch (err) {
+      console.error("Error refreshing session:", err);
+      if (mountedRef.current) {
+        setError(
+          err instanceof Error ? err : new Error("Failed to refresh session")
+        );
+      }
+      return false;
+    }
+  }, [supabase, fetchPublicUser]);
+
+  // Initialize auth and listen for changes
   useEffect(() => {
-    let mounted = true;
+    mountedRef.current = true;
 
     const initializeAuth = async () => {
       try {
         setLoading(true);
-
-        // Get session first
-        const {
-          data: { session },
-        } = await supabase.auth.getSession();
-
-        if (session?.user && mounted) {
-          setSession(session);
-          setUser(session.user);
-          await fetchPublicUser(session.user.id);
-        }
-      } catch (err) {
-        console.error("Error initializing auth:", err);
-        if (mounted) {
-          setError(
-            err instanceof Error
-              ? err
-              : new Error("Failed to initialize authentication")
-          );
-        }
+        await refreshSession();
       } finally {
-        if (mounted) {
+        if (mountedRef.current) {
           setLoading(false);
         }
       }
@@ -122,35 +152,52 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth();
 
-    // Listen for auth changes
+    // Listen for auth state changes
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (!mounted) return;
+      if (!mountedRef.current) return;
 
       console.log("Auth state change:", event);
 
       if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
-        if (session?.user) {
-          setSession(session);
-          setUser(session.user);
-          await fetchPublicUser(session.user.id);
-        }
+        await refreshSession();
       } else if (event === "SIGNED_OUT") {
         setSession(null);
         setUser(null);
         setPublicUser(null);
-      } else if (event === "USER_UPDATED" && session?.user) {
-        setUser(session.user);
-        await fetchPublicUser(session.user.id);
+      } else if (event === "USER_UPDATED") {
+        await refreshSession();
       }
     });
 
     return () => {
-      mounted = false;
+      mountedRef.current = false;
       subscription.unsubscribe();
     };
-  }, [fetchPublicUser, supabase]);
+  }, [refreshSession, supabase]);
+
+  // CRITICAL: Refresh session on route changes
+  // This ensures we pick up auth changes from server actions
+  useEffect(() => {
+    // Skip on initial mount
+    if (loading) return;
+
+    // Refresh session when navigating to a new page
+    refreshSession();
+  }, [pathname, loading]);
+
+  // Also refresh on window focus for long-running sessions
+  useEffect(() => {
+    const handleFocus = () => {
+      if (!loading && document.hasFocus()) {
+        refreshSession();
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [refreshSession, loading]);
 
   // Sign in
   const signIn = async (email: string, password: string) => {
@@ -162,7 +209,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
 
       if (error) throw error;
-      // Auth state change will handle setting user/session
+
+      // Immediately update state
+      if (data.session && data.user) {
+        setSession(data.session);
+        setUser(data.user);
+        const userData = await fetchPublicUser(data.user.id);
+        setPublicUser(userData);
+      }
     } catch (err) {
       console.error("Sign in error:", err);
       setError(err instanceof Error ? err : new Error("Failed to sign in"));
@@ -191,6 +245,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         id: authData.user.id,
         email,
         role: "user" as UserRole,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
         ...userData,
       };
 
@@ -200,8 +256,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (publicError) {
         console.error("Failed to create public user profile:", publicError);
-        // Don't delete the auth user - let them retry
         throw publicError;
+      }
+
+      // Update state if we got a session
+      if (authData.session) {
+        setSession(authData.session);
+        setUser(authData.user);
+        setPublicUser(publicUserData as PublicUser);
       }
     } catch (err) {
       console.error("Sign up error:", err);
@@ -216,7 +278,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setError(null);
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      // Auth state change will handle clearing state
+
+      // Clear state immediately
+      setSession(null);
+      setUser(null);
+      setPublicUser(null);
     } catch (err) {
       console.error("Sign out error:", err);
       setError(err instanceof Error ? err : new Error("Failed to sign out"));
@@ -228,14 +294,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     try {
       setError(null);
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session?.user) {
-        setUser(session.user);
-        await fetchPublicUser(session.user.id);
-      }
+      await refreshSession();
     } catch (err) {
       console.error("Refresh user error:", err);
       setError(
@@ -280,15 +339,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Permission helpers
   const isAuthenticated = useCallback(() => {
-    return !!user && !!publicUser;
-  }, [user, publicUser]);
+    return !!user && !!session;
+  }, [user, session]);
 
   const hasAdminAccess = useCallback(() => {
-    return publicUser?.role === "admin";
+    return publicUser?.role === "administrator";
   }, [publicUser]);
 
   const hasModeratorAccess = useCallback(() => {
-    return publicUser?.role === "moderator" || publicUser?.role === "admin";
+    console.log(publicUser?.role);
+
+    return (
+      publicUser?.role === "moderator" || publicUser?.role === "administrator"
+    );
   }, [publicUser]);
 
   const hasRole = useCallback(
@@ -296,7 +359,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (!publicUser) return false;
       if (role === "user") return true;
       if (role === "moderator") return hasModeratorAccess();
-      if (role === "admin") return hasAdminAccess();
+      if (role === "administrator") return hasAdminAccess();
       return publicUser.role === role;
     },
     [publicUser, hasAdminAccess, hasModeratorAccess]

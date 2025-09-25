@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 // @ts-expect-error TODO
 import type { Athlete } from "@/types/athlete";
 import { toast } from "sonner";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 interface AthleteInteractionsProps {
   athlete: Athlete;

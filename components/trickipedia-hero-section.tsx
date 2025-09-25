@@ -1,5 +1,5 @@
 "use client";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 import { useEffect, useState } from "react";
 // Adjust import path as needed
 

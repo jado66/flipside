@@ -1,10 +1,10 @@
+import { createServer } from "@/utils/supabase/server";
 import { NextResponse } from "next/server";
-import { createClient } from "@/utils/supabase/server";
 
 export async function POST(request: Request) {
   try {
     // Create a server-side Supabase client (SSR) with cookie management
-    const supabase = await createClient();
+    const supabase = await createServer();
 
     // Get the authenticated user
     const {

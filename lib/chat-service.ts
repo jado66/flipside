@@ -1,7 +1,6 @@
 // lib/chat-service.ts
 
-import { createSupabaseServer } from "./supabase/supabase-server";
-
+import { createServer } from "@/utils/supabase/server";
 // Types
 export interface Channel {
   id: string;
@@ -81,7 +80,7 @@ export interface User {
 export const channelService = {
   // Get all channels for current user
   async getChannels(userId: string): Promise<Channel[]> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const { data: memberChannels, error } = await supabase
       .from("channel_members")
@@ -144,7 +143,7 @@ export const channelService = {
     description?: string,
     memberIds?: string[]
   ): Promise<Channel> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -186,7 +185,7 @@ export const channelService = {
 
   // Join a public channel
   async joinChannel(channelId: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const {
       data: { user },
@@ -204,7 +203,7 @@ export const channelService = {
 
   // Leave a channel
   async leaveChannel(channelId: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const {
       data: { user },
@@ -222,7 +221,7 @@ export const channelService = {
 
   // Update last read timestamp
   async markChannelAsRead(channelId: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const {
       data: { user },
@@ -247,7 +246,7 @@ export const messageService = {
     limit = 50,
     before?: string
   ): Promise<Message[]> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     let query = supabase
       .from("chat_messages")
@@ -292,7 +291,7 @@ export const messageService = {
     parentMessageId?: string,
     metadata?: any
   ): Promise<Message> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const {
       data: { user },
@@ -344,7 +343,7 @@ export const messageService = {
 
   // Edit a message
   async editMessage(messageId: string, content: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const { error } = await supabase
       .from("chat_messages")
@@ -360,7 +359,7 @@ export const messageService = {
 
   // Delete a message (soft delete)
   async deleteMessage(messageId: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const { error } = await supabase
       .from("chat_messages")
@@ -372,7 +371,7 @@ export const messageService = {
 
   // Add reaction to message
   async addReaction(messageId: string, emoji: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const {
       data: { user },
@@ -390,7 +389,7 @@ export const messageService = {
 
   // Remove reaction
   async removeReaction(messageId: string, emoji: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const {
       data: { user },
@@ -409,7 +408,7 @@ export const messageService = {
 
   // Pin a message
   async pinMessage(channelId: string, messageId: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const {
       data: { user },
@@ -427,7 +426,7 @@ export const messageService = {
 
   // Unpin a message
   async unpinMessage(channelId: string, messageId: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const { error } = await supabase
       .from("pinned_messages")
@@ -440,7 +439,7 @@ export const messageService = {
 
   // Get pinned messages
   async getPinnedMessages(channelId: string): Promise<Message[]> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const { data, error } = await supabase
       .from("pinned_messages")
@@ -476,7 +475,7 @@ export const realtimeService = {
       onTyping?: (userId: string) => void;
     }
   ) {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const channel = supabase
       .channel(`channel:${channelId}`)
@@ -554,13 +553,13 @@ export const realtimeService = {
 
   // Unsubscribe from channel
   async unsubscribeFromChannel(channel: any) {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
     supabase.removeChannel(channel);
   },
 
   // Send typing indicator
   async sendTypingIndicator(channelId: string) {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const channel = supabase.channel(`channel:${channelId}`);
     await channel.track({
@@ -574,7 +573,7 @@ export const realtimeService = {
 export const directMessageService = {
   // Create or get existing DM channel
   async getOrCreateDMChannel(otherUserId: string): Promise<string> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const { data, error } = await supabase.rpc(
       "create_direct_message_channel",
@@ -589,7 +588,7 @@ export const directMessageService = {
 
   // Get all DM channels for current user
   async getDMChannels(): Promise<Channel[]> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const {
       data: { user },
@@ -639,7 +638,7 @@ export const fileUploadService = {
     file: File,
     channelId: string
   ): Promise<{ url: string; path: string }> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const {
       data: { user },
@@ -663,7 +662,7 @@ export const fileUploadService = {
   },
 
   async deleteFile(path: string): Promise<void> {
-    const supabase = await createSupabaseServer();
+    const supabase = await createServer();
 
     const { error } = await supabase.storage
       .from("chat-attachments")

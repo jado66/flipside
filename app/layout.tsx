@@ -17,7 +17,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ConfettiProvider } from "@/contexts/confetti-provider";
 import { TrickipediaLayoutServer } from "./layout-server";
 import { TrickipediaFooter } from "@/components/trickipdedia-footer";
-import { SupabaseProvider } from "@/utils/supabase/useSupabase";
+import { SupabaseProvider } from "@/utils/supabase/use-supabase";
 
 export const metadata: Metadata = {
   title: "Trickipedia - Learn New Tricks",
@@ -52,7 +52,8 @@ export default function RootLayout({
         <ThemeProvider
           attribute="class"
           defaultTheme="trickipedia"
-          themes={["trickipedia"]}
+          themes={["trickipedia", "dark"]}
+          enableSystem={false}
         >
           <ConfettiProvider>
             <SupabaseProvider>

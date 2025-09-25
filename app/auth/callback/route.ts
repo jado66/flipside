@@ -1,5 +1,5 @@
 // app/auth/callback/route.ts
-import { createClient } from "@/utils/supabase/server";
+import { createServer } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     try {
-      const supabase = await createClient();
+      const supabase = await createServer();
 
       console.log("Exchanging code for session...");
       const { data, error: exchangeError } =

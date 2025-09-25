@@ -15,7 +15,7 @@ export async function updateSession(request: NextRequest) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
           supabaseResponse = NextResponse.next({
@@ -29,12 +29,13 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // IMPORTANT: DO NOT REMOVE auth.getUser()
+  // This will refresh the session if expired - required for Server Components
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Redirect logged-in users hitting "/" to "/dashboard"
+  // Only redirect authenticated users from / to /dashboard
+  // Let unauthenticated users see the home page
   if (user && request.nextUrl.pathname === "/") {
     const url = request.nextUrl.clone();
     url.pathname = "/dashboard";

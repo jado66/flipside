@@ -18,18 +18,17 @@ import { Button } from "../ui/button";
 import { Plus, Settings } from "lucide-react";
 import { Wishlist } from "../wishlist";
 import { FeaturePoll } from "../feature-poll";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 import { useConfetti } from "@/contexts/confetti-provider";
 
 export function UserDashboard() {
   const supabase = useSupabase();
   const { celebrate } = useConfetti();
 
-  const [loading, setLoading] = useState(true);
+  const [dataLoading, setDataLoading] = useState(true);
   const [categories, setCategories] = useState<MasterCategory[]>([]);
   const [allTricks, setAllTricks] = useState<Trick[]>([]);
   const [userSportsIds, setUserSportsIds] = useState<string[]>([]);
-  // Draft selection while user is in sports selection mode (batch update on continue)
   const [draftSportsIds, setDraftSportsIds] = useState<string[]>([]);
   const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(
     new Set()
@@ -43,58 +42,67 @@ export function UserDashboard() {
     percentage: 0,
     recentlyCompleted: 0,
   });
-  // Remain in selection mode until user explicitly continues
   const [selectingSports, setSelectingSports] = useState(false);
-  // Track when we've loaded and applied initial sports so we don't flash selection UI
-  const [sportsInitialized, setSportsInitialized] = useState(false);
+  const [publicUserLoaded, setPublicUserLoaded] = useState(false);
 
-  const { user, publicUser, updatePublicUser, refreshUser } = useAuth();
+  const {
+    user,
+    publicUser,
+    updatePublicUser,
+    refreshUser,
+    loading: authLoading,
+  } = useAuth();
+
+  // Determine if we're still in initial loading state
+  const isInitialLoading =
+    authLoading || (user && !publicUserLoaded) || dataLoading;
 
   // Load data when user changes
   useEffect(() => {
-    if (!supabase) {
-      // console.error("Supabase client not initialized");
-      return;
-    }
+    if (!supabase) return;
+
+    // Don't load data until auth is resolved
+    if (authLoading) return;
 
     if (user) {
       loadData(user.id);
     } else {
+      // Anonymous user
       loadData(null);
     }
-  }, [user?.id, supabase]);
+  }, [user?.id, authLoading, supabase]);
 
   // Update sports when publicUser data becomes available
   useEffect(() => {
-    if (!supabase) {
-      // console.error("Supabase client not initialized");
-      return;
-    }
+    if (!supabase) return;
 
-    if (publicUser && user) {
-      console.log("Public user data loaded:", publicUser.users_sports_ids);
-      setUserSportsIds(publicUser.users_sports_ids || []);
+    // Only process if we have a user and auth is not loading
+    if (user && publicUser && !authLoading) {
+      console.log(
+        "Setting sports from publicUser:",
+        publicUser.users_sports_ids
+      );
+      const sports = publicUser.users_sports_ids || [];
+      setUserSportsIds(sports);
+      setDraftSportsIds(sports);
+      setPublicUserLoaded(true);
 
-      // If user has no sports yet, enter selection mode
-      if (
-        !publicUser.users_sports_ids ||
-        publicUser.users_sports_ids.length === 0
-      ) {
+      // Only auto-show sports selection if user has no sports and isn't already selecting
+      if (sports.length === 0 && !selectingSports) {
         setSelectingSports(true);
-      } else {
-        // User has sports, exit selection mode if we're in it
-        setSelectingSports(false);
       }
-      // Mark initialization complete after first processing of public user
-      setSportsInitialized(true);
+    } else if (!user && !authLoading) {
+      // No user logged in
+      setPublicUserLoaded(true);
     }
-  }, [publicUser?.users_sports_ids, user?.id, supabase]);
+  }, [publicUser, user, authLoading, supabase]);
 
   const loadData = useCallback(
     async (userId?: string | null) => {
       try {
-        setLoading(true);
-        // categories
+        setDataLoading(true);
+
+        // Load categories
         const { data: categoriesData, error: catError } = await supabase
           .from("master_categories")
           .select("id, name, slug, color, icon_name")
@@ -106,30 +114,30 @@ export function UserDashboard() {
         }
         setCategories(categoriesData || []);
 
-        // tricks
+        // Load tricks
         const { data: tricksData, error: tricksError } = await supabase
           .from("tricks")
           .select(
             `
-          id,
-          name,
-          slug,
-          description,
-          prerequisite_ids,
-          difficulty_level,
-          tags,
-          subcategory:subcategories!inner(
             id,
             name,
             slug,
-            master_category:master_categories!inner(
+            description,
+            prerequisite_ids,
+            difficulty_level,
+            tags,
+            subcategory:subcategories!inner(
               id,
               name,
               slug,
-              color
+              master_category:master_categories!inner(
+                id,
+                name,
+                slug,
+                color
+              )
             )
-          )
-        `
+          `
           )
           .eq("is_published", true)
           .order("difficulty_level", { ascending: true, nullsFirst: true });
@@ -141,9 +149,7 @@ export function UserDashboard() {
         setAllTricks(tricksData || []);
 
         if (userId) {
-          // Sports data will be handled by the separate useEffect for publicUser
-
-          // user tricks
+          // Load user tricks
           const { data: userTricksData, error: userTricksError } =
             await supabase
               .from("user_tricks")
@@ -158,28 +164,24 @@ export function UserDashboard() {
             new Set(userTricksData?.map((r) => r.trick_id) || [])
           );
 
-          // progress calculation
+          // Calculate progress
           calculateProgress(
             categoriesData || [],
             tricksData || [],
             userTricksData || []
           );
         } else {
-          // Anonymous user: still compute base progress (all zeros) and allow selecting sports.
-          // Do not force selection immediately; only show after initialized check below
-          setSelectingSports(false);
+          // Anonymous user
           calculateProgress(categoriesData || [], tricksData || [], []);
         }
       } catch (e) {
         console.error("Failed loading dashboard data", e);
         toast.error("Failed to load dashboard data");
       } finally {
-        setLoading(false);
-        // For anonymous user we still want to mark sports initialized once data load completes
-        if (!userId) setSportsInitialized(true);
+        setDataLoading(false);
       }
     },
-    [publicUser]
+    [supabase]
   );
 
   const calculateProgress = (
@@ -187,14 +189,12 @@ export function UserDashboard() {
     tricksData: any[],
     userTricksData: any[]
   ) => {
-    // map categories to trick totals
     const categoryMap = new Map<string, CategoryProgress>();
     let totalTricksCount = 0;
     let completedTricksCount = 0;
     const oneWeekAgo = new Date();
     oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
 
-    // Build category -> all tricks list
     const tricksByCategoryId = new Map<string, Trick[]>();
     (tricksData || []).forEach((trick: any) => {
       const categoryId = trick.subcategory?.master_category?.id;
@@ -218,7 +218,6 @@ export function UserDashboard() {
 
     userTricksData.forEach((ut: any) => {
       completedTricksCount++;
-      // find trick category
       const trick = tricksData.find((t: any) => t.id === ut.trick_id);
       const categoryId = trick?.subcategory?.master_category?.id;
       if (categoryId && categoryMap.has(categoryId)) {
@@ -251,7 +250,6 @@ export function UserDashboard() {
     });
   };
 
-  // Local draft toggling (no network calls per click)
   const toggleDraftSport = (categoryId: string) => {
     setDraftSportsIds((prev) =>
       prev.includes(categoryId)
@@ -260,44 +258,27 @@ export function UserDashboard() {
     );
   };
 
-  // Commit draft selections in one batch update
   const handleFinishSportsSelection = async () => {
-    console.log("Starting sports selection save...");
     const newSportsIds = draftSportsIds;
-    console.log("New sports IDs:", newSportsIds);
 
     if (user) {
       try {
-        console.log("Updating sports selection:", newSportsIds);
-
-        if (!updatePublicUser) {
-          throw new Error("Update function not available");
-        }
-
-        // Use the auth context method to update user sports
         await updatePublicUser({
           users_sports_ids: newSportsIds,
         });
 
-        console.log("Update completed, refreshing user data...");
-
-        // Refresh user data to get updated sports
-        await refreshUser();
-
         setUserSportsIds(newSportsIds);
         toast.success("Sports selection saved");
-        console.log("Sports saved successfully");
       } catch (e) {
         console.error("Failed saving sports selection:", e);
         toast.error("Failed to save sports selection");
-        return; // keep user in selection mode so they can retry
+        return;
       }
     } else {
-      // Not logged in: just move base state so UI reflects selections locally
       toast("Login to save your selections and track progress");
       setUserSportsIds(newSportsIds);
     }
-    console.log("Exiting sports selection mode");
+
     setSelectingSports(false);
   };
 
@@ -306,10 +287,13 @@ export function UserDashboard() {
       toast.error("Login required");
       return;
     }
+
     if (userCanDoTricks.has(trickId)) return;
+
     const optimistic = new Set(userCanDoTricks);
     optimistic.add(trickId);
     setUserCanDoTricks(optimistic);
+
     try {
       const { error } = await supabase.from("user_tricks").upsert({
         user_id: user.id,
@@ -317,11 +301,14 @@ export function UserDashboard() {
         can_do: true,
         achieved_at: new Date().toISOString(),
       });
+
       if (error) throw error;
-      // recalc progress with new user trick record
+
       const userTricksData = Array.from(optimistic).map((tid) => ({
         trick_id: tid,
+        achieved_at: new Date().toISOString(),
       }));
+
       calculateProgress(categories, allTricks as any, userTricksData);
       toast.success("Trick marked as learned");
       celebrate();
@@ -333,84 +320,106 @@ export function UserDashboard() {
     }
   };
 
-  // Show only if user intentionally managing sports OR after initialization we know there are none
-  const showSportsSelection =
-    selectingSports || (sportsInitialized && userSportsIds.length === 0);
-
-  // Keep draft in sync when entering selection mode or when base list changes while not selecting
+  // Keep draft in sync when entering selection mode
   useEffect(() => {
     if (selectingSports) {
       setDraftSportsIds(userSportsIds);
     }
   }, [selectingSports, userSportsIds]);
 
-  return (
-    <div className="space-y-6">
-      {showSportsSelection ? (
+  // Show loading while we're waiting for all necessary data
+  if (isInitialLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 py-8">
+          <Card>
+            <CardContent className="py-12 text-center">
+              <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <p className="mt-4 text-muted-foreground">
+                Loading your dashboard...
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  // Show sports selection if user is actively selecting
+  if (selectingSports) {
+    return (
+      <div className="space-y-6">
         <SportsSelection
           categories={categories}
           userSportsIds={draftSportsIds}
           onToggleSport={toggleDraftSport}
           onFinish={handleFinishSportsSelection}
         />
-      ) : (
-        <div className="min-h-screen bg-background ">
-          <div className="container mx-auto px-4  relative">
-            <div className="mb-8">
-              <h1 className="lg:text-4xl text-xl font-bold text-balance mb-2">
-                Welcome Back{" "}
-                {publicUser?.first_name ||
-                  (publicUser?.email
-                    ? publicUser.email.charAt(0).toUpperCase() +
-                      publicUser.email.slice(1)
-                    : "")}
-              </h1>
-              <p className="text-lg text-muted-foreground text-pretty">
-                Track your progress and discover new tricks to master
-              </p>
+      </div>
+    );
+  }
+
+  // Main dashboard view
+  return (
+    <div className="space-y-6">
+      <div className="min-h-screen bg-background">
+        <div className="container mx-auto px-4 relative">
+          <div className="mb-8">
+            <h1 className="lg:text-4xl text-xl font-bold text-balance mb-2">
+              Welcome Back{" "}
+              {publicUser?.first_name ||
+                (publicUser?.email
+                  ? publicUser.email.charAt(0).toUpperCase() +
+                    publicUser.email.slice(1)
+                  : "")}
+            </h1>
+            <p className="text-lg text-muted-foreground text-pretty">
+              Track your progress and discover new tricks to master
+            </p>
+          </div>
+
+          <div className="flex items-center justify-between lg:absolute lg:top-10 lg:right-4 mb-6">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setDraftSportsIds(userSportsIds);
+                setSelectingSports(true);
+              }}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Manage Sports
+            </Button>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-2">
+            {/* Left Column */}
+            <div className="space-y-6">
+              <UserProgressOverview
+                categoryProgress={categoryProgress}
+                userSportsIds={userSportsIds}
+                loading={false}
+              />
+              <NextTricksSuggestions
+                maxSuggestions={6}
+                allTricks={allTricks}
+                userCanDoTricks={userCanDoTricks}
+                userSportsIds={userSportsIds}
+                loading={false}
+                onMarkLearned={handleMarkLearned}
+              />
             </div>
 
-            <div className="flex items-center justify-between lg:absolute lg:top-10 lg:right-4 mb-6">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectingSports(true)}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Manage Sports
-              </Button>
-            </div>
-
-            <div className="grid gap-6 lg:grid-cols-2">
-              {/* Left Column */}
-              <div className="space-y-6">
-                <UserProgressOverview
-                  categoryProgress={categoryProgress}
-                  // totalStats={totalStats}
-                  userSportsIds={userSportsIds}
-                  loading={loading}
-                />
-                <NextTricksSuggestions
-                  maxSuggestions={6}
-                  allTricks={allTricks}
-                  userCanDoTricks={userCanDoTricks}
-                  userSportsIds={userSportsIds}
-                  loading={loading}
-                  onMarkLearned={handleMarkLearned}
-                />
-              </div>
-
-              {/* Right Column */}
-              <div className="space-y-6">
-                {/* <PrerequisiteGaps gaps={prerequisiteGaps} /> */}
-                <Wishlist />
-                <FeaturePoll />
-              </div>
+            {/* Right Column */}
+            <div className="space-y-6">
+              <Wishlist />
+              <FeaturePoll />
             </div>
           </div>
         </div>
-      )}
-      {!user && !loading && (
+      </div>
+
+      {!user && (
         <Card>
           <CardContent className="py-6 text-center text-sm text-muted-foreground">
             Login to save your progress.
@@ -420,35 +429,3 @@ export function UserDashboard() {
     </div>
   );
 }
-
-// <div className="space-y-6">
-//   {/* Header with Manage Sports */}
-//   <div className="flex items-center justify-between mb-2">
-//     <h2 className="text-lg font-semibold tracking-tight ">
-//       Welcome back{" "}
-//       {publicUser?.first_name ||
-//         (publicUser?.email
-//           ? publicUser.email.charAt(0).toUpperCase() + publicUser.email.slice(1)
-//           : "")}
-//       ! You should work on the following tricks:
-//     </h2>
-//     <Button
-//       variant="outline"
-//       size="sm"
-//       onClick={() => setSelectingSports(true)}
-//     >
-//       <Settings className="h-4 w-4 mr-2" />
-//       Manage Sports
-//     </Button>
-//   </div>
-//   {/* Main content grid */}
-//   <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_350px]">
-//     <div className="space-y-6">
-
-//     </div>
-//     <div className="lg:min-w-[350px] w-full">
-//       {/* progress sidebar */}
-//
-//     </div>
-//   </div>
-// </div>;

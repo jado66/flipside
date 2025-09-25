@@ -1,5 +1,5 @@
 // app/api/tricks/[id]/increment-views/route.ts
-import { createSupabaseServer } from "@/lib/supabase/supabase-server";
+import { createServer } from "@/utils/supabase/server";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function POST(
@@ -17,7 +17,7 @@ export async function POST(
     }
 
     // First, check if the trick exists and is published
-    const supabaseServer = await createSupabaseServer();
+    const supabaseServer = await createServer();
     const { data: trick, error: fetchError } = await supabaseServer
       .from("tricks")
       .select("id, view_count")

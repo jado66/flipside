@@ -1,5 +1,5 @@
-import { createSupabaseServer } from "../supabase/supabase-server";
-
+// lib/server/categories-data-server.tsx
+import { createServer } from "@/utils/supabase/server";
 export interface MasterCategory {
   id: string;
   name: string;
@@ -37,8 +37,7 @@ export async function getTricksWithUserStatus(filters?: {
 }): Promise<{ tricks: any[]; total: number }> {
   // First, get all tricks with basic information
 
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   let query = supabaseServer
     .from("tricks")
     .select(
@@ -186,8 +185,7 @@ export async function getTricksWithUserStatus(filters?: {
 
 // Get active master categories with trick counts
 export async function getMasterCategories(): Promise<MasterCategory[]> {
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   const { data, error } = await supabaseServer
     .from("master_categories")
     .select(
@@ -220,8 +218,7 @@ export async function getMasterCategories(): Promise<MasterCategory[]> {
 
 // Get all master categories (including inactive)
 export async function getAllMasterCategories(): Promise<MasterCategory[]> {
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   const { data, error } = await supabaseServer
     .from("master_categories")
     .select(
@@ -255,8 +252,7 @@ export async function getAllMasterCategories(): Promise<MasterCategory[]> {
 export async function getMasterCategoryBySlug(
   slug: string
 ): Promise<MasterCategory | null> {
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   const { data, error } = await supabaseServer
     .from("master_categories")
     .select(

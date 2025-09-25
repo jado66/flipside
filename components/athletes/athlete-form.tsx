@@ -20,7 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { X, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Athlete, SkillLevel, AthleteStatus } from "@/lib/types/athlete";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 interface AthleteFormProps {
   athlete?: Athlete;

@@ -36,7 +36,7 @@ import { TrickCard } from "../subcategory/trick-card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 interface EnhancedTricksBrowserProps {
   tricks: Trick[];

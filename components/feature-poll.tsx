@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle, Calendar, Users } from "lucide-react";
 import { useAuth } from "@/contexts/auth-provider";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 const pollOptions = [
   {
@@ -186,28 +186,28 @@ export function FeaturePoll() {
 
   if (isLoading) {
     return (
-      <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
+      <Card className="border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-950/50">
         <CardHeader>
-          <CardTitle className="text-orange-900">Loading poll...</CardTitle>
+          <CardTitle className="text-orange-900 dark:text-orange-100">Loading poll...</CardTitle>
         </CardHeader>
       </Card>
     );
   }
 
   return (
-    <Card className="border-orange-200 bg-gradient-to-br from-orange-50 to-amber-50">
+    <Card className="border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-950/50">
       <CardHeader>
-        <CardTitle className="text-orange-900 flex items-center gap-2">
+        <CardTitle className="text-orange-900 dark:text-orange-100 flex items-center gap-2">
           Help Shape Your Dashboard
         </CardTitle>
-        <CardDescription className="text-orange-700">
+        <CardDescription className="text-orange-700 dark:text-orange-300">
           {hasVoted
             ? `Thanks for voting! You selected ${
                 selectedOptions.length
               } option${selectedOptions.length !== 1 ? "s" : ""}.`
             : "What would you like to see here in the dashboard? Select your favorites:"}
         </CardDescription>
-        <div className="flex items-center gap-4 text-sm text-orange-600 mt-2">
+        <div className="flex items-center gap-4 text-sm text-orange-600 dark:text-orange-400 mt-2">
           {/* <div className="flex items-center gap-1">
             <Users className="h-4 w-4" />
             {totalVotes} votes so far
@@ -221,7 +221,7 @@ export function FeaturePoll() {
       <CardContent className="space-y-4">
         {hasVoted ? (
           <div className="space-y-3">
-            <div className="text-sm font-medium text-orange-800 mb-2">
+            <div className="text-sm font-medium text-orange-800 dark:text-orange-200 mb-2">
               Your selections:
             </div>
             {pollOptions
@@ -229,14 +229,14 @@ export function FeaturePoll() {
               .map((option) => (
                 <div
                   key={option.id}
-                  className="flex items-center gap-2 p-2 bg-orange-100 rounded-lg"
+                  className="flex items-center gap-2 p-2 bg-orange-100 dark:bg-orange-900/30 rounded-lg"
                 >
-                  <CheckCircle2 className="h-4 w-4 text-orange-600" />
+                  <CheckCircle2 className="h-4 w-4 text-orange-600 dark:text-orange-400" />
                   <div>
-                    <div className="font-medium text-orange-900">
+                    <div className="font-medium text-orange-900 dark:text-orange-100">
                       {option.title}
                     </div>
-                    <div className="text-sm text-orange-700">
+                    <div className="text-sm text-orange-700 dark:text-orange-300">
                       {option.description}
                     </div>
                   </div>
@@ -246,7 +246,7 @@ export function FeaturePoll() {
               onClick={handleResetVote}
               variant="outline"
               size="sm"
-              className="mt-4 border-orange-300 text-orange-700 hover:bg-orange-100 bg-transparent"
+              className="mt-4 border-orange-300 dark:border-orange-700 text-orange-700 dark:text-orange-300 hover:bg-orange-100 dark:hover:bg-orange-900/30 bg-transparent"
             >
               Change Vote
             </Button>
@@ -260,21 +260,21 @@ export function FeaturePoll() {
                   onClick={() => handleOptionToggle(option.id)}
                   className={`text-left p-3 rounded-lg border transition-all ${
                     selectedOptions.includes(option.id)
-                      ? "border-orange-300 bg-orange-100 shadow-sm"
-                      : "border-orange-200 hover:border-orange-300 hover:bg-orange-50"
+                      ? "border-orange-300 dark:border-orange-700 bg-orange-100 dark:bg-orange-900/30 shadow-sm"
+                      : "border-orange-200 dark:border-orange-800 hover:border-orange-300 dark:hover:border-orange-700 hover:bg-orange-50 dark:hover:bg-orange-950/30"
                   }`}
                 >
                   <div className="flex items-start gap-2">
                     {selectedOptions.includes(option.id) ? (
-                      <CheckCircle2 className="h-4 w-4 text-orange-600 mt-0.5 flex-shrink-0" />
+                      <CheckCircle2 className="h-4 w-4 text-orange-600 dark:text-orange-400 mt-0.5 flex-shrink-0" />
                     ) : (
-                      <Circle className="h-4 w-4 text-orange-400 mt-0.5 flex-shrink-0" />
+                      <Circle className="h-4 w-4 text-orange-400 dark:text-orange-500 mt-0.5 flex-shrink-0" />
                     )}
                     <div>
-                      <div className="font-medium text-orange-900">
+                      <div className="font-medium text-orange-900 dark:text-orange-100">
                         {option.title}
                       </div>
-                      <div className="text-sm text-orange-700">
+                      <div className="text-sm text-orange-700 dark:text-orange-300">
                         {option.description}
                       </div>
                     </div>
@@ -284,17 +284,17 @@ export function FeaturePoll() {
             </div>
 
             {selectedOptions.length > 0 && (
-              <div className="flex items-center justify-between pt-2 border-t border-orange-200">
+              <div className="flex items-center justify-between pt-2 border-t border-orange-200 dark:border-orange-800">
                 <Badge
                   variant="secondary"
-                  className="bg-orange-200 text-orange-800"
+                  className="bg-orange-200 dark:bg-orange-900/50 text-orange-800 dark:text-orange-200"
                 >
                   {selectedOptions.length} selected
                 </Badge>
                 <Button
                   onClick={handleSubmitVote}
                   size="sm"
-                  className="bg-orange-600 hover:bg-orange-700"
+                  className="bg-orange-600 hover:bg-orange-700 dark:bg-orange-700 dark:hover:bg-orange-800"
                   disabled={isSubmitting}
                 >
                   {isSubmitting ? "Submitting..." : "Submit Vote"}

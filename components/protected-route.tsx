@@ -41,7 +41,7 @@ export function ProtectedRoute({
       const userRole = publicUser.role;
 
       // Admin requirement
-      if (requireAdmin && userRole !== "admin") {
+      if (requireAdmin && userRole !== "administrator") {
         router.push("/unauthorized");
         return;
       }
@@ -50,7 +50,7 @@ export function ProtectedRoute({
       if (
         requireModerator &&
         userRole !== "moderator" &&
-        userRole !== "admin"
+        userRole !== "administrator"
       ) {
         router.push("/unauthorized");
         return;
@@ -88,7 +88,7 @@ export function ProtectedRoute({
   if (user && publicUser) {
     const userRole = publicUser.role;
 
-    if (requireAdmin && userRole !== "admin") {
+    if (requireAdmin && userRole !== "administrator") {
       return (
         fallback || (
           <div className="flex items-center justify-center min-h-screen">
@@ -105,7 +105,11 @@ export function ProtectedRoute({
       );
     }
 
-    if (requireModerator && userRole !== "moderator" && userRole !== "admin") {
+    if (
+      requireModerator &&
+      userRole !== "moderator" &&
+      userRole !== "administrator"
+    ) {
       return (
         fallback || (
           <div className="flex items-center justify-center min-h-screen">

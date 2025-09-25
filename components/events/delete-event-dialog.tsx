@@ -15,7 +15,7 @@ import {
 import { Loader2 } from "lucide-react";
 import type { Event } from "@/types/event";
 import { deleteEvent } from "@/lib/client/events-client";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 interface DeleteEventDialogProps {
   event: Event;

@@ -14,11 +14,13 @@ import {
   Settings,
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { useAuth } from "@/contexts/auth-provider";
 
 import { TrickipediaLogo } from "@/components/trickipedia-logo";
 
 import type { User } from "@supabase/supabase-js";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 export function TrickipediaHeader({
   onMobileMenuClick,
@@ -28,6 +30,7 @@ export function TrickipediaHeader({
   user?: User | null;
 }) {
   const supabase = useSupabase();
+  const { publicUser } = useAuth();
 
   const [userState, setUserState] = useState<User | null>(null);
 
@@ -112,6 +115,7 @@ export function TrickipediaHeader({
           </div> */}
           {/* Action Buttons */}
           <div className="hidden md:flex items-center space-x-3">
+            {publicUser && (publicUser.referrals ?? 0) >= 2 && <ThemeToggle />}
             {user ? (
               <>
                 <UserNav user={user} />
@@ -125,7 +129,7 @@ export function TrickipediaHeader({
                   </Link>
                 </Button>
                 <Button size="sm" asChild>
-                  <Link href="/login">
+                  <Link href="/signup">
                     <Plus className="h-4 w-4 mr-2" />
                     Join Now
                   </Link>

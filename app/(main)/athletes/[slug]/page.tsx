@@ -1,11 +1,10 @@
 import { AthleteProfile } from "@/components/athletes/athlete-profile";
 import { notFound } from "next/navigation";
 import { Athlete } from "@/lib/types/athlete";
-import { createSupabaseServer } from "@/lib/supabase/supabase-server";
+import { createServer } from "@/utils/supabase/server";
 
 async function getAthlete(slug: string): Promise<Athlete | null> {
-  const supabaseServer = await createSupabaseServer();
-
+  const supabaseServer = await createServer();
   const { data: athlete, error } = await supabaseServer
     .from("athletes")
     .select("*")

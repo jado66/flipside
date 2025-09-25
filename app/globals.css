@@ -90,7 +90,7 @@
   --info-foreground: oklch(1 0 0);
 }
 
-.trickipedia.dark {
+.dark {
   /* Trickipedia dark mode overrides */
   --background: oklch(0.12 0.02 258); /* Dark background */
   --foreground: oklch(0.95 0.005 258); /* Light text */
@@ -104,14 +104,18 @@
   --secondary-foreground: oklch(0.12 0.02 258); /* Dark text on secondary */
   --muted: oklch(0.2 0.02 258); /* Dark muted background */
   --muted-foreground: oklch(0.7 0.01 258); /* Muted text */
-  --accent: oklch(0.7 0.18 140); /* Brighter lime for dark mode */
-  --accent-foreground: oklch(0.12 0.02 258); /* Dark text on accent */
+  --accent: oklch(
+    0.24 0.02 258
+  ); /* Slightly lighter than card for better hover visibility */
+  --accent-foreground: oklch(0.95 0.005 258); /* Light text on accent */
   --destructive: oklch(0.65 0.2 25); /* Brighter red for dark mode */
   --destructive-foreground: oklch(
     0.95 0.005 258
   ); /* Light text on destructive */
-  --border: oklch(0.25 0.02 258); /* Dark border */
-  --input: oklch(0.18 0.02 258); /* Dark input background */
+  --border: oklch(0.3 0.02 258); /* More visible dark border */
+  --input: oklch(
+    0.22 0.02 258
+  ); /* Slightly lighter input background for better visibility */
   --ring: oklch(0.65 0.18 25 / 0.5); /* Orange focus ring for dark mode */
   --chart-1: oklch(0.65 0.18 25); /* Brighter orange */
   --chart-2: oklch(0.75 0.15 285); /* Brighter purple */

@@ -20,7 +20,7 @@ import type {
   NavigationCategory,
   NavigationSubcategory,
 } from "@/components/side-nav/types";
-import { useSupabase } from "@/utils/supabase/useSupabase";
+import { useSupabase } from "@/utils/supabase/use-supabase";
 
 interface MoveTrickDialogProps {
   trick: TrickWithLinkedPrerequisites;
