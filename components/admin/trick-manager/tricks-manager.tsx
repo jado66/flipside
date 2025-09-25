@@ -115,6 +115,7 @@ export function TricksDndManager() {
         .order("sort_order");
 
       if (error) throw error;
+      // @ts-expect-error todo fix me
       setCategories(data || []);
 
       if (data && data.length > 0 && !selectedCategory) {
