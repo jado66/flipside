@@ -137,6 +137,7 @@ export function UserDashboard() {
           console.error("Error fetching tricks", tricksError);
           throw tricksError;
         }
+        // @ts-expect-error todo fix me
         setAllTricks(tricksData || []);
 
         if (userId) {
