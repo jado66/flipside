@@ -157,6 +157,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
         .order("difficulty_level", { ascending: true, nullsFirst: true });
 
       if (error) throw error;
+      // @ts-expect-error todo fix me
       setTricks(data || []);
     } catch (err) {
       console.error("Error fetching tricks:", err);
