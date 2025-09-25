@@ -68,9 +68,9 @@ export async function signup(formData: FormData) {
     try {
       // Use a stored procedure to handle referral updates
       // This bypasses RLS policies since it runs with elevated privileges
-      const { error: referralError } = await supabase.rpc('handle_referral', {
+      const { error: referralError } = await supabase.rpc("handle_referral", {
         referrer_email: referralEmail.trim().toLowerCase(),
-        new_user_id: authData.user.id
+        new_user_id: authData.user.id,
       });
 
       if (referralError) {
