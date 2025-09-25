@@ -1,8 +1,9 @@
+import "./globals.css";
+
 import React from "react";
 import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
-import "./globals.css";
 import { AuthProvider } from "@/contexts/auth-provider";
 import { PWARegister } from "@/components/pwa-register";
 import { Toaster } from "sonner";
@@ -19,7 +20,19 @@ import { TrickipediaFooter } from "@/components/trickipdedia-footer";
 import { SupabaseProvider } from "@/utils/supabase/useSupabase";
 
 export const metadata: Metadata = {
-  // ... your existing metadata
+  title: "Trickipedia - Learn New Tricks",
+  description:
+    "Discover and master new skills with Trickipedia. Explore a wide range of tricks, track your progress, and join a community of learners.",
+  keywords:
+    "tricks, learn tricks, skill development, trick tutorials, progress tracking, community learning",
+  authors: [{ name: "Trickipedia", url: "https://trickipedia.app" }],
+  openGraph: {
+    title: "Trickipedia - Learn New Tricks",
+    description:
+      "Discover and master new skills with Trickipedia. Explore a wide range of tricks, track your progress, and join a community of learners.",
+    url: "https://trickipedia.app",
+    siteName: "Trickipedia",
+  },
 };
 
 export default function RootLayout({
@@ -28,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
+    <html lang="en" suppressHydrationWarning>
       <head>{/* Your existing head content */}</head>
       <body className="font-sans antialiased">
         <Toaster position="top-center" closeButton />
