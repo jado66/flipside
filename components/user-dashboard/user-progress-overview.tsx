@@ -15,6 +15,7 @@ import {
 // New simplified stats type (can be elevated to a shared types file if needed)
 export interface ProgressStats {
   sport: string; // label (e.g., category or sport name)
+  slug: string; // category slug for URL routing
   mastered: number; // completed tricks count
   total: number; // total available tricks
   percentage: number; // 0-100 rounded
@@ -76,6 +77,7 @@ export function ProgressOverview(props: ProgressOverviewProps) {
         : legacyCategoryProgress;
       progressStats = filtered.map((c) => ({
         sport: c.category.name,
+        slug: c.category.slug,
         mastered: c.completed,
         total: c.total,
         percentage: c.percentage,
@@ -130,12 +132,7 @@ export function ProgressOverview(props: ProgressOverviewProps) {
                         className="hover:text-accent-foreground"
                       >
                         <Link
-                          href={`/${encodeURIComponent(
-                            stat.sport
-                              .toLowerCase()
-                              .replace(/[^a-z0-9]+/g, "-")
-                              .replace(/^-|-$/g, "")
-                          )}/skill-tree`}
+                          href={`/${stat.slug}/skill-tree`}
                           aria-label={`${stat.sport} Skill Tree`}
                         >
                           <Network className="h-4 w-4" />
