@@ -47,8 +47,7 @@ interface PageProps {
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const resolvedParams = await params;
-  const { slug: categorySlug, subcategory: subcategorySlug } = resolvedParams;
+  const { slug: categorySlug, subcategory: subcategorySlug } = params;
 
   const subcategory = await getSubcategoryBySlug(subcategorySlug, categorySlug);
 
@@ -92,8 +91,7 @@ export async function generateMetadata({
 }
 
 export default async function SubcategoryPage({ params }: PageProps) {
-  const resolvedParams = await params;
-  const { slug: categorySlug, subcategory: subcategorySlug } = resolvedParams;
+  const { slug: categorySlug, subcategory: subcategorySlug } = params;
 
   // Fetch data server-side with difficulty sorting (easiest first)
   const [subcategory, tricksResponse] = await Promise.all([
