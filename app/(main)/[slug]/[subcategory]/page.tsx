@@ -9,6 +9,7 @@ import { getTricks } from "@/lib/server/tricks-data-server";
 import { ArrowLeft } from "lucide-react";
 import { TricksList } from "@/components/subcategory/tricks-list";
 import { AddTrickCard } from "@/components/subcategory/add-trick-card";
+import NotFound from "@/app/not_found";
 
 const DIFFICULTY_LABELS = {
   1: "Beginner",
@@ -105,7 +106,7 @@ export default async function SubcategoryPage({ params }: PageProps) {
   ]);
 
   if (!subcategory) {
-    notFound();
+    return <NotFound />;
   }
 
   const tricks = tricksResponse.tricks || [];
