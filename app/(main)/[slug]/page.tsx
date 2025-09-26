@@ -50,9 +50,9 @@ const DIFFICULTY_COLORS = {
 };
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string;
-  };
+  }>;
 }
 
 // Generate metadata for SEO

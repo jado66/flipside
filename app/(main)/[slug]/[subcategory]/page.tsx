@@ -37,17 +37,17 @@ const DIFFICULTY_COLORS = {
 };
 
 interface PageProps {
-  params: {
+  params: Promise<{
     slug: string;
     subcategory: string;
-  };
+  }>;
 }
 
 // Generate metadata for SEO
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { slug: categorySlug, subcategory: subcategorySlug } = params;
+  const { slug: categorySlug, subcategory: subcategorySlug } = await params;
 
   const subcategory = await getSubcategoryBySlug(subcategorySlug, categorySlug);
 
@@ -91,7 +91,7 @@ export async function generateMetadata({
 }
 
 export default async function SubcategoryPage({ params }: PageProps) {
-  const { slug: categorySlug, subcategory: subcategorySlug } = params;
+  const { slug: categorySlug, subcategory: subcategorySlug } = await params;
 
   // Fetch data server-side with difficulty sorting (easiest first)
   const [subcategory, tricksResponse] = await Promise.all([
