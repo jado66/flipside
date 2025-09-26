@@ -22,7 +22,7 @@ const XP_LEVELS = [
     color: "text-gray-500",
     bgColor: "bg-gray-500/10",
     borderColor: "border-gray-500/20",
-    rewards: ["Basic contributor access", "Can add and edit tricks"],
+    rewards: [],
   },
   {
     level: 2,

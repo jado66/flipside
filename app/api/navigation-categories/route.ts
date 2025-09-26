@@ -4,7 +4,7 @@ import { createServer } from "@/utils/supabase/server";
 
 export async function GET() {
   try {
-    const supabaseServer = await createServer();
+    const supabaseServer = createServer();
     const { data, error } = await supabaseServer
       .from("master_categories")
       .select(

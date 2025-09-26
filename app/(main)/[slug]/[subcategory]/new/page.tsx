@@ -15,14 +15,15 @@ import {
   getSubcategoryBySlug,
   Subcategory,
 } from "@/lib/client/subcategories-data-client";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { useUser } from "@/contexts/user-provider";
+import { supabase } from "@/utils/supabase/client";
 
 export default function TrickNewPage() {
   const router = useRouter();
   const params = useParams();
   const category = params.slug as string;
   const subcategorySlug = params.subcategory as string;
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useUser();
 
   const [subcategory, setSubcategory] = useState<Subcategory | null>(null);
   const [initialTrick, setInitialTrick] = useState<TrickData | null>(null);
@@ -33,8 +34,6 @@ export default function TrickNewPage() {
   // Track if we've already tried to load to prevent duplicate attempts
   const loadAttempted = useRef(false);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  const supabase = useSupabase();
 
   useEffect(() => {
     // Cleanup timeout on unmount

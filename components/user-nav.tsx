@@ -12,19 +12,19 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import type { User } from "@supabase/supabase-js";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { toast } from "sonner";
+import { useUser } from "@/contexts/user-provider";
 
 interface UserNavProps {
   user: User;
 }
 
 export function UserNav({ user }: UserNavProps) {
-  const supabase = useSupabase();
-
+  const { signOut } = useUser();
   const router = useRouter();
 
   const handleSignOut = async () => {
-    await supabase.auth.signOut();
+    await signOut();
     router.push("/");
     router.refresh();
   };
@@ -60,6 +60,19 @@ export function UserNav({ user }: UserNavProps) {
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => router.push("/profile")}>
           Profile
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          onClick={() => {
+            const referralLink = `${
+              window.location.origin
+            }/signup?ref=${encodeURIComponent(user.email || "")}`;
+            navigator.clipboard.writeText(referralLink);
+            toast.success(
+              "Referral link copied to clipboard. Now go and send it to a friend!"
+            );
+          }}
+        >
+          Invite Friends
         </DropdownMenuItem>
         {/* <DropdownMenuItem onClick={() => router.push("/dashboard")}>
           Dashboard

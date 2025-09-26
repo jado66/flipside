@@ -42,7 +42,7 @@ import { DifficultyZone } from "./difficulty-zone";
 import { TrickItem } from "./trick-item";
 import { SortableTrickItem } from "./sortable-trick-item";
 import { toast } from "sonner";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 import { useTheme } from "next-themes";
 
 export function TricksDndManager() {
@@ -103,8 +103,6 @@ export function TricksDndManager() {
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  const supabase = useSupabase();
 
   useEffect(() => {
     if (supabase) {

@@ -20,7 +20,7 @@ import type {
   NavigationCategory,
   NavigationSubcategory,
 } from "@/components/side-nav/types";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 interface MoveTrickDialogProps {
   trick: TrickWithLinkedPrerequisites;
@@ -28,8 +28,6 @@ interface MoveTrickDialogProps {
 
 export function MoveTrickDialog({ trick }: MoveTrickDialogProps) {
   const router = useRouter();
-
-  const supabase = useSupabase();
 
   const [open, setOpen] = useState(false);
   const [navigationData, setNavigationData] = useState<NavigationCategory[]>(

@@ -19,18 +19,17 @@ import Link from "next/link";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/auth-provider";
 import { useNavigation } from "@/contexts/navigation-provider";
 import { cn } from "@/lib/utils";
 import { Separator } from "@radix-ui/react-dropdown-menu";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { useUser } from "@/contexts/user-provider";
 
 export function MasterSideNav({
   onItemClick,
 }: { onItemClick?: () => void } = {}) {
   const router = useRouter();
-  const { user, publicUser, signOut, hasModeratorAccess, hasAdminAccess } =
-    useAuth();
+  const { user, signOut, hasModeratorAccess, hasAdminAccess } = useUser();
 
   // Use the navigation context
   const {
@@ -578,7 +577,7 @@ export function MasterSideNav({
                 {/* Mobile-only user nav or login/join buttons after categories */}
                 <div className="block sm:hidden">
                   <div className="my-4 border-t border-border" />
-                  {publicUser && (publicUser.referrals ?? 0) >= 2 && (
+                  {user && (user.referrals ?? 0) >= 2 && (
                     <div className="flex items-center justify-between mb-4">
                       <span className="text-sm font-medium">Theme</span>
                       <ThemeToggle />

@@ -11,7 +11,7 @@ export interface CommunityStats {
  * @returns Promise<CommunityStats>
  */
 export async function getCommunityStats(): Promise<CommunityStats> {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
   try {
     // Fetch all stats in parallel
     const [

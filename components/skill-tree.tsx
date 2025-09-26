@@ -21,12 +21,11 @@ import { levenshtein } from "./levenshtein";
 import TrickNode from "./TrickNode";
 import { toast } from "sonner";
 import { ArrowBigLeft, ArrowBigRight, ChevronLeft, Info } from "lucide-react";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 import { useConfetti } from "@/contexts/confetti-provider";
 import { useTheme } from "next-themes";
 
 export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
-  const supabase = useSupabase();
   const { theme } = useTheme();
   // Global confetti via provider
   const { celebrate: triggerConfetti } = useConfetti();

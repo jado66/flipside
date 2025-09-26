@@ -26,7 +26,7 @@ export async function GET(request: NextRequest) {
 
   if (code) {
     try {
-      const supabase = await createServer();
+      const supabase = createServer();
 
       console.log("Exchanging code for session...");
       const { data, error: exchangeError } =

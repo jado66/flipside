@@ -1,7 +1,5 @@
-// ===== /components/auth-form.tsx =====
 "use client";
 
-import { login } from "@/app/actions/auth";
 import {
   Card,
   CardContent,
@@ -13,42 +11,53 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import PasswordInput from "@/components/password-input";
 import { Label } from "@/components/ui/label";
-import { useState, useTransition, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/auth-provider";
 import Link from "next/link";
+import { useUser } from "@/contexts/user-provider";
 
 export default function AuthForm() {
-  const [isPending, startTransition] = useTransition();
+  const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const { user } = useAuth();
+  const { user, signIn, isAuthenticated } = useUser();
 
   // Redirect if already logged in
   useEffect(() => {
-    if (user) {
+    // Use isAuthenticated() for more reliable check
+    if (isAuthenticated()) {
       router.push("/dashboard");
     }
-  }, [user, router]);
+  }, [isAuthenticated, router]);
 
-  const handleSignIn = async (formData: FormData) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
     setError(null);
+    setIsLoading(true);
 
-    startTransition(async () => {
-      const result = await login(formData);
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
 
-      if (!result.success) {
-        setError(result.error || "Failed to sign in");
-        toast.error(result.error || "Failed to sign in");
-      } else {
-        toast.success("Welcome back!");
-        // Small delay to allow auth state to propagate
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 100);
-      }
-    });
+    try {
+      await signIn(email, password);
+
+      // Success! The auth provider will handle the state update
+      toast.success("Welcome back!");
+
+      // Give the auth state a moment to propagate, then redirect
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 100);
+    } catch (err) {
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to sign in";
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -63,7 +72,11 @@ export default function AuthForm() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form action={handleSignIn} className="space-y-4" autoComplete="off">
+          <form
+            onSubmit={handleSubmit}
+            className="space-y-4"
+            autoComplete="off"
+          >
             <div className="space-y-2">
               <Label htmlFor="signin-email">Email</Label>
               <Input
@@ -73,7 +86,7 @@ export default function AuthForm() {
                 required
                 placeholder="Enter your email"
                 className="bg-white/80"
-                disabled={isPending}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -84,12 +97,12 @@ export default function AuthForm() {
                 required
                 placeholder="Enter your password"
                 className="bg-white/80"
-                disabled={isPending}
+                disabled={isLoading}
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={isPending}>
-              {isPending ? "Signing in..." : "Sign In"}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? "Signing in..." : "Sign In"}
             </Button>
           </form>
 

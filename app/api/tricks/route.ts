@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = await createServer();
+    const supabase = createServer();
     const searchParams = request.nextUrl.searchParams;
 
     // Parse filters from query params

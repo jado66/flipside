@@ -17,7 +17,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { User } from "@supabase/supabase-js";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 const navigation = [
   { name: "Home", href: "/", icon: Home },
@@ -31,8 +31,6 @@ export function MainNav() {
   const [user, setUser] = useState<User | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-
-  const supabase = useSupabase();
 
   useEffect(() => {
     if (!supabase) {

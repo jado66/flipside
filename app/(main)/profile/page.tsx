@@ -8,7 +8,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -31,7 +30,7 @@ import {
   UserCheck,
   Trash,
   Plus,
-  Link as LinkIcon,
+  LinkIcon,
   Github,
   Twitter,
   Linkedin,
@@ -41,6 +40,9 @@ import {
   Youtube,
   Twitch,
   ExternalLink,
+  Trophy,
+  Users,
+  Star,
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth-provider";
 import {
@@ -56,7 +58,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { Progress } from "@/components/ui/progress";
+import { toast } from "sonner";
 
 interface SocialLink {
   id?: string;
@@ -100,6 +103,59 @@ const getPlatformIcon = (platformId: string) => {
   return platform?.icon || <LinkIcon className="h-4 w-4" />;
 };
 
+// XP level system configuration
+const XP_LEVELS = [
+  { level: 1, minXP: 0, maxXP: 99, name: "Rookie", color: "text-gray-600" },
+  { level: 2, minXP: 100, maxXP: 299, name: "Player", color: "text-blue-600" },
+  {
+    level: 3,
+    minXP: 300,
+    maxXP: 599,
+    name: "Veteran",
+    color: "text-green-600",
+  },
+  {
+    level: 4,
+    minXP: 600,
+    maxXP: 999,
+    name: "Expert",
+    color: "text-purple-600",
+  },
+  {
+    level: 5,
+    minXP: 1000,
+    maxXP: Number.POSITIVE_INFINITY,
+    name: "Legend",
+    color: "text-yellow-600",
+  },
+];
+
+// Helper function to calculate current level and progress
+const calculateLevel = (xp: number) => {
+  const currentLevel =
+    XP_LEVELS.find((level) => xp >= level.minXP && xp <= level.maxXP) ||
+    XP_LEVELS[0];
+  const nextLevel = XP_LEVELS.find(
+    (level) => level.level === currentLevel.level + 1
+  );
+
+  let progress = 0;
+  if (nextLevel) {
+    const currentLevelXP = xp - currentLevel.minXP;
+    const totalLevelXP = nextLevel.minXP - currentLevel.minXP;
+    progress = (currentLevelXP / totalLevelXP) * 100;
+  } else {
+    progress = 100; // Max level reached
+  }
+
+  return {
+    currentLevel,
+    nextLevel,
+    progress: Math.min(progress, 100),
+    xpToNext: nextLevel ? nextLevel.minXP - xp : 0,
+  };
+};
+
 export default function ProfilePage() {
   const {
     user,
@@ -107,8 +163,6 @@ export default function ProfilePage() {
     loading: authLoading,
     updatePublicUser,
   } = useAuth();
-
-  const supabase = useSupabase();
 
   // Initialize with current user data or defaults
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -347,18 +401,119 @@ export default function ProfilePage() {
                       {profileData.firstName} {profileData.lastName}
                     </CardTitle>
                     <CardDescription className="flex items-center justify-center gap-2">
-                      {publicUser && (
+                      {user && (
                         <Badge
-                          variant={getRoleBadgeVariant(publicUser.role)}
+                          variant={getRoleBadgeVariant(user.role)}
                           className="flex items-center gap-1"
                         >
-                          {getRoleIcon(publicUser.role)}
-                          {publicUser.role}
+                          {getRoleIcon(user.role)}
+                          {user.role}
                         </Badge>
                       )}
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
+                    {user && (
+                      <>
+                        <div className="space-y-3">
+                          {/* XP Level Section */}
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Trophy className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-sm font-medium">
+                                  Level
+                                </span>
+                              </div>
+                              <div className="text-right">
+                                <div
+                                  className={`text-sm font-bold ${
+                                    calculateLevel(publicUser.xp || 0)
+                                      .currentLevel.color
+                                  }`}
+                                >
+                                  {
+                                    calculateLevel(publicUser.xp || 0)
+                                      .currentLevel.name
+                                  }
+                                </div>
+                                <div className="text-xs text-muted-foreground">
+                                  Level{" "}
+                                  {
+                                    calculateLevel(publicUser.xp || 0)
+                                      .currentLevel.level
+                                  }
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="space-y-1">
+                              <div className="flex items-center justify-between text-xs">
+                                <span className="text-muted-foreground">
+                                  {publicUser.xp || 0} XP
+                                </span>
+                                {calculateLevel(publicUser.xp || 0)
+                                  .nextLevel && (
+                                  <span className="text-muted-foreground">
+                                    {
+                                      calculateLevel(publicUser.xp || 0)
+                                        .xpToNext
+                                    }{" "}
+                                    XP to next level
+                                  </span>
+                                )}
+                              </div>
+                              <Progress
+                                value={
+                                  calculateLevel(publicUser.xp || 0).progress
+                                }
+                                className="h-2"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Referrals Section */}
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4 text-muted-foreground" />
+                              <span className="text-sm font-medium">
+                                Referrals
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-500" />
+                              <span className="text-sm font-bold">
+                                {publicUser.referrals || 0}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Invite Friends Button */}
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => {
+                              const referralLink = `${
+                                window.location.origin
+                              }/signup?ref=${encodeURIComponent(
+                                publicUser.email || ""
+                              )}`;
+                              navigator.clipboard.writeText(referralLink);
+                              toast.success(
+                                "Referral link copied to clipboard. Now go and send it to a friend!"
+                              );
+                            }}
+                          >
+                            <Users className="h-4 w-4 mr-2" />
+                            Invite Friends
+                          </Button>
+                        </div>
+
+                        <Separator className="my-2" />
+                      </>
+                    )}
+
                     <div className="flex items-center gap-3 text-sm">
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <span>{profileData.email}</span>
@@ -542,7 +697,7 @@ export default function ProfilePage() {
                             size="sm"
                             variant="outline"
                             onClick={addSocialLink}
-                            className="flex items-center gap-1"
+                            className="flex items-center gap-1 bg-transparent"
                           >
                             <Plus className="h-4 w-4" />
                             Add Link

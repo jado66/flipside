@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export async function POST(request: Request) {
   try {
     // Create a server-side Supabase client (SSR) with cookie management
-    const supabase = await createServer();
+    const supabase = createServer();
 
     // Get the authenticated user
     const {

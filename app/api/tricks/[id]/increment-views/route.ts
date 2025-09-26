@@ -17,7 +17,7 @@ export async function POST(
     }
 
     // First, check if the trick exists and is published
-    const supabaseServer = await createServer();
+    const supabaseServer = createServer();
     const { data: trick, error: fetchError } = await supabaseServer
       .from("tricks")
       .select("id, view_count")

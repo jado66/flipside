@@ -32,7 +32,7 @@ import {
 import { searchPotentialPrerequisites } from "@/lib/client/tricks-data-client";
 import { PrerequisitesDisplay } from "./prerequisites-display"; // NEW: Import for display
 import { PrerequisiteTrick } from "@/types/trick";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 interface PrerequisitesFormFieldProps {
   prerequisite_ids: string[];
@@ -69,8 +69,6 @@ export function PrerequisitesFormField({
   const [loading, setLoading] = useState(false);
   const [searchOnlyInCategory, setSearchOnlyInCategory] = useState(false);
   const debounceRef = useRef<NodeJS.Timeout>(null);
-
-  const supabase = useSupabase();
 
   // Fetch trick suggestions when input changes with better debouncing
   useEffect(() => {

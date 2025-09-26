@@ -18,7 +18,7 @@ import {
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
 import { Save, RefreshCw, Trash2, Info } from "lucide-react";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 import { useTheme } from "next-themes";
 
 // Types
@@ -142,8 +142,6 @@ export function SkillTreeAdmin() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
-
-  const supabase = useSupabase();
 
   // Fetch master categories on mount
   useEffect(() => {

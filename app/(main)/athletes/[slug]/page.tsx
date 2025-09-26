@@ -4,7 +4,7 @@ import { Athlete } from "@/lib/types/athlete";
 import { createServer } from "@/utils/supabase/server";
 
 async function getAthlete(slug: string): Promise<Athlete | null> {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
   const { data: athlete, error } = await supabaseServer
     .from("athletes")
     .select("*")

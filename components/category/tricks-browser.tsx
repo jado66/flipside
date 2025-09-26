@@ -36,7 +36,7 @@ import { TrickCard } from "../subcategory/trick-card";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 interface EnhancedTricksBrowserProps {
   tricks: Trick[];
@@ -69,8 +69,6 @@ export function TricksBrowser({
   moveName,
 }: EnhancedTricksBrowserProps & { moveName: string }) {
   const { user } = useAuth();
-
-  const supabase = useSupabase();
 
   const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(
     new Set()

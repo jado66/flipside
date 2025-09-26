@@ -46,7 +46,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import type { Event } from "@/types/event";
 import { createEvent, updateEvent } from "@/lib/client/events-client";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 export const eventUpsertSchema = z.object({
   title: z.string().min(1, "Title is required").max(200, "Title too long"),
@@ -104,7 +104,7 @@ export type EventUpsertDialogProps = CreateModeProps | EditModeProps;
 export function EventUpsertDialog(props: EventUpsertDialogProps) {
   const { open, onOpenChange, trigger, mode } = props;
   const router = useRouter();
-  const supabase = useSupabase();
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
 

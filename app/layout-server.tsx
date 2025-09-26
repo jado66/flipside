@@ -5,7 +5,7 @@ import type { NavigationCategory } from "@/components/side-nav/types";
 export const revalidate = 60;
 
 async function getNavigationData(): Promise<NavigationCategory[]> {
-  const supabase = await createServer();
+  const supabase = createServer();
 
   try {
     const { data, error } = await supabase

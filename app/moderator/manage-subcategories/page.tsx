@@ -48,7 +48,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 export default function ModeratorCategoriesPage() {
   const [categories, setCategories] = useState<MasterCategory[]>([]);
@@ -62,8 +62,6 @@ export default function ModeratorCategoriesPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [savingOrder, setSavingOrder] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor));
-
-  const supabase = useSupabase();
 
   useEffect(() => {
     fetchCategories();

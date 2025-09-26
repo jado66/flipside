@@ -19,7 +19,7 @@ async function getAthletes(searchParams: {
   skill_level?: string;
   country?: string;
 }) {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
 
   let query = supabaseServer
     .from("athletes")
@@ -54,7 +54,7 @@ async function getAthletes(searchParams: {
 }
 
 async function getSports() {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
   const { data } = await supabaseServer
     .from("athletes")
     .select("sport")
@@ -65,7 +65,7 @@ async function getSports() {
 }
 
 async function getCountries() {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
   const { data } = await supabaseServer
     .from("athletes")
     .select("country")

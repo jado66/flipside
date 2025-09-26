@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle, Calendar, Users } from "lucide-react";
 import { useAuth } from "@/contexts/auth-provider";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 const pollOptions = [
   {
@@ -77,8 +77,6 @@ export function FeaturePoll() {
 
   const [totalVotes, setTotalVotes] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
-
-  const supabase = useSupabase();
 
   useEffect(() => {
     loadUserVotes();
@@ -188,7 +186,9 @@ export function FeaturePoll() {
     return (
       <Card className="border-orange-200 dark:border-orange-800 bg-gradient-to-br from-orange-50 to-amber-50 dark:from-orange-950/50 dark:to-amber-950/50">
         <CardHeader>
-          <CardTitle className="text-orange-900 dark:text-orange-100">Loading poll...</CardTitle>
+          <CardTitle className="text-orange-900 dark:text-orange-100">
+            Loading poll...
+          </CardTitle>
         </CardHeader>
       </Card>
     );

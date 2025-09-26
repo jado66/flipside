@@ -19,7 +19,7 @@ export default async function SkillTreePage({ params }: SkillTreePageProps) {
 
   // Check if the category exists
   const category = await getMasterCategoryBySlug(slug);
-  
+
   if (!category) {
     return <NotFoundComponent />;
   }

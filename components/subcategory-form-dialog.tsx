@@ -22,7 +22,7 @@ import {
   updateSubcategory,
   type Subcategory,
 } from "@/lib/client/subcategories-data-client";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 interface SubcategoryFormDialogProps {
   subcategory: Subcategory | null;
@@ -46,8 +46,6 @@ export function SubcategoryFormDialog({
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  const supabase = useSupabase();
 
   useEffect(() => {
     if (subcategory) {

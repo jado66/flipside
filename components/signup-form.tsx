@@ -22,6 +22,7 @@ export default function SignUpForm() {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const [referralEmail, setReferralEmail] = useState<string>("");
+  const [isReferralFromUrl, setIsReferralFromUrl] = useState<boolean>(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -38,6 +39,7 @@ export default function SignUpForm() {
     const refParam = searchParams.get("ref");
     if (refParam) {
       setReferralEmail(refParam);
+      setIsReferralFromUrl(true);
     }
   }, [searchParams]);
 
@@ -131,6 +133,9 @@ export default function SignUpForm() {
               <Label htmlFor="referral-email">
                 Referral Email{" "}
                 <span className="text-grey-400 text-sm">(Optional)</span>
+                {isReferralFromUrl && (
+                  <span className="text-xs text-blue-600 ml-1">(From URL)</span>
+                )}
               </Label>
               <Input
                 id="referral-email"
@@ -140,10 +145,12 @@ export default function SignUpForm() {
                 disabled={isPending}
                 value={referralEmail}
                 onChange={(e) => setReferralEmail(e.target.value)}
+                readOnly={isReferralFromUrl}
               />
               <p className="text-xs text-grey-500">
-                Enter the email of the person who referred you to earn them a
-                referral point!
+                {isReferralFromUrl
+                  ? "You were referred by this email address. This cannot be changed."
+                  : "Enter the email of the person who referred you to earn them a referral point!"}
               </p>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}

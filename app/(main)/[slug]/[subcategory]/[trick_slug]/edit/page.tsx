@@ -11,7 +11,8 @@ import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
 import { TrickForm } from "@/components/trick-form";
 import { Trick, TrickData } from "@/types/trick";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { useUser } from "@/contexts/user-provider";
+import { supabase } from "@/utils/supabase/client";
 
 export default function TrickEditPage() {
   const router = useRouter();
@@ -19,14 +20,12 @@ export default function TrickEditPage() {
   const category = params.slug as string;
   const slug = params.trick_slug as string;
   const subcategory = params.subcategory as string;
-  const { user, hasModeratorAccess, loading: authLoading } = useAuth();
+  const { user, hasModeratorAccess, loading: authLoading } = useUser();
 
   const [trick, setTrick] = useState<Trick | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const supabase = useSupabase();
 
   useEffect(() => {
     if (!supabase) {

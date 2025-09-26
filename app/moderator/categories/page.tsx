@@ -31,7 +31,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 export default function ModeratorCategoriesPage() {
   const [categories, setCategories] = useState<MasterCategory[]>([]);
@@ -44,7 +44,6 @@ export default function ModeratorCategoriesPage() {
   const [editing, setEditing] = useState<Subcategory | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  const supabase = useSupabase();
   useEffect(() => {
     fetchCategories();
   }, []);

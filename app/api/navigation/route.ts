@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(request: NextRequest) {
   try {
-    const supabaseServer = await createServer();
+    const supabaseServer = createServer();
     const { data, error } = await supabaseServer
       .from("master_categories")
       .select(

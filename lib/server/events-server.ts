@@ -4,7 +4,7 @@ import { createServer } from "@/utils/supabase/server";
 export async function getEventsByCategory(
   categorySlug: string
 ): Promise<Event[]> {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
   const { data, error } = await supabaseServer
     .from("events")
     .select(
@@ -26,7 +26,7 @@ export async function getEventsByCategory(
 }
 
 export async function getEventById(eventId: string): Promise<Event | null> {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
   const { data, error } = await supabaseServer
     .from("events")
     .select(

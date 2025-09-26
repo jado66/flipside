@@ -35,7 +35,9 @@ export default function ReferralDashboard({
     try {
       await navigator.clipboard.writeText(referralLink);
       setCopied(true);
-      toast.success("Referral link copied to clipboard!");
+      toast.success(
+        "Referral link copied to clipboard. Now go and send it to a friend!"
+      );
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast.error("Failed to copy link");

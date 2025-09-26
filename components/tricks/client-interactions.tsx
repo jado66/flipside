@@ -23,7 +23,7 @@ import { incrementTrickViews } from "@/lib/client/tricks-data-client";
 import { useConfetti } from "@/contexts/confetti-provider";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { MoveTrickDialog } from "./move-trick-dialog";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 interface ClientInteractionsProps {
   trick: TrickWithLinkedPrerequisites;
@@ -35,8 +35,6 @@ export function ClientInteractions({ trick }: ClientInteractionsProps) {
   const [canDo, setCanDo] = useState(false);
   const [canDoCount, setCanDoCount] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);
-
-  const supabase = useSupabase();
 
   const handleShare = async () => {
     try {

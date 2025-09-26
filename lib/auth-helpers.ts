@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import { createServer } from "@/utils/supabase/server";
 export async function checkAuth() {
-  const supabase = await createServer();
+  const supabase = createServer();
 
   const {
     data: { user },
@@ -43,7 +43,7 @@ export async function requireModerator() {
 }
 
 export async function canManageCategories(userId: string): Promise<boolean> {
-  const supabase = await createServer();
+  const supabase = createServer();
 
   const { data: profile } = await supabase
     .from("users")
@@ -58,7 +58,7 @@ export async function canEditTrick(
   userId: string,
   trickId: string
 ): Promise<boolean> {
-  const supabase = await createServer();
+  const supabase = createServer();
 
   // Check if user is admin/moderator
   const { data: profile } = await supabase

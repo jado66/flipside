@@ -12,22 +12,36 @@ import {
   TotalStats,
   TrickWithProgress,
 } from "./user-dashboard.types";
-import { Card, CardContent } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
-import { Plus, Settings } from "lucide-react";
+import { Plus, Settings, Users, Copy } from "lucide-react";
+import { Input } from "../ui/input";
 import { Wishlist } from "../wishlist";
 import { FeaturePoll } from "../feature-poll";
-import { useSupabase } from "@/utils/supabase/use-supabase";
 import { useConfetti } from "@/contexts/confetti-provider";
+import ReferralDashboard from "@/components/referral-dashboard";
+import { generateReferralLink } from "@/lib/referral-utils";
+import { useUserReferralData } from "@/hooks/use-user-referral-data";
+import { useUser } from "@/contexts/user-provider";
+import { supabase } from "@/utils/supabase/client";
+import { useMasterCategories } from "@/hooks/use-categories";
+import { getAllTricks } from "@/lib/client/tricks-data-client";
 
 export function UserDashboard() {
-  const supabase = useSupabase();
   const { celebrate } = useConfetti();
 
-  const [dataLoading, setDataLoading] = useState(true);
-  const [categories, setCategories] = useState<MasterCategory[]>([]);
+  // Use existing hooks for data fetching
+  const { categories, loading: categoriesLoading } = useMasterCategories();
   const [allTricks, setAllTricks] = useState<Trick[]>([]);
+  const [tricksLoading, setTricksLoading] = useState(true);
+
   const [userSportsIds, setUserSportsIds] = useState<string[]>([]);
   const [draftSportsIds, setDraftSportsIds] = useState<string[]>([]);
   const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(
@@ -43,146 +57,112 @@ export function UserDashboard() {
     recentlyCompleted: 0,
   });
   const [selectingSports, setSelectingSports] = useState(false);
-  const [publicUserLoaded, setPublicUserLoaded] = useState(false);
 
-  const {
-    user,
-    publicUser,
-    updatePublicUser,
-    refreshUser,
-    loading: authLoading,
-  } = useAuth();
+  const { user, updateUser, refreshUser, isLoading: authLoading } = useUser();
 
-  // Determine if we're still in initial loading state
-  const isInitialLoading =
-    authLoading || (user && !publicUserLoaded) || dataLoading;
+  // Referral data
+  const { data: referralData, loading: referralLoading } =
+    useUserReferralData();
 
-  // Load data when user changes
+  // Fetch all tricks
   useEffect(() => {
-    if (!supabase) return;
+    let isMounted = true;
 
-    // Don't load data until auth is resolved
-    if (authLoading) return;
+    const fetchTricks = async () => {
+      if (!supabase) return;
 
-    if (user) {
-      loadData(user.id);
-    } else {
-      // Anonymous user
-      loadData(null);
-    }
-  }, [user?.id, authLoading, supabase]);
+      try {
+        setTricksLoading(true);
+        const { data: tricks, error } = await supabase
+          .from("tricks")
+          .select(
+            `  id,   name,   slug,   difficulty,  subcategory:subcategories(    id,    name,    slug,    master_category:master_categories(      id,      name,      slug    )  )`
+          )
+          .eq("is_published", true)
+          .order("name", { ascending: true });
+
+        if (isMounted) {
+          setAllTricks(tricks || []);
+        }
+      } catch (error) {
+        console.error("Failed to fetch tricks:", error);
+        if (isMounted) {
+          setAllTricks([]);
+        }
+      } finally {
+        if (isMounted) {
+          setTricksLoading(false);
+        }
+      }
+    };
+
+    fetchTricks();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [supabase]);
+
+  // Fetch user's completed tricks
+  useEffect(() => {
+    let isMounted = true;
+
+    const fetchUserTricks = async () => {
+      if (!user || !supabase) {
+        setUserCanDoTricks(new Set());
+        return;
+      }
+
+      try {
+        const { data: userTricks, error } = await supabase
+          .from("user_tricks")
+          .select("trick_id, achieved_at")
+          .eq("user_id", user.id)
+          .eq("can_do", true);
+
+        if (error) throw error;
+
+        if (isMounted) {
+          const trickIds = new Set(userTricks?.map((ut) => ut.trick_id) || []);
+          setUserCanDoTricks(trickIds);
+
+          // Calculate progress with fresh data
+          if (categories.length > 0 && allTricks.length > 0) {
+            calculateProgress(categories, allTricks, userTricks || []);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch user tricks:", error);
+        if (isMounted) {
+          setUserCanDoTricks(new Set());
+        }
+      }
+    };
+
+    fetchUserTricks();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user, supabase, categories, allTricks]);
 
   // Update sports when publicUser data becomes available
   useEffect(() => {
     if (!supabase) return;
 
     // Only process if we have a user and auth is not loading
-    if (user && publicUser && !authLoading) {
-      console.log(
-        "Setting sports from publicUser:",
-        publicUser.users_sports_ids
-      );
-      const sports = publicUser.users_sports_ids || [];
+    if (user && !authLoading) {
+      console.log("Setting sports from publicUser:", user.users_sports_ids);
+      const sports = user.users_sports_ids || [];
       setUserSportsIds(sports);
       setDraftSportsIds(sports);
-      setPublicUserLoaded(true);
 
       // Only auto-show sports selection if user has no sports and isn't already selecting
       if (sports.length === 0 && !selectingSports) {
         setSelectingSports(true);
       }
-    } else if (!user && !authLoading) {
-      // No user logged in
-      setPublicUserLoaded(true);
     }
-  }, [publicUser, user, authLoading, supabase]);
-
-  const loadData = useCallback(
-    async (userId?: string | null) => {
-      try {
-        setDataLoading(true);
-
-        // Load categories
-        const { data: categoriesData, error: catError } = await supabase
-          .from("master_categories")
-          .select("id, name, slug, color, icon_name")
-          .eq("is_active", true)
-          .order("sort_order");
-        if (catError) {
-          console.error("Error fetching categories", catError);
-          throw catError;
-        }
-        setCategories(categoriesData || []);
-
-        // Load tricks
-        const { data: tricksData, error: tricksError } = await supabase
-          .from("tricks")
-          .select(
-            `
-            id,
-            name,
-            slug,
-            description,
-            prerequisite_ids,
-            difficulty_level,
-            tags,
-            subcategory:subcategories!inner(
-              id,
-              name,
-              slug,
-              master_category:master_categories!inner(
-                id,
-                name,
-                slug,
-                color
-              )
-            )
-          `
-          )
-          .eq("is_published", true)
-          .order("difficulty_level", { ascending: true, nullsFirst: true });
-        if (tricksError) {
-          console.error("Error fetching tricks", tricksError);
-          throw tricksError;
-        }
-        // @ts-expect-error todo fix me
-        setAllTricks(tricksData || []);
-
-        if (userId) {
-          // Load user tricks
-          const { data: userTricksData, error: userTricksError } =
-            await supabase
-              .from("user_tricks")
-              .select("trick_id, achieved_at")
-              .eq("user_id", userId)
-              .eq("can_do", true);
-          if (userTricksError) {
-            console.error("Error fetching user tricks", userTricksError);
-            throw userTricksError;
-          }
-          setUserCanDoTricks(
-            new Set(userTricksData?.map((r) => r.trick_id) || [])
-          );
-
-          // Calculate progress
-          calculateProgress(
-            categoriesData || [],
-            tricksData || [],
-            userTricksData || []
-          );
-        } else {
-          // Anonymous user
-          calculateProgress(categoriesData || [], tricksData || [], []);
-        }
-      } catch (e) {
-        console.error("Failed loading dashboard data", e);
-        toast.error("Failed to load dashboard data");
-      } finally {
-        setDataLoading(false);
-      }
-    },
-    [supabase]
-  );
+  }, [user, authLoading, supabase]);
 
   const calculateProgress = (
     categoriesData: any[],
@@ -263,7 +243,7 @@ export function UserDashboard() {
 
     if (user) {
       try {
-        await updatePublicUser({
+        await updateUser({
           users_sports_ids: newSportsIds,
         });
 
@@ -300,7 +280,7 @@ export function UserDashboard() {
         trick_id: trickId,
         can_do: true,
         achieved_at: new Date().toISOString(),
-      });
+      } as any);
 
       if (error) throw error;
 
@@ -328,7 +308,9 @@ export function UserDashboard() {
   }, [selectingSports, userSportsIds]);
 
   // Show loading while we're waiting for all necessary data
-  if (isInitialLoading) {
+  const isLoading = authLoading || categoriesLoading || tricksLoading;
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8">
@@ -367,10 +349,9 @@ export function UserDashboard() {
           <div className="mb-8">
             <h1 className="lg:text-4xl text-xl font-bold text-balance mb-2">
               Welcome Back{" "}
-              {publicUser?.first_name ||
-                (publicUser?.email
-                  ? publicUser.email.charAt(0).toUpperCase() +
-                    publicUser.email.slice(1)
+              {user?.first_name ||
+                (user?.email
+                  ? user.email.charAt(0).toUpperCase() + user.email.slice(1)
                   : "")}
             </h1>
             <p className="text-lg text-muted-foreground text-pretty">
@@ -398,14 +379,14 @@ export function UserDashboard() {
               <UserProgressOverview
                 categoryProgress={categoryProgress}
                 userSportsIds={userSportsIds}
-                loading={false}
+                loading={isLoading}
               />
               <NextTricksSuggestions
                 maxSuggestions={6}
                 allTricks={allTricks}
                 userCanDoTricks={userCanDoTricks}
                 userSportsIds={userSportsIds}
-                loading={false}
+                loading={isLoading}
                 onMarkLearned={handleMarkLearned}
               />
             </div>
@@ -414,6 +395,74 @@ export function UserDashboard() {
             <div className="space-y-6">
               <Wishlist />
               <FeaturePoll />
+              {user && user?.email && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                      <Users className="h-4 w-4" />
+                      Help Build Trickipedia
+                    </CardTitle>
+                    <CardDescription className="text-sm">
+                      Earn XP and level up by contributing to the community
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="text-sm text-muted-foreground">
+                      Every contribution earns you XP towards your next level.
+                      Help grow our trick database and unlock rewards!
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="bg-muted/50 p-3 rounded-lg text-center">
+                        <div className="font-semibold text-primary">
+                          50-100 XP
+                        </div>
+                        <div className="text-muted-foreground">
+                          Add New Tricks
+                        </div>
+                      </div>
+                      <div className="bg-muted/50 p-3 rounded-lg text-center">
+                        <div className="font-semibold text-primary">200 XP</div>
+                        <div className="text-muted-foreground">Referrals</div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          navigator.clipboard.writeText(
+                            generateReferralLink(user.email)
+                          );
+                          toast.success(
+                            "Referral link copied to clipboard. Now go and send it to a friend!"
+                          );
+                        }}
+                        className="w-full"
+                      >
+                        <Copy className="h-4 w-4 mr-2" />
+                        Copy Referral Link
+                      </Button>
+
+                      <div className="flex gap-2 justify-between text-xs">
+                        <div className="bg-muted p-2 rounded-lg text-center flex-1">
+                          <div className="font-bold text-primary">
+                            {user.xp || 0}
+                          </div>
+                          <div className="text-muted-foreground">Total XP</div>
+                        </div>
+                        <div className="bg-muted p-2 rounded-lg text-center flex-1">
+                          <div className="font-bold text-primary">
+                            {referralData?.referrals || 0}
+                          </div>
+                          <div className="text-muted-foreground">Referrals</div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </div>
           </div>
         </div>

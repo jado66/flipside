@@ -21,7 +21,7 @@ export async function getSubcategoriesByMasterCategory(
   masterCategoryId: string,
   includeInactive = true
 ): Promise<Subcategory[]> {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
   let query = supabaseServer
     .from("subcategories")
     .select(
@@ -54,7 +54,7 @@ export async function getSubcategoriesByMasterCategory(
 
 // Get all subcategories
 export async function getAllSubcategories(): Promise<Subcategory[]> {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
   const { data, error } = await supabaseServer
     .from("subcategories")
     .select(
@@ -83,7 +83,7 @@ export async function getSubcategoryBySlug(
   masterCategorySlug: string,
   subcategorySlug: string
 ): Promise<Subcategory | null> {
-  const supabaseServer = await createServer();
+  const supabaseServer = createServer();
   const { data, error } = await supabaseServer
     .from("subcategories")
     .select(

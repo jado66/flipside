@@ -1,5 +1,5 @@
 "use client";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 import { useEffect, useState } from "react";
 // Adjust import path as needed
 
@@ -13,8 +13,6 @@ interface HeroStats {
 export function TrickipediaHeroSection() {
   const [stats, setStats] = useState<HeroStats | null>(null);
   const [loading, setLoading] = useState(true);
-
-  const supabase = useSupabase();
 
   useEffect(() => {
     if (!supabase) return;

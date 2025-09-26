@@ -17,7 +17,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { ConfettiProvider } from "@/contexts/confetti-provider";
 import { TrickipediaLayoutServer } from "./layout-server";
 import { TrickipediaFooter } from "@/components/trickipdedia-footer";
-import { SupabaseProvider } from "@/utils/supabase/use-supabase";
+import { UserProvider } from "@/contexts/user-provider";
 
 export const metadata: Metadata = {
   title: "Trickipedia - Learn New Tricks",
@@ -35,11 +35,14 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Note: With standard supabase-js, we can't access session server-side
+  // The AuthProvider will handle session initialization client-side
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>{/* Your existing head content */}</head>
@@ -56,14 +59,14 @@ export default function RootLayout({
           enableSystem={false}
         >
           <ConfettiProvider>
-            <SupabaseProvider>
-              <AuthProvider>
+            <AuthProvider>
+              <UserProvider>
                 <TrickipediaLayoutServer>
                   {children}
                   <TrickipediaFooter />
                 </TrickipediaLayoutServer>
-              </AuthProvider>
-            </SupabaseProvider>
+              </UserProvider>
+            </AuthProvider>
           </ConfettiProvider>
         </ThemeProvider>
 

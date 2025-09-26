@@ -32,7 +32,7 @@ import { SubcategoryFormDialog } from "@/components/subcategory-form-dialog";
 import { getMasterCategoryBySlug } from "@/lib/client/categories-data-client";
 import Link from "next/link";
 import { deleteSubcategory } from "@/lib/client/subcategories-data-client";
-import { useSupabase } from "@/utils/supabase/use-supabase";
+import { supabase } from "@/utils/supabase/client";
 
 interface MasterCategory {
   id: string;
@@ -55,8 +55,6 @@ export default function AdminSubcategoriesPage() {
   const [editingSubcategory, setEditingSubcategory] =
     useState<Subcategory | null>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
-
-  const supabase = useSupabase();
 
   useEffect(() => {
     if (!supabase) {
