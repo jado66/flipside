@@ -2,6 +2,7 @@
 "use client";
 
 import { useAuth } from "@/contexts/auth-provider";
+import { useUser } from "@/contexts/user-provider";
 
 interface PermissionGateProps {
   children: React.ReactNode;
@@ -20,7 +21,7 @@ export function PermissionGate({
   ownerId,
   fallback = null,
 }: PermissionGateProps) {
-  const { user, hasAdminAccess, hasModeratorAccess } = useAuth();
+  const { user, hasAdminAccess, hasModeratorAccess } = useUser();
 
   // Check admin permission
   if (requireAdmin && !hasAdminAccess()) {

@@ -16,57 +16,27 @@ import {
 import { UserNav } from "@/components/user-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/contexts/auth-provider";
+import { NotificationBell } from "@/components/notifications";
 
 import { TrickipediaLogo } from "@/components/trickipedia-logo";
 
 import type { User } from "@supabase/supabase-js";
 import { supabase } from "@/utils/supabase/client";
+import { useUser } from "@/contexts/user-provider";
 
 export function TrickipediaHeader({
   onMobileMenuClick,
-  user: userProp,
 }: {
   onMobileMenuClick?: () => void;
-  user?: User | null;
 }) {
-  const { publicUser } = useAuth();
-
-  const [userState, setUserState] = useState<User | null>(null);
-
-  useEffect(() => {
-    if (!supabase) return;
-
-    if (userProp !== undefined) {
-      setUserState(userProp);
-      return; // Don't fetch if user is provided by prop
-    }
-
-    const getUser = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      setUserState(user);
-    };
-
-    getUser();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserState(session?.user ?? null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [userProp, supabase]);
-
-  const user = userProp !== undefined ? userProp : userState;
+  const { user } = useUser();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
-          <TrickipediaLogo />
+          <TrickipediaLogo hasUser={user && user?.email ? true : false} />
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link
@@ -114,6 +84,7 @@ export function TrickipediaHeader({
           </div> */}
           {/* Action Buttons */}
           <div className="hidden md:flex items-center space-x-3">
+            {user && user?.email && <NotificationBell />}
             {user && (user.referrals ?? 0) >= 2 && <ThemeToggle />}
             {user ? (
               <>
@@ -136,15 +107,14 @@ export function TrickipediaHeader({
               </>
             )}
           </div>
-          {/* Mobile Menu Button triggers sidebar for mobile navigation. */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="md:hidden"
-            onClick={onMobileMenuClick}
-          >
-            <Menu className="h-5 w-5" />
-          </Button>
+          {/* Mobile Actions */}
+          <div className="md:hidden flex items-center space-x-2">
+            {user && user?.email && <NotificationBell />}
+            {/* Mobile Menu Button triggers sidebar for mobile navigation. */}
+            <Button variant="ghost" size="sm" onClick={onMobileMenuClick}>
+              <Menu className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
         {/* Mobile Menu removed. Use sidebar for mobile navigation. */}

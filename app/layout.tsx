@@ -18,6 +18,8 @@ import { ConfettiProvider } from "@/contexts/confetti-provider";
 import { TrickipediaLayoutServer } from "./layout-server";
 import { TrickipediaFooter } from "@/components/trickipdedia-footer";
 import { UserProvider } from "@/contexts/user-provider";
+import { UserProgressProvider } from "@/contexts/user-progress-provider";
+import { NotificationsProvider } from "@/contexts/notifications-provider";
 
 export const metadata: Metadata = {
   title: "Trickipedia - Learn New Tricks",
@@ -61,10 +63,14 @@ export default async function RootLayout({
           <ConfettiProvider>
             <AuthProvider>
               <UserProvider>
-                <TrickipediaLayoutServer>
-                  {children}
-                  <TrickipediaFooter />
-                </TrickipediaLayoutServer>
+                <UserProgressProvider>
+                  <NotificationsProvider>
+                    <TrickipediaLayoutServer>
+                      {children}
+                      <TrickipediaFooter />
+                    </TrickipediaLayoutServer>
+                  </NotificationsProvider>
+                </UserProgressProvider>
               </UserProvider>
             </AuthProvider>
           </ConfettiProvider>

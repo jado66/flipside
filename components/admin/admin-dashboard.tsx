@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { supabase } from "@/utils/supabase/client";
 import {
   Card,
   CardContent,
@@ -66,8 +66,6 @@ export function AdminDashboard() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [updatingRole, setUpdatingRole] = useState<string | null>(null);
   const { toast } = useToast();
-
-  const supabase = createClient();
 
   const fetchUsers = async () => {
     setLoading(true);

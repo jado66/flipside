@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
-import { createClient } from "@/utils/supabase/client";
+import { createClient, supabase } from "@/utils/supabase/client";
 import { useAuth } from "@/contexts/auth-provider";
+import { useUser } from "@/contexts/user-provider";
 
 export interface ReferredUser {
   id: string;
@@ -21,7 +22,7 @@ export function useUserReferralData() {
   const [data, setData] = useState<UserReferralData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user } = useAuth();
+  const { user } = useUser();
 
   useEffect(() => {
     async function fetchReferralData() {
@@ -31,7 +32,6 @@ export function useUserReferralData() {
       }
 
       try {
-        const supabase = createClient();
         const { data: userData, error } = await supabase
           .from("users")
           .select("referrals, email, referral_user_ids")

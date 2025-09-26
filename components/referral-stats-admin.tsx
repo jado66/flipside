@@ -11,7 +11,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { TrendingUp, Users, Award, Crown } from "lucide-react";
-import { createClient } from "@/utils/supabase/client";
+import { supabase } from "@/utils/supabase/client";
 
 interface TopReferrer {
   id: string;
@@ -36,8 +36,6 @@ export default function ReferralStatsAdmin() {
   useEffect(() => {
     async function fetchReferralStats() {
       try {
-        const supabase = createClient();
-
         // Get total referrals and users
         const { data: totalStats, error: totalError } = await supabase
           .from("users")

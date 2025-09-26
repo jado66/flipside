@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Set the correct workspace root to avoid lockfile confusion
+  outputFileTracingRoot: __dirname,
+
   // Enable trailing slash for better SEO consistency
   trailingSlash: true,
 

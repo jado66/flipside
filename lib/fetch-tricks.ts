@@ -1,26 +1,8 @@
 // ============================================================================
-// CLIENT-SIDE FETCH APIs
-// ============================================================================
-
-import { createClient } from "@supabase/supabase-js";
-
-// Initialize Supabase client (replace with your actual URL and anon key)
-const supabaseUrl =
-  process.env.NEXT_PUBLIC_SUPABASE_URL ??
-  (() => {
-    throw new Error("NEXT_PUBLIC_SUPABASE_URL is not defined");
-  })();
-const supabaseAnonKey =
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ??
-  (() => {
-    throw new Error("NEXT_PUBLIC_SUPABASE_ANON_KEY is not defined");
-  })();
-
-const supabase = createClient(supabaseUrl, supabaseAnonKey);
-
-// ============================================================================
 // API FUNCTIONS
 // ============================================================================
+
+import { supabase } from "@/utils/supabase/client";
 
 /**
  * Fetch all master categories with counts

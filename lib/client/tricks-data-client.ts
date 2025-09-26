@@ -733,6 +733,71 @@ export async function getUserProgressStats(
 }
 
 /**
+ * Get user's progress with totals for each category
+ */
+export async function getUserProgressWithTotals(
+  supabaseClient: any,
+  userId: string,
+  categoryIds: string[]
+): Promise<{ categoryId: string; completed: number; total: number }[]> {
+  try {
+    const results: { categoryId: string; completed: number; total: number }[] =
+      [];
+
+    for (const categoryId of categoryIds) {
+      // First get subcategories for this category
+      const { data: subcategories } = await supabaseClient
+        .from("subcategories")
+        .select("id")
+        .eq("master_category_id", categoryId);
+
+      const subcategoryIds =
+        (subcategories as { id: string }[])?.map((sub) => sub.id) || [];
+
+      let completedCount = 0;
+      let totalCount = 0;
+
+      if (subcategoryIds.length > 0) {
+        // Get trick IDs for this category first
+        const { data: tricks } = await supabaseClient
+          .from("tricks")
+          .select("id")
+          .eq("is_published", true)
+          .in("subcategory_id", subcategoryIds);
+
+        const trickIds = (tricks as { id: string }[])?.map((t) => t.id) || [];
+
+        // Get total tricks count
+        totalCount = trickIds.length;
+
+        // Get user's completed tricks count for these specific tricks
+        if (trickIds.length > 0) {
+          const { count: userCount } = await supabaseClient
+            .from("user_tricks")
+            .select("*", { count: "exact", head: true })
+            .eq("user_id", userId)
+            .eq("can_do", true)
+            .in("trick_id", trickIds);
+
+          completedCount = userCount || 0;
+        }
+      }
+
+      results.push({
+        categoryId,
+        completed: completedCount,
+        total: totalCount,
+      });
+    }
+
+    return results;
+  } catch (error) {
+    console.error("Error fetching user progress with totals:", error);
+    return [];
+  }
+}
+
+/**
  * Check if user can do a specific trick
  */
 export async function checkUserCanDoTrick(
@@ -954,5 +1019,67 @@ export async function incrementTrickViews(
   } catch (error) {
     console.error("Error incrementing trick views:", error);
     return { success: false };
+  }
+}
+
+/**
+ * Get all trick IDs that a user can do
+ */
+export async function getUserTrickIds(
+  supabaseClient: any,
+  userId: string
+): Promise<Set<string>> {
+  try {
+    const { data: userTricks, error } = await supabaseClient
+      .from("user_tricks")
+      .select("trick_id")
+      .eq("user_id", userId)
+      .eq("can_do", true);
+
+    if (error) throw error;
+
+    return new Set(userTricks?.map((ut: any) => ut.trick_id) || []);
+  } catch (error) {
+    console.error("Error fetching user trick IDs:", error);
+    return new Set();
+  }
+}
+
+/**
+ * Get all published tricks with basic info
+ */
+export async function getAllTricksBasic(supabaseClient: any): Promise<Trick[]> {
+  try {
+    const { data: tricks, error } = await supabaseClient
+      .from("tricks")
+      .select(
+        `
+        id,
+        name,
+        slug,
+        description,
+        difficulty_level,
+        prerequisite_ids,
+        subcategory:subcategories(
+          id,
+          name,
+          slug,
+          master_category:master_categories(
+            id,
+            name,
+            slug
+          )
+        )
+      `
+      )
+      .eq("is_published", true)
+      .order("name", { ascending: true });
+
+    if (error) throw error;
+
+    return tricks || [];
+  } catch (error) {
+    console.error("Error fetching tricks:", error);
+    return [];
   }
 }

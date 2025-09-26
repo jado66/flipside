@@ -12,7 +12,6 @@ import {
 import { MasterSideNav } from "@/components/side-nav";
 import { NavigationProvider } from "@/contexts/navigation-provider";
 import type { NavigationCategory } from "@/components/side-nav/types";
-import { useAuth } from "@/contexts/auth-provider";
 
 export function TrickipediaLayoutClient({
   children,
@@ -22,14 +21,10 @@ export function TrickipediaLayoutClient({
   initialNavigationData: NavigationCategory[];
 }) {
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
-  const { user } = useAuth(); // Get user from context
 
   return (
     <NavigationProvider initialData={initialNavigationData}>
-      <TrickipediaHeader
-        onMobileMenuClick={() => setMobileSidebarOpen(true)}
-        user={user}
-      />
+      <TrickipediaHeader onMobileMenuClick={() => setMobileSidebarOpen(true)} />
       {/* Mobile sidebar overlay */}
       {mobileSidebarOpen && (
         <SidebarProvider defaultOpen={true}>

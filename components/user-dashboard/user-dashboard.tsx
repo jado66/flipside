@@ -1,17 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState, useCallback } from "react";
-import { useAuth } from "@/contexts/auth-provider";
 import { SportsSelection } from "./sports-selection";
 import { NextTricksSuggestions } from "./new-trick-suggestions";
 import { UserProgressOverview } from "./user-progress-overview";
 import type { Trick } from "@/types/trick";
-import type { MasterCategory } from "../skill-tree.types";
-import {
-  CategoryProgress,
-  TotalStats,
-  TrickWithProgress,
-} from "./user-dashboard.types";
 import {
   Card,
   CardContent,
@@ -21,21 +14,23 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Button } from "../ui/button";
-import { Plus, Settings, Users, Copy } from "lucide-react";
-import { Input } from "../ui/input";
+import { Settings, Users, Copy } from "lucide-react";
 import { Wishlist } from "../wishlist";
 import { FeaturePoll } from "../feature-poll";
+import { MiniContributeCTA } from "@/components/xp";
 import { useConfetti } from "@/contexts/confetti-provider";
-import ReferralDashboard from "@/components/referral-dashboard";
 import { generateReferralLink } from "@/lib/referral-utils";
 import { useUserReferralData } from "@/hooks/use-user-referral-data";
 import { useUser } from "@/contexts/user-provider";
 import { supabase } from "@/utils/supabase/client";
 import { useMasterCategories } from "@/hooks/use-categories";
-import { getAllTricks } from "@/lib/client/tricks-data-client";
+import { useUserProgress } from "@/contexts/user-progress-provider";
+import { getAllTricksBasic } from "@/lib/client/tricks-data-client";
 
 export function UserDashboard() {
   const { celebrate } = useConfetti();
+  const { userCanDoTricks, markTrickAsLearned, refreshProgress } =
+    useUserProgress();
 
   // Use existing hooks for data fetching
   const { categories, loading: categoriesLoading } = useMasterCategories();
@@ -44,27 +39,15 @@ export function UserDashboard() {
 
   const [userSportsIds, setUserSportsIds] = useState<string[]>([]);
   const [draftSportsIds, setDraftSportsIds] = useState<string[]>([]);
-  const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(
-    new Set()
-  );
-  const [categoryProgress, setCategoryProgress] = useState<CategoryProgress[]>(
-    []
-  );
-  const [totalStats, setTotalStats] = useState<TotalStats>({
-    totalTricks: 0,
-    completedTricks: 0,
-    percentage: 0,
-    recentlyCompleted: 0,
-  });
   const [selectingSports, setSelectingSports] = useState(false);
 
-  const { user, updateUser, refreshUser, isLoading: authLoading } = useUser();
+  const { user, updateUser, isLoading: authLoading } = useUser();
 
   // Referral data
   const { data: referralData, loading: referralLoading } =
     useUserReferralData();
 
-  // Fetch all tricks
+  // Fetch all tricks only - user tricks come from context
   useEffect(() => {
     let isMounted = true;
 
@@ -73,16 +56,10 @@ export function UserDashboard() {
 
       try {
         setTricksLoading(true);
-        const { data: tricks, error } = await supabase
-          .from("tricks")
-          .select(
-            `  id,   name,   slug,   difficulty,  subcategory:subcategories(    id,    name,    slug,    master_category:master_categories(      id,      name,      slug    )  )`
-          )
-          .eq("is_published", true)
-          .order("name", { ascending: true });
+        const tricks = await getAllTricksBasic(supabase);
 
         if (isMounted) {
-          setAllTricks(tricks || []);
+          setAllTricks(tricks);
         }
       } catch (error) {
         console.error("Failed to fetch tricks:", error);
@@ -101,58 +78,14 @@ export function UserDashboard() {
     return () => {
       isMounted = false;
     };
-  }, [supabase]);
+  }, []);
 
-  // Fetch user's completed tricks
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchUserTricks = async () => {
-      if (!user || !supabase) {
-        setUserCanDoTricks(new Set());
-        return;
-      }
-
-      try {
-        const { data: userTricks, error } = await supabase
-          .from("user_tricks")
-          .select("trick_id, achieved_at")
-          .eq("user_id", user.id)
-          .eq("can_do", true);
-
-        if (error) throw error;
-
-        if (isMounted) {
-          const trickIds = new Set(userTricks?.map((ut) => ut.trick_id) || []);
-          setUserCanDoTricks(trickIds);
-
-          // Calculate progress with fresh data
-          if (categories.length > 0 && allTricks.length > 0) {
-            calculateProgress(categories, allTricks, userTricks || []);
-          }
-        }
-      } catch (error) {
-        console.error("Failed to fetch user tricks:", error);
-        if (isMounted) {
-          setUserCanDoTricks(new Set());
-        }
-      }
-    };
-
-    fetchUserTricks();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [user, supabase, categories, allTricks]);
-
-  // Update sports when publicUser data becomes available
+  // Update sports when user data becomes available
   useEffect(() => {
     if (!supabase) return;
 
     // Only process if we have a user and auth is not loading
     if (user && !authLoading) {
-      console.log("Setting sports from publicUser:", user.users_sports_ids);
       const sports = user.users_sports_ids || [];
       setUserSportsIds(sports);
       setDraftSportsIds(sports);
@@ -162,73 +95,7 @@ export function UserDashboard() {
         setSelectingSports(true);
       }
     }
-  }, [user, authLoading, supabase]);
-
-  const calculateProgress = (
-    categoriesData: any[],
-    tricksData: any[],
-    userTricksData: any[]
-  ) => {
-    const categoryMap = new Map<string, CategoryProgress>();
-    let totalTricksCount = 0;
-    let completedTricksCount = 0;
-    const oneWeekAgo = new Date();
-    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-    const tricksByCategoryId = new Map<string, Trick[]>();
-    (tricksData || []).forEach((trick: any) => {
-      const categoryId = trick.subcategory?.master_category?.id;
-      if (!categoryId) return;
-      if (!tricksByCategoryId.has(categoryId))
-        tricksByCategoryId.set(categoryId, []);
-      tricksByCategoryId.get(categoryId)!.push(trick);
-    });
-
-    categoriesData.forEach((cat: any) => {
-      const total = tricksByCategoryId.get(cat.id)?.length || 0;
-      totalTricksCount += total;
-      categoryMap.set(cat.id, {
-        category: cat,
-        completed: 0,
-        total,
-        percentage: 0,
-        recentlyCompleted: 0,
-      });
-    });
-
-    userTricksData.forEach((ut: any) => {
-      completedTricksCount++;
-      const trick = tricksData.find((t: any) => t.id === ut.trick_id);
-      const categoryId = trick?.subcategory?.master_category?.id;
-      if (categoryId && categoryMap.has(categoryId)) {
-        const progress = categoryMap.get(categoryId)!;
-        progress.completed++;
-        if (ut.achieved_at && new Date(ut.achieved_at) > oneWeekAgo) {
-          progress.recentlyCompleted++;
-        }
-      }
-    });
-
-    const progressArray: CategoryProgress[] = [];
-    let recentTotal = 0;
-    categoryMap.forEach((p) => {
-      p.percentage = p.total ? Math.round((p.completed / p.total) * 100) : 0;
-      recentTotal += p.recentlyCompleted;
-      progressArray.push(p);
-    });
-
-    progressArray.sort((a, b) => b.percentage - a.percentage);
-
-    setCategoryProgress(progressArray);
-    setTotalStats({
-      totalTricks: totalTricksCount,
-      completedTricks: completedTricksCount,
-      percentage: totalTricksCount
-        ? Math.round((completedTricksCount / totalTricksCount) * 100)
-        : 0,
-      recentlyCompleted: recentTotal,
-    });
-  };
+  }, [user, authLoading]);
 
   const toggleDraftSport = (categoryId: string) => {
     setDraftSportsIds((prev) =>
@@ -249,6 +116,9 @@ export function UserDashboard() {
 
         setUserSportsIds(newSportsIds);
         toast.success("Sports selection saved");
+
+        // Refresh progress stats after updating sports
+        await refreshProgress();
       } catch (e) {
         console.error("Failed saving sports selection:", e);
         toast.error("Failed to save sports selection");
@@ -263,40 +133,15 @@ export function UserDashboard() {
   };
 
   const handleMarkLearned = async (trickId: string) => {
-    if (!user) {
-      toast.error("Login required");
-      return;
-    }
+    // Find the trick to get its category for optimistic update
+    const trick = allTricks.find((t) => t.id === trickId);
+    const categorySlug = trick?.subcategory?.master_category?.slug;
 
-    if (userCanDoTricks.has(trickId)) return;
+    const success = await markTrickAsLearned(trickId, categorySlug);
 
-    const optimistic = new Set(userCanDoTricks);
-    optimistic.add(trickId);
-    setUserCanDoTricks(optimistic);
-
-    try {
-      const { error } = await supabase.from("user_tricks").upsert({
-        user_id: user.id,
-        trick_id: trickId,
-        can_do: true,
-        achieved_at: new Date().toISOString(),
-      } as any);
-
-      if (error) throw error;
-
-      const userTricksData = Array.from(optimistic).map((tid) => ({
-        trick_id: tid,
-        achieved_at: new Date().toISOString(),
-      }));
-
-      calculateProgress(categories, allTricks as any, userTricksData);
+    if (success) {
       toast.success("Trick marked as learned");
       celebrate();
-    } catch (e) {
-      toast.error("Failed to update trick");
-      const reverted = new Set(optimistic);
-      reverted.delete(trickId);
-      setUserCanDoTricks(reverted);
     }
   };
 
@@ -376,11 +221,7 @@ export function UserDashboard() {
           <div className="grid gap-6 lg:grid-cols-2">
             {/* Left Column */}
             <div className="space-y-6">
-              <UserProgressOverview
-                categoryProgress={categoryProgress}
-                userSportsIds={userSportsIds}
-                loading={isLoading}
-              />
+              <UserProgressOverview />
               <NextTricksSuggestions
                 maxSuggestions={6}
                 allTricks={allTricks}
@@ -395,6 +236,7 @@ export function UserDashboard() {
             <div className="space-y-6">
               <Wishlist />
               <FeaturePoll />
+              <MiniContributeCTA variant="dashboard" />
               {user && user?.email && (
                 <Card>
                   <CardHeader>
@@ -412,47 +254,48 @@ export function UserDashboard() {
                       Help grow our trick database and unlock rewards!
                     </div>
 
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        navigator.clipboard.writeText(
+                          generateReferralLink(user.email)
+                        );
+                        toast.success(
+                          "Referral link copied to clipboard. Now go and send it to a friend!"
+                        );
+                      }}
+                      className="w-full"
+                    >
+                      <Copy className="h-4 w-4 mr-2" />
+                      Copy Referral Link
+                    </Button>
                     <div className="grid grid-cols-2 gap-3 text-xs">
                       <div className="bg-muted/50 p-3 rounded-lg text-center">
                         <div className="font-semibold text-primary">
-                          50-100 XP
+                          + 50-100 XP
                         </div>
                         <div className="text-muted-foreground">
-                          Add New Tricks
+                          Add &amp; Edit Tricks
                         </div>
                       </div>
                       <div className="bg-muted/50 p-3 rounded-lg text-center">
-                        <div className="font-semibold text-primary">200 XP</div>
+                        <div className="font-semibold text-primary">
+                          + 200 XP
+                        </div>
                         <div className="text-muted-foreground">Referrals</div>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          navigator.clipboard.writeText(
-                            generateReferralLink(user.email)
-                          );
-                          toast.success(
-                            "Referral link copied to clipboard. Now go and send it to a friend!"
-                          );
-                        }}
-                        className="w-full"
-                      >
-                        <Copy className="h-4 w-4 mr-2" />
-                        Copy Referral Link
-                      </Button>
-
                       <div className="flex gap-2 justify-between text-xs">
-                        <div className="bg-muted p-2 rounded-lg text-center flex-1">
+                        <div className="bg-background border border-border p-2 rounded-lg text-center flex-1">
                           <div className="font-bold text-primary">
                             {user.xp || 0}
                           </div>
                           <div className="text-muted-foreground">Total XP</div>
                         </div>
-                        <div className="bg-muted p-2 rounded-lg text-center flex-1">
+                        <div className="bg-background border border-border p-2 rounded-lg text-center flex-1">
                           <div className="font-bold text-primary">
                             {referralData?.referrals || 0}
                           </div>

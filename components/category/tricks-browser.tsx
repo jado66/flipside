@@ -340,11 +340,7 @@ export function TricksBrowser({
             </div>
             {/* View Skill Tree Button */}
             <div className="mt-2 sm:mt-0">
-              <Link
-                href={`/${categorySlug}/skill-tree`}
-                passHref
-                legacyBehavior
-              >
+              <Link href={`/${categorySlug}/skill-tree`} passHref>
                 <Button
                   variant="outline"
                   size="sm"

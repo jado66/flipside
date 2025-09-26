@@ -1,8 +1,8 @@
 import Link from "next/link";
 
-export function TrickipediaLogo() {
+export function TrickipediaLogo({ hasUser = false }) {
   return (
-    <Link href="/">
+    <Link href={hasUser ? "/dashboard" : "/"}>
       <div className="flex flex-col items-center">
         <div className="flex flex-row items-center">
           <div className="flex-shrink-0 flex items-center justify-center mr-3">

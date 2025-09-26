@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { XP_LEVELS, calculateXPProgress } from "@/lib/xp/levels";
+import { MiniContributeCTA } from "@/components/xp";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -60,6 +62,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "sonner";
+import { useUser } from "@/contexts/user-provider";
 
 interface SocialLink {
   id?: string;
@@ -103,66 +106,36 @@ const getPlatformIcon = (platformId: string) => {
   return platform?.icon || <LinkIcon className="h-4 w-4" />;
 };
 
-// XP level system configuration
-const XP_LEVELS = [
-  { level: 1, minXP: 0, maxXP: 99, name: "Rookie", color: "text-gray-600" },
-  { level: 2, minXP: 100, maxXP: 299, name: "Player", color: "text-blue-600" },
-  {
-    level: 3,
-    minXP: 300,
-    maxXP: 599,
-    name: "Veteran",
-    color: "text-green-600",
-  },
-  {
-    level: 4,
-    minXP: 600,
-    maxXP: 999,
-    name: "Expert",
-    color: "text-purple-600",
-  },
-  {
-    level: 5,
-    minXP: 1000,
-    maxXP: Number.POSITIVE_INFINITY,
-    name: "Legend",
-    color: "text-yellow-600",
-  },
-];
-
-// Helper function to calculate current level and progress
+// Adapter to maintain legacy usage shape until fully refactored
 const calculateLevel = (xp: number) => {
-  const currentLevel =
-    XP_LEVELS.find((level) => xp >= level.minXP && xp <= level.maxXP) ||
-    XP_LEVELS[0];
-  const nextLevel = XP_LEVELS.find(
-    (level) => level.level === currentLevel.level + 1
-  );
-
-  let progress = 0;
-  if (nextLevel) {
-    const currentLevelXP = xp - currentLevel.minXP;
-    const totalLevelXP = nextLevel.minXP - currentLevel.minXP;
-    progress = (currentLevelXP / totalLevelXP) * 100;
-  } else {
-    progress = 100; // Max level reached
-  }
-
+  const result = calculateXPProgress(xp);
   return {
-    currentLevel,
-    nextLevel,
-    progress: Math.min(progress, 100),
-    xpToNext: nextLevel ? nextLevel.minXP - xp : 0,
-  };
+    currentLevel: {
+      level: result.currentLevel.level,
+      minXP: result.currentLevel.nextLevelXP, // not strictly accurate but unused externally
+      maxXP: result.nextLevel ? result.nextLevel.nextLevelXP - 1 : Infinity,
+      name: result.currentLevel.name,
+      color: result.currentLevel.color,
+    },
+    nextLevel: result.nextLevel && {
+      level: result.nextLevel.level,
+      minXP: result.nextLevel.nextLevelXP,
+      maxXP: Infinity,
+      name: result.nextLevel.name,
+      color: result.nextLevel.color,
+    },
+    progress: result.progressPct,
+    xpToNext: result.xpToNext,
+  } as any;
 };
 
 export default function ProfilePage() {
   const {
     user,
-    publicUser,
-    loading: authLoading,
-    updatePublicUser,
-  } = useAuth();
+
+    isLoading: authLoading,
+    updateUser,
+  } = useUser();
 
   // Initialize with current user data or defaults
   const [profileData, setProfileData] = useState<ProfileData>({
@@ -178,19 +151,19 @@ export default function ProfilePage() {
 
   // Load user data when available
   useEffect(() => {
-    if (publicUser) {
+    if (user) {
       setProfileData({
-        firstName: publicUser.first_name || "",
-        lastName: publicUser.last_name || "",
-        email: publicUser.email || "",
-        phone: publicUser.phone || "",
-        dateOfBirth: publicUser.date_of_birth || "",
-        bio: publicUser.bio || "",
-        profileImageUrl: publicUser.profile_image_url || "",
+        firstName: user.first_name || "",
+        lastName: user.last_name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        dateOfBirth: user.date_of_birth || "",
+        bio: user.bio || "",
+        profileImageUrl: user.profile_image_url || "",
         socialLinks: [], // Will load from database if needed
       });
     }
-  }, [publicUser]);
+  }, [user]);
 
   const [isEditing, setIsEditing] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -243,7 +216,7 @@ export default function ProfilePage() {
         throw new Error("User not authenticated");
       }
 
-      if (!updatePublicUser) {
+      if (!updateUser) {
         throw new Error("Update function not available");
       }
 
@@ -257,7 +230,7 @@ export default function ProfilePage() {
       });
 
       // Update user profile using auth context method
-      await updatePublicUser({
+      await updateUser({
         first_name: profileData.firstName,
         last_name: profileData.lastName,
         phone: profileData.phone,
@@ -283,15 +256,15 @@ export default function ProfilePage() {
 
   const handleCancel = () => {
     // Reset to original data
-    if (publicUser) {
+    if (user) {
       setProfileData({
-        firstName: publicUser.first_name || "",
-        lastName: publicUser.last_name || "",
-        email: publicUser.email || "",
-        phone: publicUser.phone || "",
-        dateOfBirth: publicUser.date_of_birth || "",
-        bio: publicUser.bio || "",
-        profileImageUrl: publicUser.profile_image_url || "",
+        firstName: user.first_name || "",
+        lastName: user.last_name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        dateOfBirth: user.date_of_birth || "",
+        bio: user.bio || "",
+        profileImageUrl: user.profile_image_url || "",
         socialLinks: [], // Will load from database if needed
       });
     }
@@ -428,20 +401,20 @@ export default function ProfilePage() {
                               <div className="text-right">
                                 <div
                                   className={`text-sm font-bold ${
-                                    calculateLevel(publicUser.xp || 0)
-                                      .currentLevel.color
+                                    calculateLevel(user.xp || 0).currentLevel
+                                      .color
                                   }`}
                                 >
                                   {
-                                    calculateLevel(publicUser.xp || 0)
-                                      .currentLevel.name
+                                    calculateLevel(user.xp || 0).currentLevel
+                                      .name
                                   }
                                 </div>
                                 <div className="text-xs text-muted-foreground">
                                   Level{" "}
                                   {
-                                    calculateLevel(publicUser.xp || 0)
-                                      .currentLevel.level
+                                    calculateLevel(user.xp || 0).currentLevel
+                                      .level
                                   }
                                 </div>
                               </div>
@@ -450,23 +423,17 @@ export default function ProfilePage() {
                             <div className="space-y-1">
                               <div className="flex items-center justify-between text-xs">
                                 <span className="text-muted-foreground">
-                                  {publicUser.xp || 0} XP
+                                  {user.xp || 0} XP
                                 </span>
-                                {calculateLevel(publicUser.xp || 0)
-                                  .nextLevel && (
+                                {calculateLevel(user.xp || 0).nextLevel && (
                                   <span className="text-muted-foreground">
-                                    {
-                                      calculateLevel(publicUser.xp || 0)
-                                        .xpToNext
-                                    }{" "}
-                                    XP to next level
+                                    {calculateLevel(user.xp || 0).xpToNext} XP
+                                    to next level
                                   </span>
                                 )}
                               </div>
                               <Progress
-                                value={
-                                  calculateLevel(publicUser.xp || 0).progress
-                                }
+                                value={calculateLevel(user.xp || 0).progress}
                                 className="h-2"
                               />
                             </div>
@@ -483,7 +450,7 @@ export default function ProfilePage() {
                             <div className="flex items-center gap-1">
                               <Star className="h-4 w-4 text-yellow-500" />
                               <span className="text-sm font-bold">
-                                {publicUser.referrals || 0}
+                                {user.referrals || 0}
                               </span>
                             </div>
                           </div>
@@ -497,7 +464,7 @@ export default function ProfilePage() {
                               const referralLink = `${
                                 window.location.origin
                               }/signup?ref=${encodeURIComponent(
-                                publicUser.email || ""
+                                user.email || ""
                               )}`;
                               navigator.clipboard.writeText(referralLink);
                               toast.success(
@@ -591,6 +558,7 @@ export default function ProfilePage() {
                     )}
                   </CardHeader>
                   <CardContent className="space-y-6">
+                    <MiniContributeCTA variant="profile" />
                     {/* Personal Information */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold">

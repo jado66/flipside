@@ -11,79 +11,18 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
+import { useUserProgress } from "@/contexts/user-progress-provider";
 
-// New simplified stats type (can be elevated to a shared types file if needed)
-export interface ProgressStats {
-  sport: string; // label (e.g., category or sport name)
-  slug: string; // category slug for URL routing
-  mastered: number; // completed tricks count
-  total: number; // total available tricks
-  percentage: number; // 0-100 rounded
+interface UserProgressOverviewProps {
+  className?: string;
+  title?: string;
 }
 
-// Legacy types (from previous implementation)
-interface LegacyCategoryProgressItem {
-  category: { id: string; name: string; slug: string };
-  completed: number;
-  total: number;
-  percentage: number;
-}
-interface LegacyTotalStats {
-  totalTricks: number;
-  completedTricks: number;
-  percentage: number;
-  recentlyCompleted?: any[];
-}
-
-// New props OR legacy props (discriminated by presence of progressStats)
-type ProgressOverviewProps =
-  | {
-      progressStats: ProgressStats[];
-      loading?: boolean;
-      className?: string;
-      title?: string;
-    }
-  | {
-      // Legacy
-      categoryProgress?: LegacyCategoryProgressItem[];
-      totalStats?: LegacyTotalStats;
-      userSportsIds?: string[];
-      loading?: boolean;
-      className?: string;
-      title?: string;
-      progressStats?: undefined; // ensure mutual exclusivity
-    };
-
-export function ProgressOverview(props: ProgressOverviewProps) {
-  const { loading, className, title = "Your Progress" } = props as any;
-
-  // Normalize to progressStats[] if legacy props were provided
-  let progressStats: ProgressStats[] = [];
-
-  if ("progressStats" in props && props.progressStats !== undefined) {
-    progressStats = props.progressStats || [];
-  } else {
-    const legacyCategoryProgress = (props as any).categoryProgress as
-      | LegacyCategoryProgressItem[]
-      | undefined;
-    const userSportsIds = ((props as any).userSportsIds || []) as string[];
-
-    if (legacyCategoryProgress && legacyCategoryProgress.length > 0) {
-      // Optionally filter by userSportsIds if provided
-      const filtered = userSportsIds.length
-        ? legacyCategoryProgress.filter((c) =>
-            userSportsIds.includes(c.category.id)
-          )
-        : legacyCategoryProgress;
-      progressStats = filtered.map((c) => ({
-        sport: c.category.name,
-        slug: c.category.slug,
-        mastered: c.completed,
-        total: c.total,
-        percentage: c.percentage,
-      }));
-    }
-  }
+export function UserProgressOverview({
+  className,
+  title = "Your Progress",
+}: UserProgressOverviewProps) {
+  const { progressStats, loading } = useUserProgress();
 
   if (loading) {
     return (
@@ -164,7 +103,3 @@ export function ProgressOverview(props: ProgressOverviewProps) {
     </Card>
   );
 }
-
-// Backwards compatibility: re-export under previous name expecting transformed input upstream.
-// NOTE: Previous props signature was very different; upstream code must adapt to supply progressStats.
-export const UserProgressOverview = ProgressOverview;
