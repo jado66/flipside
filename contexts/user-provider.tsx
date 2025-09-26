@@ -1,5 +1,11 @@
 "use client";
-import React, { createContext, useState, useEffect, useContext } from "react";
+import React, {
+  createContext,
+  useState,
+  useEffect,
+  useContext,
+  useRef,
+} from "react";
 import { supabase } from "@/utils/supabase/client";
 import { User } from "@supabase/supabase-js";
 
@@ -58,6 +64,9 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(
+    null
+  );
 
   const fetchUser = async (id: string) => {
     try {
@@ -99,6 +108,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       if (event === "SIGNED_OUT") {
         setUser(null);
         setError(null);
+        // Clean up any existing realtime channel
+        if (realtimeChannelRef.current) {
+          realtimeChannelRef.current.unsubscribe();
+          realtimeChannelRef.current = null;
+        }
       } else if (session?.user && event === "SIGNED_IN") {
         await fetchUser(session.user.id);
       }
@@ -138,8 +152,74 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
     return () => {
       subscription?.unsubscribe();
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe();
+      }
     };
   }, []);
+
+  // Realtime subscription for user row updates (keeps XP / referrals etc in sync for UI components)
+  useEffect(() => {
+    if (!authUser) {
+      // No authenticated user -> ensure channel cleaned up
+      if (realtimeChannelRef.current) {
+        realtimeChannelRef.current.unsubscribe();
+        realtimeChannelRef.current = null;
+      }
+      return;
+    }
+
+    // If channel already exists for same user, skip
+    if (realtimeChannelRef.current) {
+      const existingTopic = (realtimeChannelRef.current as any).topic as
+        | string
+        | undefined;
+      if (existingTopic && existingTopic.endsWith(authUser.id)) {
+        return; // already subscribed
+      } else {
+        // Different user, unsubscribe first
+        realtimeChannelRef.current.unsubscribe();
+        realtimeChannelRef.current = null;
+      }
+    }
+
+    const channel = supabase
+      .channel(`user-${authUser.id}-realtime`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "users",
+          filter: `id=eq.${authUser.id}`,
+        },
+        (payload) => {
+          const newData = payload.new as PublicUser;
+          // Merge new data into state only if something changed to avoid unnecessary re-renders
+          setUser((prev) => {
+            if (!prev) return newData;
+            const changed = Object.keys(newData).some(
+              (k) => (newData as any)[k] !== (prev as any)[k]
+            );
+            return changed ? newData : prev;
+          });
+        }
+      )
+      .subscribe((status) => {
+        if (status === "CHANNEL_ERROR") {
+          console.error("User realtime channel error");
+        }
+      });
+
+    realtimeChannelRef.current = channel;
+
+    return () => {
+      channel.unsubscribe();
+      if (realtimeChannelRef.current === channel) {
+        realtimeChannelRef.current = null;
+      }
+    };
+  }, [authUser]);
 
   // Authentication methods
   const signIn = async (email: string, password: string) => {
@@ -225,9 +305,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!authUser) throw new Error("No user logged in");
 
-      const { data, error } = await supabase
+      // Use any for update to bypass generated type constraints if types aren't aligned
+      const { data, error } = await (supabase as any)
         .from("users")
-        .update(updates as any)
+        .update(updates)
         .eq("id", authUser.id)
         .select()
         .single();
@@ -253,7 +334,11 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   const hasModeratorAccess = () => {
-    return user?.role === "moderator" || user?.role === "administrator";
+    return (
+      user?.role === "moderator" ||
+      user?.role === "administrator" ||
+      user?.xp >= 1500
+    );
   };
 
   const hasRole = (role: UserRole) => {

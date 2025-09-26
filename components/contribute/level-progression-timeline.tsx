@@ -28,7 +28,7 @@ export default function LevelProgressionTimeline() {
         {/* Timeline line (visible on all breakpoints, sits behind content) */}
         {lineHeight > 0 && (
           <div
-            className="absolute left-1/2 -translate-x-0.5 w-1 bg-gradient-to-b from-primary/15 via-primary/30 to-primary/15 rounded-full pointer-events-none z-0"
+            className="absolute left-1/2 -translate-x-0.5 w-1 bg-gradient-to-b from-primary/20 via-primary/35 to-primary/20 dark:from-primary/35 dark:via-primary/55 dark:to-primary/35 rounded-full pointer-events-none z-0 transition-colors"
             style={{ top: lineTop, height: lineHeight }}
           />
         )}
@@ -45,7 +45,7 @@ export default function LevelProgressionTimeline() {
               {/* Timeline node (flow on mobile, centered absolute on md+) */}
               <div className="md:absolute md:left-1/2 md:-translate-x-1/2 z-10 mb-6 md:mb-0">
                 <div
-                  className="w-14 h-14 md:w-16 md:h-16 bg-background border-4 border-primary/20 rounded-full flex items-center justify-center shadow-lg"
+                  className="w-14 h-14 md:w-16 md:h-16 bg-background dark:bg-background/80 backdrop-blur-sm border-4 border-primary/20 dark:border-primary/40 rounded-full flex items-center justify-center shadow-lg dark:shadow-primary/10 ring-0 dark:ring-1 dark:ring-primary/30 transition-colors"
                   data-timeline-icon
                 >
                   <IconComponent
@@ -66,7 +66,7 @@ export default function LevelProgressionTimeline() {
                   }`}
                 >
                   <Card
-                    className={`${level.borderColor} ${level.bgColor} shadow-lg hover:shadow-xl transition-all duration-300`}
+                    className={`${level.borderColor} ${level.bgColor} shadow-lg hover:shadow-xl transition-all duration-300 dark:shadow-primary/10 dark:border-primary/30`}
                   >
                     <CardHeader className="text-center">
                       <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-3 mb-2">
@@ -102,7 +102,7 @@ export default function LevelProgressionTimeline() {
                                 className={`mt-1 w-2 h-2 rounded-full ${level.color.replace(
                                   "text-",
                                   "bg-"
-                                )} flex-shrink-0`}
+                                )} flex-shrink-0 dark:opacity-90`}
                               ></div>
                               <span>{unlock}</span>
                             </div>
@@ -159,3 +159,13 @@ function useTimelineLineMetrics() {
 
   return { containerRef, lineTop: metrics.top, lineHeight: metrics.height };
 }
+
+// Dark Mode Notes:
+// ---------------------------------------------------------------------------
+// This component now adds dark: variants for the vertical timeline line, icon
+// wrapper, and card accents. For richer theming, ensure each XP_LEVEL object
+// in `XP_LEVELS` supplies dark-aware utility classes (e.g.
+// color: "text-sky-600 dark:text-sky-400", bgColor: "bg-sky-50 dark:bg-sky-900/30", etc.).
+// The dynamic bullet color uses `level.color.replace('text-', 'bg-')`; if you
+// introduce multi-token color strings, consider adding an explicit `bulletBg`
+// field to avoid brittle replacements.

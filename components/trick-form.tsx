@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/accordion";
 import { useTrickForm } from "@/hooks/use-trick-form";
 
-import { LivePreview } from "./trick-form/live-preview";
 import { BasicInfoSection } from "./trick-form/basic-info-section";
 import { MediaTagsSection } from "./media-tags-section";
 import { PrerequisitesSection } from "./trick-form/prerequisites-section";
@@ -22,7 +21,6 @@ import { SourcesSection } from "./trick-form/sources-section";
 import { AddSectionButtons } from "./trick-form/add-section-buttons";
 
 import type { TrickFormProps } from "@/types/trick-form";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -32,17 +30,6 @@ import {
 } from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Star } from "lucide-react";
-
-import {
-  Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardAction,
-  CardDescription,
-  CardContent,
-} from "@/components/ui/card";
-import { supabase } from "@/utils/supabase/client";
 
 export function TrickForm({
   mode,

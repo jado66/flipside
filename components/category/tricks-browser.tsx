@@ -659,8 +659,13 @@ export function TricksBrowser({
               ? `No ${moveName}s found matching your filters`
               : `No ${moveName}s found in ${categoryName}`}
           </p>
+          <Link href={`/${categorySlug}/add-trick`}>
+            <Button variant="default" className="mx-2">
+              Add New Trick
+            </Button>
+          </Link>
           {hasActiveFilters && (
-            <Button variant="outline" onClick={clearFilters}>
+            <Button variant="outline" onClick={clearFilters} className="mx-2">
               Clear all filters
             </Button>
           )}

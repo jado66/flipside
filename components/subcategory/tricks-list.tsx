@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -163,13 +164,22 @@ export function TricksList({
             />
           </>
         ) : (
-          <div className="col-span-full text-center py-8">
-            <p className="text-muted-foreground text-lg mb-4">
+          <div className="col-span-full text-center py-8 space-y-4">
+            <p className="text-muted-foreground text-lg">
               No tricks found matching &quot;{searchTerm}&quot;
             </p>
-            <Button variant="outline" onClick={() => setSearchTerm("")}>
-              Clear search
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <Button variant="outline" onClick={() => setSearchTerm("")}>
+                Clear search
+              </Button>
+              <Button asChild>
+                <Link
+                  href={`/${categorySlug}/add-trick?subcategory=${subcategorySlug}`}
+                >
+                  Add Trick
+                </Link>
+              </Button>
+            </div>
           </div>
         )}
       </div>

@@ -85,7 +85,7 @@ export function TrickipediaHeader({
           {/* Action Buttons */}
           <div className="hidden md:flex items-center space-x-3">
             {user && user?.email && <NotificationBell />}
-            {user && (user.referrals ?? 0) >= 2 && <ThemeToggle />}
+            {user && (user.xp ?? 0) >= 500 && <ThemeToggle />}
             {user ? (
               <>
                 <UserNav user={user} />

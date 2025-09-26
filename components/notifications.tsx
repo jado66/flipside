@@ -2,13 +2,31 @@
 
 import type React from "react";
 import { useState } from "react";
-import { Bell, X, Check, CheckCheck, Star } from "lucide-react";
+import {
+  Bell,
+  X,
+  Check,
+  CheckCheck,
+  Star,
+  Zap,
+  Gift,
+  Trophy,
+  Sparkles,
+} from "lucide-react";
 import { useNotifications } from "@/contexts/notifications-provider";
+import { useUser } from "@/contexts/user-provider";
+import { calculateXPProgress } from "@/lib/xp/levels";
+import type { Notification as NotificationType } from "@/contexts/notifications-provider";
+import { Progress } from "@/components/ui/progress";
 
 export const NotificationBell = () => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotifications();
   const [isOpen, setIsOpen] = useState(false);
+  const { user } = useUser();
+
+  const xp = user?.xp ?? 0;
+  const { currentLevel, nextLevel, progressPct, xpToNext } = calculateXPProgress(xp);
 
   const toggleNotifications = () => {
     setIsOpen(!isOpen);
@@ -31,7 +49,7 @@ export const NotificationBell = () => {
 
       {/* Notification Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-96 overflow-hidden">
+        <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg border border-gray-200 z-50 max-h-[34rem] overflow-hidden flex flex-col">
           {/* Header */}
           <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-gray-900">
@@ -57,8 +75,45 @@ export const NotificationBell = () => {
             </div>
           </div>
 
+          {/* Level Summary */}
+          <div className="px-4 pt-3 pb-4 border-b border-gray-100 bg-gradient-to-br from-white to-blue-50/40">
+            <div className="flex items-start gap-3 mb-2">
+              <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                <Trophy className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <p className="text-sm font-medium leading-none">Level {currentLevel.level}</p>
+                  <span className={`text-xs font-semibold px-2 py-0.5 rounded-md text-white ${currentLevel.badgeBg}`}>{currentLevel.name}</span>
+                  {nextLevel ? (
+                    <span className="text-[11px] text-gray-500">{xpToNext} XP to Level {nextLevel.level}</span>
+                  ) : (
+                    <span className="text-[11px] text-gray-500">Max level reached</span>
+                  )}
+                </div>
+                <div className="mt-2 space-y-1">
+                  <div className="flex justify-between text-[10px] text-gray-500">
+                    <span>{xp} XP</span>
+                    {nextLevel && <span>{nextLevel.nextLevelXP} XP Goal</span>}
+                  </div>
+                  <Progress value={progressPct} className="h-2" />
+                </div>
+                {nextLevel ? (
+                  <p className="mt-2 text-[11px] text-gray-600 line-clamp-2">
+                    Next unlock: {nextLevel.unlocks.slice(0, 3).join(", ")}
+                    {nextLevel.unlocks.length > 3 && "..."}
+                  </p>
+                ) : (
+                  <p className="mt-2 text-[11px] text-gray-600 flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" /> All features unlocked
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           {/* Notifications List */}
-          <div className="max-h-80 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-gray-500">
                 <Bell className="h-12 w-12 mx-auto mb-2 text-gray-300" />
@@ -88,7 +143,7 @@ export const NotificationBell = () => {
 };
 
 interface NotificationItemProps {
-  notification: any;
+  notification: NotificationType;
   onMarkAsRead: (id: string) => void;
 }
 
@@ -96,20 +151,23 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   notification,
   onMarkAsRead,
 }) => {
-  const getNotificationIcon = (type: string) => {
+  const getNotificationIcon = (type: NotificationType["type"]) => {
     switch (type) {
       case "referral_increase":
         return <Star className="h-5 w-5 text-green-500" />;
       case "referral_milestone":
-        return <span className="text-lg">🎉</span>;
+        return <Star className="h-5 w-5 text-purple-500" />;
       case "xp_gain":
-        return <span className="text-lg">⭐</span>;
+        return <Zap className="h-5 w-5 text-yellow-500" />;
+      case "level_up":
+        return <Trophy className="h-5 w-5 text-orange-500" />;
+      case "general":
       default:
-        return <span className="text-lg">📢</span>;
+        return <Gift className="h-5 w-5 text-blue-500" />;
     }
   };
 
-  const getNotificationColor = (type: string) => {
+  const getNotificationColor = (type: NotificationType["type"]) => {
     switch (type) {
       case "referral_increase":
         return "bg-green-50 border-l-4 border-l-green-400";
@@ -117,6 +175,9 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
         return "bg-purple-50 border-l-4 border-l-purple-400";
       case "xp_gain":
         return "bg-yellow-50 border-l-4 border-l-yellow-400";
+      case "level_up":
+        return "bg-orange-50 border-l-4 border-l-orange-400";
+      case "general":
       default:
         return "bg-blue-50 border-l-4 border-l-blue-400";
     }
@@ -160,7 +221,17 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
                 </div>
               )}
             </div>
-            <p className="text-sm text-gray-600 mb-1">{notification.message}</p>
+            <p className="text-sm text-gray-600 mb-1 whitespace-pre-line">{notification.message}</p>
+            {notification.type === "level_up" && notification.data?.unlocks?.length > 0 && (
+              <p className="text-xs text-gray-700 font-medium flex items-center gap-1">
+                <Sparkles className="w-3 h-3 text-yellow-500" /> Unlocks: {notification.data.unlocks.slice(0,4).join(", ")}{notification.data.unlocks.length > 4 && "..."}
+              </p>
+            )}
+            {notification.type === "general" && notification.data?.unlocks?.length > 0 && (
+              <p className="text-xs text-gray-700 flex items-center gap-1">
+                <Gift className="w-3 h-3 text-blue-500" /> {notification.data.unlocks.slice(0,4).join(", ")}{notification.data.unlocks.length > 4 && "..."}
+              </p>
+            )}
             <p className="text-xs text-gray-400">
               {formatTime(notification.timestamp)}
             </p>

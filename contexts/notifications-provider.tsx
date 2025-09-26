@@ -10,10 +10,16 @@ import React, {
 import { supabase } from "@/utils/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { useUser } from "./user-provider";
+import { calculateXPProgress, XP_LEVELS } from "@/lib/xp/levels";
 
 export interface Notification {
   id: string;
-  type: "referral_increase" | "referral_milestone" | "xp_gain" | "general";
+  type:
+    | "referral_increase"
+    | "referral_milestone"
+    | "xp_gain"
+    | "level_up"
+    | "general";
   title: string;
   message: string;
   timestamp: Date;
@@ -46,8 +52,9 @@ export const useNotifications = () => {
   return context;
 };
 
-// Storage key for persisting referral count
+// Storage keys for persisting data
 const REFERRAL_STORAGE_KEY = (userId: string) => `referrals_${userId}`;
+const XP_STORAGE_KEY = (userId: string) => `xp_${userId}`;
 const NOTIFICATIONS_STORAGE_KEY = (userId: string) => `notifications_${userId}`;
 
 export const NotificationsProvider = ({
@@ -59,70 +66,83 @@ export const NotificationsProvider = ({
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
   const previousReferralsRef = useRef<number | null>(null);
+  const previousXPRef = useRef<number | null>(null);
   const hasInitializedRef = useRef(false);
-  const lastActiveTimeRef = useRef<Date>(new Date());
 
   // Generate notification ID
   const generateId = () =>
     `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  // Load stored referral count from localStorage (for your actual implementation)
+  // Load stored referral count from localStorage
   const loadStoredReferralCount = (userId: string): number | null => {
-    // In your actual app, uncomment this:
-    // try {
-    //   const stored = localStorage.getItem(REFERRAL_STORAGE_KEY(userId));
-    //   return stored ? parseInt(stored, 10) : null;
-    // } catch (error) {
-    //   console.error("Error loading stored referral count:", error);
-    //   return null;
-    // }
-
-    // For the artifact environment, we'll use in-memory storage
-    return previousReferralsRef.current;
+    try {
+      const stored = localStorage.getItem(REFERRAL_STORAGE_KEY(userId));
+      return stored ? parseInt(stored, 10) : null;
+    } catch (error) {
+      console.error("Error loading stored referral count:", error);
+      return null;
+    }
   };
 
-  // Store referral count in localStorage (for your actual implementation)
+  // Store referral count in localStorage
   const storeReferralCount = (userId: string, count: number) => {
-    // In your actual app, uncomment this:
-    // try {
-    //   localStorage.setItem(REFERRAL_STORAGE_KEY(userId), count.toString());
-    // } catch (error) {
-    //   console.error("Error storing referral count:", error);
-    // }
+    try {
+      localStorage.setItem(REFERRAL_STORAGE_KEY(userId), count.toString());
+    } catch (error) {
+      console.error("Error storing referral count:", error);
+    }
+  };
 
-    // For the artifact environment, we'll use in-memory storage
-    previousReferralsRef.current = count;
+  // Load stored XP from localStorage
+  const loadStoredXP = (userId: string): number | null => {
+    try {
+      const stored = localStorage.getItem(XP_STORAGE_KEY(userId));
+      return stored ? parseInt(stored, 10) : null;
+    } catch (error) {
+      console.error("Error loading stored XP:", error);
+      return null;
+    }
+  };
+
+  // Store XP in localStorage
+  const storeXP = (userId: string, xp: number) => {
+    try {
+      localStorage.setItem(XP_STORAGE_KEY(userId), xp.toString());
+    } catch (error) {
+      console.error("Error storing XP:", error);
+    }
   };
 
   // Load stored notifications from localStorage
   const loadStoredNotifications = (userId: string): Notification[] => {
-    // In your actual app, uncomment this:
-    // try {
-    //   const stored = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY(userId));
-    //   if (stored) {
-    //     const parsed = JSON.parse(stored);
-    //     // Convert timestamp strings back to Date objects
-    //     return parsed.map((n: any) => ({
-    //       ...n,
-    //       timestamp: new Date(n.timestamp)
-    //     }));
-    //   }
-    // } catch (error) {
-    //   console.error("Error loading stored notifications:", error);
-    // }
+    try {
+      const stored = localStorage.getItem(NOTIFICATIONS_STORAGE_KEY(userId));
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        // Convert timestamp strings back to Date objects
+        return parsed.map((n: any) => ({
+          ...n,
+          timestamp: new Date(n.timestamp),
+        }));
+      }
+    } catch (error) {
+      console.error("Error loading stored notifications:", error);
+    }
     return [];
   };
 
   // Store notifications in localStorage
   const storeNotifications = (userId: string, notifs: Notification[]) => {
-    // In your actual app, uncomment this:
-    // try {
-    //   // Keep only last 50 notifications
-    //   const toStore = notifs.slice(0, 50);
-    //   localStorage.setItem(NOTIFICATIONS_STORAGE_KEY(userId), JSON.stringify(toStore));
-    // } catch (error) {
-    //   console.error("Error storing notifications:", error);
-    // }
+    try {
+      // Keep only last 50 notifications
+      const toStore = notifs.slice(0, 50);
+      localStorage.setItem(
+        NOTIFICATIONS_STORAGE_KEY(userId),
+        JSON.stringify(toStore)
+      );
+    } catch (error) {
+      console.error("Error storing notifications:", error);
+    }
   };
 
   // Add notification
@@ -183,8 +203,7 @@ export const NotificationsProvider = ({
   const clearNotifications = useCallback(() => {
     setNotifications([]);
     if (authUser) {
-      // In your actual app, uncomment this:
-      // localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY(authUser.id));
+      localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY(authUser.id));
     }
   }, [authUser]);
 
@@ -229,15 +248,72 @@ export const NotificationsProvider = ({
     [addNotification]
   );
 
-  // Check for referral changes that happened while user was away
-  const checkForMissedReferralChanges = useCallback(async () => {
+  // Handle XP changes and level ups
+  const handleXPChange = useCallback(
+    (newXP: number, oldXP: number | null) => {
+      // Don't notify if this is the initial load or if oldXP is null
+      if (oldXP === null || !hasInitializedRef.current) {
+        return;
+      }
+
+      const increase = newXP - oldXP;
+      if (increase > 0) {
+        // Check for level up
+        const oldProgress = calculateXPProgress(oldXP);
+        const newProgress = calculateXPProgress(newXP);
+
+        if (newProgress.currentLevel.level > oldProgress.currentLevel.level) {
+          // Level up notification
+          const newLevel = newProgress.currentLevel;
+          addNotification({
+            type: "level_up",
+            title: `Level ${newLevel.level} Achieved! `,
+            message: `Congratulations! You've reached ${newLevel.name} status!`,
+            data: {
+              newLevel: newLevel.level,
+              levelName: newLevel.name,
+              unlocks: newLevel.unlocks,
+              previousLevel: oldProgress.currentLevel.level,
+            },
+          });
+
+          // Add a separate notification for unlocks if there are any
+          if (newLevel.unlocks.length > 0) {
+            addNotification({
+              type: "general",
+              title: "New Features Unlocked!",
+              message: `You've unlocked: ${newLevel.unlocks.join(", ")}`,
+              data: { unlocks: newLevel.unlocks },
+            });
+          }
+        } else {
+          // Regular XP gain notification
+          addNotification({
+            type: "xp_gain",
+            title: "XP Gained!",
+            message: `You earned ${increase} XP! Total: ${newXP} XP`,
+            data: {
+              increase,
+              total: newXP,
+              progressToNext: newProgress.xpToNext,
+              progressPct: newProgress.progressPct,
+            },
+          });
+        }
+      }
+    },
+    [addNotification]
+  );
+
+  // Check for changes that happened while user was away
+  const checkForMissedChanges = useCallback(async () => {
     if (!authUser || !user) return;
 
     try {
       // Fetch the latest user data from the database
       const { data: latestUserData, error } = await supabase
         .from("users")
-        .select("referrals")
+        .select("referrals, xp")
         .eq("id", authUser.id)
         .single();
 
@@ -246,20 +322,38 @@ export const NotificationsProvider = ({
         return;
       }
 
-      if (latestUserData && typeof latestUserData.referrals === "number") {
-        const currentReferrals = latestUserData.referrals;
-        const storedReferrals = previousReferralsRef.current;
+      if (latestUserData) {
+        // Check referrals
+        if (typeof latestUserData.referrals === "number") {
+          const currentReferrals = latestUserData.referrals;
+          const storedReferrals = loadStoredReferralCount(authUser.id);
 
-        if (storedReferrals !== null && currentReferrals !== storedReferrals) {
-          handleReferralChange(currentReferrals, storedReferrals);
+          if (
+            storedReferrals !== null &&
+            currentReferrals !== storedReferrals
+          ) {
+            handleReferralChange(currentReferrals, storedReferrals);
+          }
           previousReferralsRef.current = currentReferrals;
           storeReferralCount(authUser.id, currentReferrals);
         }
+
+        // Check XP
+        if (typeof latestUserData.xp === "number") {
+          const currentXP = latestUserData.xp;
+          const storedXP = loadStoredXP(authUser.id);
+
+          if (storedXP !== null && currentXP !== storedXP) {
+            handleXPChange(currentXP, storedXP);
+          }
+          previousXPRef.current = currentXP;
+          storeXP(authUser.id, currentXP);
+        }
       }
     } catch (error) {
-      console.error("Error checking for missed referral changes:", error);
+      console.error("Error checking for missed changes:", error);
     }
-  }, [authUser, user, handleReferralChange]);
+  }, [authUser, user, handleReferralChange, handleXPChange]);
 
   // Initialize user data and set up realtime subscription
   useEffect(() => {
@@ -271,6 +365,7 @@ export const NotificationsProvider = ({
       }
       setNotifications([]);
       previousReferralsRef.current = null;
+      previousXPRef.current = null;
       hasInitializedRef.current = false;
       return;
     }
@@ -281,19 +376,24 @@ export const NotificationsProvider = ({
       setNotifications(storedNotifications);
     }
 
-    // Initialize referral tracking
+    // Initialize tracking
     if (user && !hasInitializedRef.current) {
-      // Try to load the stored referral count first
+      // Check for referral changes
       const storedReferrals = loadStoredReferralCount(authUser.id);
-
       if (storedReferrals !== null && storedReferrals !== user.referrals) {
-        // If stored value exists and is different from current, check for changes
         handleReferralChange(user.referrals || 0, storedReferrals);
       }
-
-      // Update the stored value with current
       previousReferralsRef.current = user.referrals || 0;
       storeReferralCount(authUser.id, user.referrals || 0);
+
+      // Check for XP changes
+      const storedXP = loadStoredXP(authUser.id);
+      if (storedXP !== null && storedXP !== user.xp) {
+        handleXPChange(user.xp || 0, storedXP);
+      }
+      previousXPRef.current = user.xp || 0;
+      storeXP(authUser.id, user.xp || 0);
+
       hasInitializedRef.current = true;
     }
 
@@ -326,6 +426,17 @@ export const NotificationsProvider = ({
             previousReferralsRef.current = newData.referrals;
             storeReferralCount(authUser.id, newData.referrals);
           }
+
+          // Handle XP changes
+          if (
+            typeof newData.xp === "number" &&
+            previousXPRef.current !== null &&
+            newData.xp !== previousXPRef.current
+          ) {
+            handleXPChange(newData.xp, previousXPRef.current);
+            previousXPRef.current = newData.xp;
+            storeXP(authUser.id, newData.xp);
+          }
         }
       )
       .subscribe((status) => {
@@ -340,30 +451,55 @@ export const NotificationsProvider = ({
 
     setChannel(realtimeChannel);
 
+    // Check for missed changes on mount
+    checkForMissedChanges();
+
     // Cleanup function
     return () => {
       console.log("Unsubscribing from realtime channel");
       realtimeChannel.unsubscribe();
     };
-  }, [authUser, isAuthenticated, user, handleReferralChange, addNotification]);
+  }, [
+    authUser,
+    isAuthenticated,
+    user,
+    handleReferralChange,
+    handleXPChange,
+    addNotification,
+    checkForMissedChanges,
+  ]);
 
-  // Update stored referral count when user data changes
+  // Update stored values when user data changes
   useEffect(() => {
     if (user && authUser && hasInitializedRef.current) {
+      // Handle referrals
       if (
         user.referrals !== undefined &&
         user.referrals !== previousReferralsRef.current
       ) {
-        // This handles cases where the user data is updated through other means
-        // (e.g., a manual refresh) rather than realtime
         if (previousReferralsRef.current !== null) {
           handleReferralChange(user.referrals, previousReferralsRef.current);
         }
         previousReferralsRef.current = user.referrals;
         storeReferralCount(authUser.id, user.referrals);
       }
+
+      // Handle XP
+      if (user.xp !== undefined && user.xp !== previousXPRef.current) {
+        if (previousXPRef.current !== null) {
+          handleXPChange(user.xp, previousXPRef.current);
+        }
+        previousXPRef.current = user.xp;
+        storeXP(authUser.id, user.xp);
+      }
     }
-  }, [user?.referrals, authUser, handleReferralChange]);
+  }, [
+    user?.referrals,
+    user?.xp,
+    authUser,
+    handleReferralChange,
+    handleXPChange,
+  ]);
 
   return (
     <NotificationsContext.Provider

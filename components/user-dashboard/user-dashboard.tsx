@@ -165,6 +165,11 @@ export function UserDashboard() {
               <p className="mt-4 text-muted-foreground">
                 Loading your dashboard...
               </p>
+              {JSON.stringify({
+                authLoading,
+                categoriesLoading,
+                tricksLoading,
+              })}
             </CardContent>
           </Card>
         </div>
