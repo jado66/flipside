@@ -6,7 +6,7 @@ import { Trick } from "@/types/trick";
  */
 export function calculateTrickCreationXP(trickData: Partial<Trick>): number {
   const baseXP = 50;
-  const bonusXP = 0;
+  let bonusXP = 0;
 
   // Content completeness bonuses
   if (trickData.description && trickData.description.length > 50) {
