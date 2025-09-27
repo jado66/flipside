@@ -314,7 +314,7 @@ export function ClassScheduling() {
         {/* Classes List */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Today's Classes</CardTitle>
+            <CardTitle>Today&apos;s Classes</CardTitle>
             <CardDescription>January 25, 2024</CardDescription>
           </CardHeader>
           <CardContent>
