@@ -105,7 +105,7 @@
   --muted: oklch(0.2 0.02 258); /* Dark muted background */
   --muted-foreground: oklch(0.7 0.01 258); /* Muted text */
   --accent: oklch(
-    0.24 0.02 258
+    47.953% 0.12889 147.324
   ); /* Slightly lighter than card for better hover visibility */
   --accent-foreground: oklch(0.95 0.005 258); /* Light text on accent */
   --destructive: oklch(0.65 0.2 25); /* Brighter red for dark mode */

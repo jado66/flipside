@@ -93,8 +93,8 @@ export default function ContributeCallToAction() {
                   "m-1 inline-flex items-center gap-2 text-sm rounded-full px-4 py-2 border",
                   level.bgColor,
                   level.borderColor,
-                  // Provide a subtle text color; fallback to slate if custom color is very dark/light
-                  "text-slate-700 dark:text-slate-800/90",
+                  // Use proper dark mode friendly text colors
+                  "text-slate-700 dark:text-slate-300",
                 ].join(" ")}
               >
                 <Trophy className={["w-4 h-4", level.color].join(" ")} />
