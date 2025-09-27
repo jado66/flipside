@@ -151,10 +151,10 @@ export function InstallPWAApp({ className }: { className?: string }) {
             <div className="space-y-3">
               {[
                 { icon: Share, text: "Tap the Share button in Safari" },
-                { icon: Plus, text: 'Select "Add to Home Screen"' },
+                { icon: Plus, text: "Select &quot;Add to Home Screen&quot;" },
                 {
                   icon: CheckCircle,
-                  text: 'Tap "Add" to complete installation',
+                  text: "Tap &quot;Add&quot; to complete installation",
                 },
               ].map((step, index) => (
                 <div
@@ -196,7 +196,7 @@ export function InstallPWAApp({ className }: { className?: string }) {
                 { icon: Menu, text: "Tap the menu (⋮) in your browser" },
                 {
                   icon: Download,
-                  text: 'Select "Add to Home screen" or "Install app"',
+                  text: "Select &quot;Add to Home screen&quot; or &quot;Install app&quot;",
                 },
                 {
                   icon: CheckCircle,
@@ -237,7 +237,7 @@ export function InstallPWAApp({ className }: { className?: string }) {
                 <h3 className="font-semibold">Install as PWA</h3>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   You can install this app as a PWA for a better experience. If
-                  you don't see a native install prompt, use manual
+                  you don&apos;t see a native install prompt, use manual
                   instructions.
                 </p>
               </div>
@@ -329,13 +329,13 @@ export function InstallPWAApp({ className }: { className?: string }) {
                       <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
                         2
                       </span>
-                      Scroll and select "Add to Home Screen".
+                      Scroll and select &quot;Add to Home Screen&quot;.
                     </li>
                     <li className="flex gap-3 items-start">
                       <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
                         3
                       </span>
-                      Tap "Add" in the top right.
+                      Tap &quot;Add&quot; in the top right.
                     </li>
                   </ol>
                 </div>
@@ -356,7 +356,8 @@ export function InstallPWAApp({ className }: { className?: string }) {
                       <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
                         2
                       </span>
-                      Tap "Install app" or "Add to Home screen".
+                      Tap &quot;Install app&quot; or &quot;Add to Home
+                      screen&quot;.
                     </li>
                     <li className="flex gap-3 items-start">
                       <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
@@ -384,8 +385,8 @@ export function InstallPWAApp({ className }: { className?: string }) {
                       <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
                         2
                       </span>
-                      Select "Install App" / "Install Trickipedia" / "Add to
-                      Home Screen".
+                      Select &quot;Install App&quot; / &quot;Install
+                      Trickipedia&quot; / &quot;Add to Home Screen&quot;.
                     </li>
                     <li className="flex gap-3 items-start">
                       <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
@@ -397,9 +398,9 @@ export function InstallPWAApp({ className }: { className?: string }) {
                 </div>
               )}
               <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
-                Still not seeing an option? Make sure you're using a modern
-                browser (Chrome, Edge, Safari, Firefox) and that you're online
-                the first time so assets can cache.
+                Still not seeing an option? Make sure you&apos;re using a modern
+                browser (Chrome, Edge, Safari, Firefox) and that you&apos;re
+                online the first time so assets can cache.
               </div>
             </div>
             <div className="p-4 border-t flex justify-end gap-2">
