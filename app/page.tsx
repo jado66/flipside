@@ -15,7 +15,7 @@ export default async function HomePageServer() {
       <FeaturedCategories />
       <RecentTricks />
       <div className="py-10 px-4">
-        <InstallPWAApp />
+        <InstallPWAApp className="max-w-lg mx-auto" />
       </div>
       <hr className="mb-10 border-t border-muted" />
       <ContributingSection />

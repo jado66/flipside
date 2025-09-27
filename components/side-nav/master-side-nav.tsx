@@ -100,24 +100,21 @@ export function MasterSideNav({
     href,
     children,
     className,
+    itemClassName,
   }: {
     href: string;
     children: React.ReactNode;
-    className?: string;
+    className?: string; // button classes
+    itemClassName?: string; // li classes
   }) => (
-    <SidebarMenuItem>
+    <SidebarMenuItem className={cn("sm:hidden", itemClassName)}>
       <SidebarMenuButton
         asChild
         onClick={() => {
           if (onItemClick) onItemClick();
         }}
         className={cn(
-          // Ensure consistent typography & spacing with other sidebar items
-          "text-base md:text-sm font-normal h-auto py-2",
-          // Use full width on mobile for tap area, left aligned like other items
-          "justify-start",
-          // White text on hover (works against colored or neutral backgrounds)
-          "hover:text-white",
+          "text-base md:text-sm font-normal h-auto py-2 justify-start hover:text-white",
           className
         )}
       >
@@ -605,65 +602,50 @@ export function MasterSideNav({
                 )}
 
                 {/* Mobile-only user nav or login/join buttons after categories */}
-                <div className="block sm:hidden">
-                  <div className="my-4 border-t border-border" />
-                  {user && (user.referrals ?? 0) >= 2 && (
-                    <div className="mb-2">
-                      <ThemeToggle variant="nav" />
-                    </div>
-                  )}
-                  <MobileNavLink href="/about">About</MobileNavLink>
-                  <MobileNavLink href="/contribute">Help Contribute</MobileNavLink>
-                  <MobileNavLink href="/faqs">FAQs</MobileNavLink>
-
-                  <div className="my-4 border-t border-border" />
-                  {user ? (
-                    // User navigation for logged-in users
-                    <>
-                      <SidebarMenuItem>
-                        {/* <Avatar className="h-8 w-8">
-                            <AvatarImage
-                              src={user.user_metadata?.avatar_url}
-                              alt="Avatar"
-                            />
-                            <AvatarFallback>
-                              {user.user_metadata?.first_name?.[0]?.toUpperCase() ||
-                                user.email?.[0]?.toUpperCase() ||
-                                "U"}
-                            </AvatarFallback>
-                          </Avatar> */}
-
-                        {/* <p className="text-xs leading-none text-muted-foreground truncate"> */}
-                        <MobileNavLink href="/profile" className="truncate">
-                          {user.email}
-                        </MobileNavLink>
-
-                        {/* </p> */}
-                      </SidebarMenuItem>
-                      <SidebarMenuItem>
-                        <SidebarMenuButton
-                          onClick={handleSignOut}
-                          className={cn(
-                            "text-base md:text-sm font-normal h-auto py-2 justify-start hover:text-white"
-                          )}
-                        >
-                          Sign Out
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    </>
-                  ) : (
-                    // Login buttons for non-authenticated users
-                    <>
-                      <MobileNavLink href="/login">Sign In</MobileNavLink>
-                      <MobileNavLink
-                        href="/signup"
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                {/* NOTE: Only li (SidebarMenuItem) elements as direct children of SidebarMenu to avoid hydration issues */}
+                <SidebarMenuItem className="sm:hidden px-2" aria-hidden="true">
+                  <div className="my-4 w-full border-t border-border" />
+                </SidebarMenuItem>
+                {user && (user.referrals ?? 0) >= 2 && (
+                  <SidebarMenuItem className="sm:hidden">
+                    <ThemeToggle variant="nav" className="w-full" />
+                  </SidebarMenuItem>
+                )}
+                <MobileNavLink href="/about">About</MobileNavLink>
+                <MobileNavLink href="/contribute">
+                  Help Contribute
+                </MobileNavLink>
+                <MobileNavLink href="/faqs">FAQs</MobileNavLink>
+                <SidebarMenuItem className="sm:hidden px-2" aria-hidden="true">
+                  <div className="my-4 w-full border-t border-border" />
+                </SidebarMenuItem>
+                {user ? (
+                  <>
+                    <MobileNavLink href="/profile" className="truncate">
+                      {user.email}
+                    </MobileNavLink>
+                    <SidebarMenuItem className="sm:hidden">
+                      <SidebarMenuButton
+                        onClick={handleSignOut}
+                        className={cn(
+                          "text-base md:text-sm font-normal h-auto py-2 justify-start hover:text-white"
+                        )}
                       >
-                        Join Now
-                      </MobileNavLink>
-                    </>
-                  )}
-                </div>
+                        Sign Out
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  </>
+                ) : (
+                  <>
+                    <MobileNavLink href="/login">Sign In</MobileNavLink>
+                    <MobileNavLink
+                      href="/signup"
+                      className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      Join Now
+                    </MobileNavLink>
+                  </>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

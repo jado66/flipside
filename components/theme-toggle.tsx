@@ -37,9 +37,7 @@ export function ThemeToggle({ variant = "icon", className }: ThemeToggleProps) {
         </Button>
       );
     }
-    return (
-      <div className="h-9 w-full rounded-md bg-muted/20 animate-pulse" />
-    );
+    return <div className="h-9 w-full rounded-md bg-muted/20 animate-pulse" />;
   }
 
   if (variant === "nav") {
@@ -54,11 +52,7 @@ export function ThemeToggle({ variant = "icon", className }: ThemeToggleProps) {
           className
         )}
       >
-        {isDark ? (
-          <Sun className="h-4 w-4" />
-        ) : (
-          <Moon className="h-4 w-4" />
-        )}
+        {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
         <span className="truncate">Switch to {nextLabel} Mode</span>
         <span className="sr-only">Toggle theme</span>
       </Button>

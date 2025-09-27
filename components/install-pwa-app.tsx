@@ -18,19 +18,21 @@ import {
   CheckCircle,
   Sparkles,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => void;
   userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
 };
 
-export function InstallPWAApp() {
+export function InstallPWAApp({ className }: { className?: string }) {
   // PWA install states
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
+  const [showManualDialog, setShowManualDialog] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
@@ -67,7 +69,11 @@ export function InstallPWAApp() {
   }, []);
 
   const handleInstallClick = async () => {
-    if (!deferredPrompt) return;
+    // If we don't have the deferred prompt, show the manual instructions dialog
+    if (!deferredPrompt) {
+      setShowManualDialog(true);
+      return;
+    }
 
     try {
       deferredPrompt.prompt();
@@ -76,9 +82,13 @@ export function InstallPWAApp() {
       if (outcome === "accepted") {
         setDeferredPrompt(null);
         setIsInstalled(true);
+      } else if (outcome === "dismissed") {
+        // Provide helpful fallback if they dismiss the native prompt
+        setShowManualDialog(true);
       }
     } catch (error) {
       console.error("Error during install prompt:", error);
+      setShowManualDialog(true);
     }
   };
 
@@ -88,7 +98,12 @@ export function InstallPWAApp() {
   }
 
   return (
-    <Card className="w-full max-w-md mx-auto border-2 border-primary/20 bg-gradient-to-br from-background to-muted/30 shadow-lg">
+    <Card
+      className={cn(
+        "w-full  mx-auto border-2 border-primary/20 bg-gradient-to-br from-background to-muted/30 shadow-lg",
+        className
+      )}
+    >
       <CardHeader className="text-center pb-4">
         <div className="mx-auto mb-3 w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
           <Smartphone className="w-8 h-8 text-primary" />
@@ -117,6 +132,13 @@ export function InstallPWAApp() {
               <Download className="w-5 h-5 mr-2" />
               Install App Now
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => setShowManualDialog(true)}
+              className="w-full h-10 text-sm"
+            >
+              Need help? See manual instructions
+            </Button>
           </div>
         ) : isIOS ? (
           <div className="space-y-4">
@@ -126,7 +148,6 @@ export function InstallPWAApp() {
               </div>
               <h3 className="font-semibold text-foreground">Install on iOS</h3>
             </div>
-
             <div className="space-y-3">
               {[
                 { icon: Share, text: "Tap the Share button in Safari" },
@@ -152,6 +173,13 @@ export function InstallPWAApp() {
                 </div>
               ))}
             </div>
+            <Button
+              onClick={() => setShowManualDialog(true)}
+              variant="outline"
+              className="w-full h-10 text-sm"
+            >
+              Need help? Manual instructions
+            </Button>
           </div>
         ) : isAndroid ? (
           <div className="space-y-4">
@@ -163,7 +191,6 @@ export function InstallPWAApp() {
                 Install on Android
               </h3>
             </div>
-
             <div className="space-y-3">
               {[
                 { icon: Menu, text: "Tap the menu (⋮) in your browser" },
@@ -192,19 +219,36 @@ export function InstallPWAApp() {
                 </div>
               ))}
             </div>
+            <Button
+              onClick={() => setShowManualDialog(true)}
+              variant="outline"
+              className="w-full h-10 text-sm"
+            >
+              Need help? Manual instructions
+            </Button>
           </div>
         ) : (
-          <div className="text-center space-y-4">
-            <div className="w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center mx-auto">
-              <Download className="w-6 h-6 text-muted-foreground" />
+          <div className="space-y-4">
+            <div className="text-center space-y-4">
+              <div className="w-12 h-12 bg-muted/50 rounded-full flex items-center justify-center mx-auto">
+                <Download className="w-6 h-6 text-muted-foreground" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="font-semibold">Install as PWA</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  You can install this app as a PWA for a better experience. If
+                  you don't see a native install prompt, use manual
+                  instructions.
+                </p>
+              </div>
             </div>
-            <div className="space-y-2">
-              <h3 className="font-semibold">Install as PWA</h3>
-              <p className="text-sm text-muted-foreground leading-relaxed">
-                You can install this app as a PWA for a better experience. Look
-                for an install option in your browser menu or address bar.
-              </p>
-            </div>
+            <Button
+              onClick={handleInstallClick}
+              className="w-full h-11 text-sm font-medium"
+            >
+              <Download className="w-5 h-5 mr-2" />
+              Show Manual Install Instructions
+            </Button>
           </div>
         )}
 
@@ -255,6 +299,121 @@ export function InstallPWAApp() {
           </div>
         )}
       </CardContent>
+      {/* Manual instructions dialog */}
+      {showManualDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-xl border bg-card shadow-lg animate-in fade-in-0 zoom-in-95">
+            <div className="p-5 border-b">
+              <h2 className="text-lg font-semibold flex items-center gap-2">
+                <Smartphone className="w-5 h-5 text-primary" />
+                Install Trickipedia
+              </h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Follow the steps below to add the app to your home screen.
+              </p>
+            </div>
+            <div className="p-5 space-y-6 max-h-[60vh] overflow-y-auto">
+              {isIOS && (
+                <div>
+                  <h3 className="font-medium mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                    iOS (Safari)
+                  </h3>
+                  <ol className="space-y-3 text-sm">
+                    <li className="flex gap-3 items-start">
+                      <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
+                        1
+                      </span>
+                      Tap the Share button (square with arrow) in Safari.
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
+                        2
+                      </span>
+                      Scroll and select "Add to Home Screen".
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
+                        3
+                      </span>
+                      Tap "Add" in the top right.
+                    </li>
+                  </ol>
+                </div>
+              )}
+              {isAndroid && (
+                <div>
+                  <h3 className="font-medium mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                    Android (Chrome / Edge / Brave)
+                  </h3>
+                  <ol className="space-y-3 text-sm">
+                    <li className="flex gap-3 items-start">
+                      <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
+                        1
+                      </span>
+                      Open the browser menu (⋮).
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
+                        2
+                      </span>
+                      Tap "Install app" or "Add to Home screen".
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
+                        3
+                      </span>
+                      Confirm the prompt to install.
+                    </li>
+                  </ol>
+                </div>
+              )}
+              {!isIOS && !isAndroid && (
+                <div>
+                  <h3 className="font-medium mb-3 text-sm uppercase tracking-wide text-muted-foreground">
+                    Desktop Browsers
+                  </h3>
+                  <ol className="space-y-3 text-sm">
+                    <li className="flex gap-3 items-start">
+                      <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
+                        1
+                      </span>
+                      Look for an install icon (usually at the right of the
+                      address bar) OR open the browser menu.
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
+                        2
+                      </span>
+                      Select "Install App" / "Install Trickipedia" / "Add to
+                      Home Screen".
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <span className="inline-flex w-5 h-5 items-center justify-center rounded-full bg-primary text-primary-foreground text-[11px] font-bold flex-shrink-0">
+                        3
+                      </span>
+                      Confirm the installation prompt.
+                    </li>
+                  </ol>
+                </div>
+              )}
+              <div className="rounded-lg bg-muted/40 p-3 text-xs text-muted-foreground">
+                Still not seeing an option? Make sure you're using a modern
+                browser (Chrome, Edge, Safari, Firefox) and that you're online
+                the first time so assets can cache.
+              </div>
+            </div>
+            <div className="p-4 border-t flex justify-end gap-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowManualDialog(false)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
