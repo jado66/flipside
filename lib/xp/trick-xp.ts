@@ -5,8 +5,8 @@ import { Trick } from "@/types/trick";
  * Range: 50-200 XP as per XP_ACTIONS
  */
 export function calculateTrickCreationXP(trickData: Partial<Trick>): number {
-  let baseXP = 50;
-  let bonusXP = 0;
+  const baseXP = 50;
+  const bonusXP = 0;
 
   // Content completeness bonuses
   if (trickData.description && trickData.description.length > 50) {
@@ -297,14 +297,26 @@ export async function awardTrickXP(
     if (fetchError) {
       // If user doesn't exist in public.users table, create them
       if (fetchError.code === "PGRST116") {
-        console.log("User not found in public.users table, creating profile...");
-        
+        console.log(
+          "User not found in public.users table, creating profile..."
+        );
+
         // Get auth user data to create the profile
-        const { data: { user: authUser }, error: authError } = await supabaseClient.auth.getUser();
-        
+        const {
+          data: { user: authUser },
+          error: authError,
+        } = await supabaseClient.auth.getUser();
+
         if (authError || !authUser || authUser.id !== userId) {
-          console.error("Could not get auth user data for XP award:", authError);
-          return { success: false, newXP: 0, error: "Could not create user profile for XP award" };
+          console.error(
+            "Could not get auth user data for XP award:",
+            authError
+          );
+          return {
+            success: false,
+            newXP: 0,
+            error: "Could not create user profile for XP award",
+          };
         }
 
         // Create a new user profile with the XP amount
