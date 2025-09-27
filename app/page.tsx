@@ -11,10 +11,14 @@ export default async function HomePageServer() {
     <main>
       <TrickipediaHeroSection />
       {/* Get the App Section */}
-      <InstallPWAApp />
-      <ContributingSection />
+
       <FeaturedCategories />
       <RecentTricks />
+      <div className="py-10 px-4">
+        <InstallPWAApp />
+      </div>
+      <hr className="mb-10 border-t border-muted" />
+      <ContributingSection />
       <CommunityStats />
     </main>
   );

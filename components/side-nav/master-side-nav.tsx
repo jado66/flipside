@@ -87,16 +87,46 @@ export function MasterSideNav({
   };
 
   const CloseSideBarLink = ({ children, href, className }) => {
+    // Deprecated – kept temporarily in case of fallback usage.
     return (
-      <Link
-        href={href}
-        className={`w-full text-lg py-0 block flex items-center justify-center border border-border rounded mb-2 ${className}`}
-        onClick={onItemClick}
-      >
+      <Link href={href} onClick={onItemClick} className={className}>
         {children}
       </Link>
     );
   };
+
+  // New standardized mobile nav link using existing sidebar button styling
+  const MobileNavLink = ({
+    href,
+    children,
+    className,
+  }: {
+    href: string;
+    children: React.ReactNode;
+    className?: string;
+  }) => (
+    <SidebarMenuItem>
+      <SidebarMenuButton
+        asChild
+        onClick={() => {
+          if (onItemClick) onItemClick();
+        }}
+        className={cn(
+          // Ensure consistent typography & spacing with other sidebar items
+          "text-base md:text-sm font-normal h-auto py-2",
+          // Use full width on mobile for tap area, left aligned like other items
+          "justify-start",
+          // White text on hover (works against colored or neutral backgrounds)
+          "hover:text-white",
+          className
+        )}
+      >
+        <Link href={href} className="w-full truncate">
+          {children}
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  );
 
   return (
     <>
@@ -578,22 +608,13 @@ export function MasterSideNav({
                 <div className="block sm:hidden">
                   <div className="my-4 border-t border-border" />
                   {user && (user.referrals ?? 0) >= 2 && (
-                    <div className="flex items-center justify-between mb-4">
-                      <span className="text-sm font-medium">Theme</span>
-                      <ThemeToggle />
+                    <div className="mb-2">
+                      <ThemeToggle variant="nav" />
                     </div>
                   )}
-                  <CloseSideBarLink href="/about" className="w-full block">
-                    <SidebarHeader className="text-md ">About</SidebarHeader>
-                  </CloseSideBarLink>
-                  <CloseSideBarLink href="/contribute" className="w-full block">
-                    <SidebarHeader className="text-md ">
-                      Help Contribute
-                    </SidebarHeader>
-                  </CloseSideBarLink>
-                  <CloseSideBarLink href="/faqs" className="w-full block">
-                    <SidebarHeader className="text-md ">FAQs</SidebarHeader>
-                  </CloseSideBarLink>
+                  <MobileNavLink href="/about">About</MobileNavLink>
+                  <MobileNavLink href="/contribute">Help Contribute</MobileNavLink>
+                  <MobileNavLink href="/faqs">FAQs</MobileNavLink>
 
                   <div className="my-4 border-t border-border" />
                   {user ? (
@@ -613,40 +634,33 @@ export function MasterSideNav({
                           </Avatar> */}
 
                         {/* <p className="text-xs leading-none text-muted-foreground truncate"> */}
-                        <CloseSideBarLink
-                          href={`/profile`}
-                          className=" block truncate"
-                        >
-                          <SidebarHeader>{user.email}</SidebarHeader>
-                        </CloseSideBarLink>
+                        <MobileNavLink href="/profile" className="truncate">
+                          {user.email}
+                        </MobileNavLink>
 
                         {/* </p> */}
                       </SidebarMenuItem>
                       <SidebarMenuItem>
                         <SidebarMenuButton
                           onClick={handleSignOut}
-                          className="w-full text-lg py-6 block flex items-center justify-center border border-border rounded mb-2"
+                          className={cn(
+                            "text-base md:text-sm font-normal h-auto py-2 justify-start hover:text-white"
+                          )}
                         >
-                          Sign out
+                          Sign Out
                         </SidebarMenuButton>
                       </SidebarMenuItem>
                     </>
                   ) : (
                     // Login buttons for non-authenticated users
                     <>
-                      <CloseSideBarLink
-                        href={`/login`}
-                        className=" block truncate"
+                      <MobileNavLink href="/login">Sign In</MobileNavLink>
+                      <MobileNavLink
+                        href="/signup"
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
-                        <SidebarHeader>Sign In</SidebarHeader>
-                      </CloseSideBarLink>
-
-                      <CloseSideBarLink
-                        href={`/signup`}
-                        className=" block truncate bg-primary text-primary-foreground"
-                      >
-                        <SidebarHeader>Join Now</SidebarHeader>
-                      </CloseSideBarLink>
+                        Join Now
+                      </MobileNavLink>
                     </>
                   )}
                 </div>

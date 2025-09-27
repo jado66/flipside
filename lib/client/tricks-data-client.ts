@@ -34,9 +34,36 @@ export async function createTrick(
   console.log("Trick data (without components):", trickData);
 
   // Prepare insert data
+  // Determine acting (logged-in) user. This is who should receive XP, regardless of provided created_by
+  let actingUserId: string | null = null;
+  try {
+    const {
+      data: { user: sessionUser },
+      error: sessionError,
+    } = await supabaseClient.auth.getUser();
+    if (sessionError) {
+      console.warn(
+        "Could not get current auth user for XP awarding:",
+        sessionError
+      );
+    } else if (sessionUser) {
+      actingUserId = sessionUser.id;
+    }
+  } catch (e) {
+    console.warn(
+      "auth.getUser() threw while creating trick (continuing without acting user):",
+      e
+    );
+  }
+
   const insertData = {
     ...trickData,
     view_count: 0,
+    // Auto-populate created_by if not supplied so future logic & attribution remain consistent
+    created_by:
+      (trickData as any).created_by ||
+      actingUserId ||
+      (trickData as any).created_by, // fallback keeps existing if somehow defined later
   };
   console.log(
     "Data being inserted to Supabase:",
@@ -166,34 +193,31 @@ export async function createTrick(
 
   console.timeEnd("Fetch components");
 
-  // Award XP for trick creation
-  if (newTrick.created_by) {
-    console.log("=== AWARDING XP FOR TRICK CREATION ===");
+  // Award XP for trick creation to the CURRENT LOGGED-IN USER (actingUserId), not necessarily the stored created_by
+  if (actingUserId) {
+    console.log("=== AWARDING XP FOR TRICK CREATION (acting user) ===");
     const xpAmount = calculateTrickCreationXP(newTrick);
     console.log(`Calculated XP amount: ${xpAmount}`);
-
     try {
       const xpResult = await awardUserXP(
         supabaseClient,
-        newTrick.created_by,
+        actingUserId,
         xpAmount,
         "trick_creation"
       );
-
       if (xpResult.success) {
         console.log(
-          `✅ Successfully awarded ${xpAmount} XP to user ${newTrick.created_by}`
+          `✅ Successfully awarded ${xpAmount} XP to acting user ${actingUserId}`
         );
-        console.log(`User's new XP total: ${xpResult.newXP}`);
+        console.log(`Acting user's new XP total: ${xpResult.newXP}`);
       } else {
         console.warn(`⚠️ Failed to award XP: ${xpResult.error}`);
       }
     } catch (xpError) {
       console.error("XP awarding error:", xpError);
-      // Don't fail the trick creation if XP awarding fails
     }
   } else {
-    console.log("No created_by user ID, skipping XP award");
+    console.log("No acting user session, skipping XP award");
   }
 
   console.log("=== createTrick SUCCESS ===");
@@ -287,10 +311,30 @@ export async function updateTrick(
   const compData = await getTrickComponents(supabaseClient, id);
   updatedTrick.components = compData;
 
-  // Award XP for trick editing (need original trick data for comparison)
-  if (updatedTrick.created_by) {
-    console.log("=== AWARDING XP FOR TRICK EDIT ===");
+  // Award XP for trick editing TO THE CURRENT USER (not necessarily the original creator)
+  console.log("=== AWARDING XP FOR TRICK EDIT (acting user) ===");
+  let editingUserId: string | null = null;
+  try {
+    const {
+      data: { user: sessionUser },
+      error: sessionError,
+    } = await supabaseClient.auth.getUser();
+    if (sessionError) {
+      console.warn(
+        "Could not get current auth user for edit XP awarding:",
+        sessionError
+      );
+    } else if (sessionUser) {
+      editingUserId = sessionUser.id;
+    }
+  } catch (e) {
+    console.warn(
+      "auth.getUser() threw while updating trick (continuing without XP)",
+      e
+    );
+  }
 
+  if (editingUserId) {
     try {
       // Get original trick data for comparison
       const { data: originalTrick, error: fetchError } = await supabaseClient
@@ -307,16 +351,15 @@ export async function updateTrick(
         if (xpAmount > 0) {
           const xpResult = await awardUserXP(
             supabaseClient,
-            updatedTrick.created_by,
+            editingUserId,
             xpAmount,
             "trick_edit"
           );
-
           if (xpResult.success) {
             console.log(
-              `✅ Successfully awarded ${xpAmount} XP to user ${updatedTrick.created_by}`
+              `✅ Successfully awarded ${xpAmount} XP to editing user ${editingUserId}`
             );
-            console.log(`User's new XP total: ${xpResult.newXP}`);
+            console.log(`Editing user's new XP total: ${xpResult.newXP}`);
           } else {
             console.warn(`⚠️ Failed to award XP: ${xpResult.error}`);
           }
@@ -328,10 +371,9 @@ export async function updateTrick(
       }
     } catch (xpError) {
       console.error("XP awarding error:", xpError);
-      // Don't fail the trick update if XP awarding fails
     }
   } else {
-    console.log("No created_by user ID, skipping XP award");
+    console.log("No authenticated editing user, skipping XP award");
   }
 
   return updatedTrick;
