@@ -18,14 +18,18 @@ type BeforeInstallPromptEvent = Event & {
 
 export function InstallPWAApp() {
   // PWA install states
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] =
+    useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
 
   useEffect(() => {
     // Check if app is already installed
-    if (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) {
+    if (
+      window.matchMedia &&
+      window.matchMedia("(display-mode: standalone)").matches
+    ) {
       setIsInstalled(true);
     }
 
@@ -36,7 +40,7 @@ export function InstallPWAApp() {
 
     const handler = (e: Event) => {
       e.preventDefault();
-      console.log('beforeinstallprompt fired');
+      console.log("beforeinstallprompt fired");
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
 
@@ -66,7 +70,7 @@ export function InstallPWAApp() {
         setIsInstalled(true);
       }
     } catch (error) {
-      console.error('Error during install prompt:', error);
+      console.error("Error during install prompt:", error);
     }
   };
 
@@ -90,9 +94,7 @@ export function InstallPWAApp() {
           </Button>
         ) : isIOS ? (
           <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              To install on iOS:
-            </p>
+            <p className="text-sm text-muted-foreground">To install on iOS:</p>
             <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
               <li>Tap the Share button in Safari</li>
               <li>Select &quot;Add to Home Screen&quot;</li>
@@ -106,7 +108,9 @@ export function InstallPWAApp() {
             </p>
             <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
               <li>Tap the menu (⋮) in your browser</li>
-              <li>Select &quot;Add to Home screen&quot; or &quot;Install app&quot;</li>
+              <li>
+                Select &quot;Add to Home screen&quot; or &quot;Install app&quot;
+              </li>
               <li>Follow the prompts to install</li>
             </ol>
           </div>
@@ -116,15 +120,15 @@ export function InstallPWAApp() {
             an install option in your browser menu or address bar.
           </p>
         )}
-        
+
         {/* Debug info - remove in production */}
-        {process.env.NODE_ENV === 'development' && (
+        {process.env.NODE_ENV === "development" && (
           <div className="mt-4 p-2 bg-gray-100 dark:bg-gray-800 rounded text-xs">
             <p>Debug info:</p>
-            <p>Has prompt: {deferredPrompt ? 'Yes' : 'No'}</p>
-            <p>Is iOS: {isIOS ? 'Yes' : 'No'}</p>
-            <p>Is Android: {isAndroid ? 'Yes' : 'No'}</p>
-            <p>Is installed: {isInstalled ? 'Yes' : 'No'}</p>
+            <p>Has prompt: {deferredPrompt ? "Yes" : "No"}</p>
+            <p>Is iOS: {isIOS ? "Yes" : "No"}</p>
+            <p>Is Android: {isAndroid ? "Yes" : "No"}</p>
+            <p>Is installed: {isInstalled ? "Yes" : "No"}</p>
           </div>
         )}
       </CardContent>
