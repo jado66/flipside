@@ -77,7 +77,7 @@ export function calculateTrickEditXP(
   oldTrickData: Partial<Trick>,
   newTrickData: Partial<Trick>
 ): number {
-  let baseXP = 5;
+  const baseXP = 5;
   let bonusXP = 0;
 
   // Major content changes
