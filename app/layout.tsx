@@ -47,7 +47,17 @@ export default async function RootLayout({
 
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>{/* Your existing head content */}</head>
+      <head>
+        <link rel="manifest" href="/favicon/site.webmanifest" />
+        <meta name="theme-color" content="#000000" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="Trickipedia" />
+        {/* PWA Debug Script - Remove in production */}
+        {process.env.NODE_ENV === 'development' && (
+          <script src="/pwa-debug.js" async></script>
+        )}
+      </head>
       <body className="font-sans antialiased">
         <Toaster position="top-center" closeButton />
         <PWARegister />
