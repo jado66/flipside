@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useState, ReactNode, useMemo } from "react";
-import { useAuth } from "./auth-provider";
+import { useUser } from "./user-provider";
 import type {
   NavigationCategory,
   NavigationSubcategory,
@@ -29,8 +29,7 @@ export function NavigationProvider({
   children: ReactNode;
   initialData?: NavigationCategory[];
 }) {
-  const { publicUser } = useAuth();
-
+  const { user: publicUser } = useUser();
   // Filter categories based on user's selected sports
   const categories = useMemo(() => {
     if (

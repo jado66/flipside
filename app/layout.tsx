@@ -1,10 +1,9 @@
+// cspell:disable
 import "./globals.css";
 
 import React from "react";
 import type { Metadata } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
-import { AuthProvider } from "@/contexts/auth-provider";
+
 import { PWARegister } from "@/components/pwa-register";
 import { Toaster } from "sonner";
 import { Analytics } from "@vercel/analytics/react";
@@ -20,6 +19,7 @@ import { TrickipediaFooter } from "@/components/trickipdedia-footer";
 import { UserProvider } from "@/contexts/user-provider";
 import { UserProgressProvider } from "@/contexts/user-progress-provider";
 import { NotificationsProvider } from "@/contexts/notifications-provider";
+import { CategoriesProvider } from "@/contexts/categories-provider";
 
 export const metadata: Metadata = {
   title: "Trickipedia - Learn New Tricks",
@@ -61,8 +61,8 @@ export default async function RootLayout({
           enableSystem={false}
         >
           <ConfettiProvider>
-            <AuthProvider>
-              <UserProvider>
+            <UserProvider>
+              <CategoriesProvider>
                 <UserProgressProvider>
                   <NotificationsProvider>
                     <TrickipediaLayoutServer>
@@ -71,11 +71,10 @@ export default async function RootLayout({
                     </TrickipediaLayoutServer>
                   </NotificationsProvider>
                 </UserProgressProvider>
-              </UserProvider>
-            </AuthProvider>
+              </CategoriesProvider>
+            </UserProvider>
           </ConfettiProvider>
         </ThemeProvider>
-
         <Analytics />
       </body>
     </html>

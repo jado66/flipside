@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { useAuth } from "@/contexts/auth-provider";
+import { useUser } from "@/contexts/user-provider";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,7 +21,7 @@ export function ProtectedRoute({
   redirectTo = "/login",
   fallback,
 }: ProtectedRouteProps) {
-  const { user, publicUser, loading } = useAuth();
+  const { user, isLoading: loading } = useUser();
   const router = useRouter();
   const pathname = usePathname();
 
@@ -37,8 +37,8 @@ export function ProtectedRoute({
     }
 
     // Check role-based access
-    if (user && publicUser) {
-      const userRole = publicUser.role;
+    if (user) {
+      const userRole = user.role;
 
       // Admin requirement
       if (requireAdmin && userRole !== "administrator") {
@@ -58,7 +58,6 @@ export function ProtectedRoute({
     }
   }, [
     user,
-    publicUser,
     loading,
     requireAuth,
     requireAdmin,
@@ -85,8 +84,8 @@ export function ProtectedRoute({
   }
 
   // Check role-based access
-  if (user && publicUser) {
-    const userRole = publicUser.role;
+  if (user) {
+    const userRole = user.role;
 
     if (requireAdmin && userRole !== "administrator") {
       return (

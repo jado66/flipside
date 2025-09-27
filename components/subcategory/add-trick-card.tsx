@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Plus } from "lucide-react";
-import { useAuth } from "@/contexts/auth-provider";
+import { useUser } from "@/contexts/user-provider";
 
 interface AddTrickCardProps {
   categorySlug: string;
@@ -19,7 +19,7 @@ export function AddTrickCard({
   categorySlug,
   subcategorySlug,
 }: AddTrickCardProps) {
-  const { user } = useAuth();
+  const { user } = useUser();
 
   return (
     <Link href={user ? `/${categorySlug}/${subcategorySlug}/new` : `/login`}>

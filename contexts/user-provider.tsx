@@ -5,9 +5,12 @@ import React, {
   useEffect,
   useContext,
   useRef,
+  useCallback,
+  useMemo,
 } from "react";
 import { supabase } from "@/utils/supabase/client";
-import { User } from "@supabase/supabase-js";
+import { Session, User } from "@supabase/supabase-js";
+import { getOrCreateUserProfile } from "@/lib/xp/user-xp-utils";
 
 export type UserRole = "user" | "administrator" | "moderator";
 
@@ -41,6 +44,10 @@ interface UserContextType {
   signOut: () => Promise<{ error: any }>;
   refreshUser: () => Promise<void>;
   updateUser: (updates: Partial<PublicUser>) => Promise<PublicUser>;
+  awardXP: (
+    xpAmount: number,
+    reason?: string
+  ) => Promise<{ success: boolean; newXP: number; error?: string }>;
   isAuthenticated: () => boolean;
   hasAdminAccess: () => boolean;
   hasModeratorAccess: () => boolean;
@@ -59,80 +66,116 @@ export const useUser = () => {
   return context;
 };
 
-export const UserProvider = ({ children }: { children: React.ReactNode }) => {
+const UserProviderComponent = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<PublicUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
   const [authUser, setAuthUser] = useState<User | null>(null);
+  const [accessToken, setAccessToken] = useState<string | undefined>(undefined);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const realtimeChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(
-    null
-  );
 
-  const fetchUser = async (id: string) => {
+  // Track mounted state to prevent state updates after unmount
+  const isMounted = useRef(true);
+
+  // Track if we're currently fetching to prevent duplicate fetches
+  const fetchingRef = useRef(false);
+
+  const fetchUser = useCallback(async (id: string) => {
+    // Prevent duplicate fetches
+    if (fetchingRef.current) {
+      console.log("Already fetching user, skipping...");
+      return null;
+    }
+
+    fetchingRef.current = true;
+
     try {
-      // Query the users table in Supabase
       const { data, error } = await supabase
         .from("users")
         .select("*")
         .eq("id", id)
         .single();
 
+      if (!isMounted.current) return null;
+
       if (error) {
         if (error.code === "PGRST116") {
-          console.log("Public user profile not found");
+          console.log("Public user profile not found, creating one...");
+
+          // Get auth user data for the email
+          const {
+            data: { user: authUser },
+            error: authError,
+          } = await supabase.auth.getUser();
+
+          if (!authError && authUser && authUser.id === id) {
+            // Use utility function to create user profile
+            const result = await getOrCreateUserProfile(
+              supabase,
+              id,
+              authUser.email!
+            );
+
+            if (result.success && result.user) {
+              if (isMounted.current) {
+                setUser(result.user);
+                setIsLoading(false);
+              }
+              return result.user;
+            } else {
+              console.error("Failed to create user profile:", result.error);
+            }
+          }
+
           return null;
         }
         throw error;
       }
 
-      setUser(data);
-      setIsLoading(false);
-      return data;
-    } catch (error) {
-      console.error("Could not fetch user", error);
-      setError(
-        error instanceof Error ? error : new Error("Failed to fetch user")
-      );
-      setIsLoading(false);
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    // Set up Supabase auth listener
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setAuthUser(session?.user ?? null);
-
-      if (event === "SIGNED_OUT") {
-        setUser(null);
-        setError(null);
-        // Clean up any existing realtime channel
-        if (realtimeChannelRef.current) {
-          realtimeChannelRef.current.unsubscribe();
-          realtimeChannelRef.current = null;
-        }
-      } else if (session?.user && event === "SIGNED_IN") {
-        await fetchUser(session.user.id);
+      if (isMounted.current) {
+        setUser(data);
+        setIsLoading(false);
       }
-    });
 
-    // Initial check
+      return data;
+    } catch (error: any) {
+      console.error("Could not fetch user", error);
+
+      if (isMounted.current) {
+        setError(
+          error instanceof Error ? error : new Error("Failed to fetch user")
+        );
+        setIsLoading(false);
+      }
+
+      return null;
+    } finally {
+      fetchingRef.current = false;
+    }
+  }, []);
+
+  // Initialize auth
+  useEffect(() => {
+    isMounted.current = true;
+
     const initializeAuth = async () => {
       try {
+        // Get initial session
         const {
           data: { session },
           error,
         } = await supabase.auth.getSession();
 
+        if (!isMounted.current) return;
+
         if (error) {
           console.error("Error getting session:", error);
           setError(error);
+          setIsLoading(false);
           return;
         }
 
         setAuthUser(session?.user ?? null);
+        setAccessToken(session?.access_token);
 
         if (session?.user) {
           await fetchUser(session.user.id);
@@ -141,85 +184,22 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         }
       } catch (err) {
         console.error("Error initializing auth:", err);
-        setError(
-          err instanceof Error ? err : new Error("Auth initialization failed")
-        );
-        setIsLoading(false);
+
+        if (isMounted.current) {
+          setError(
+            err instanceof Error ? err : new Error("Auth initialization failed")
+          );
+          setIsLoading(false);
+        }
       }
     };
 
     initializeAuth();
 
     return () => {
-      subscription?.unsubscribe();
-      if (realtimeChannelRef.current) {
-        realtimeChannelRef.current.unsubscribe();
-      }
+      isMounted.current = false;
     };
-  }, []);
-
-  // Realtime subscription for user row updates (keeps XP / referrals etc in sync for UI components)
-  useEffect(() => {
-    if (!authUser) {
-      // No authenticated user -> ensure channel cleaned up
-      if (realtimeChannelRef.current) {
-        realtimeChannelRef.current.unsubscribe();
-        realtimeChannelRef.current = null;
-      }
-      return;
-    }
-
-    // If channel already exists for same user, skip
-    if (realtimeChannelRef.current) {
-      const existingTopic = (realtimeChannelRef.current as any).topic as
-        | string
-        | undefined;
-      if (existingTopic && existingTopic.endsWith(authUser.id)) {
-        return; // already subscribed
-      } else {
-        // Different user, unsubscribe first
-        realtimeChannelRef.current.unsubscribe();
-        realtimeChannelRef.current = null;
-      }
-    }
-
-    const channel = supabase
-      .channel(`user-${authUser.id}-realtime`)
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "users",
-          filter: `id=eq.${authUser.id}`,
-        },
-        (payload) => {
-          const newData = payload.new as PublicUser;
-          // Merge new data into state only if something changed to avoid unnecessary re-renders
-          setUser((prev) => {
-            if (!prev) return newData;
-            const changed = Object.keys(newData).some(
-              (k) => (newData as any)[k] !== (prev as any)[k]
-            );
-            return changed ? newData : prev;
-          });
-        }
-      )
-      .subscribe((status) => {
-        if (status === "CHANNEL_ERROR") {
-          console.error("User realtime channel error");
-        }
-      });
-
-    realtimeChannelRef.current = channel;
-
-    return () => {
-      channel.unsubscribe();
-      if (realtimeChannelRef.current === channel) {
-        realtimeChannelRef.current = null;
-      }
-    };
-  }, [authUser]);
+  }, []); // Empty deps - only run once
 
   // Authentication methods
   const signIn = async (email: string, password: string) => {
@@ -234,8 +214,10 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      if (data.user) {
-        await fetchUser(data.user.id);
+      if (data.session && isMounted.current) {
+        setAuthUser(data.session.user);
+        setAccessToken(data.session.access_token);
+        await fetchUser(data.session.user.id);
       }
 
       return { data, error: null };
@@ -244,8 +226,14 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
         "Error signing in:",
         error instanceof Error ? error.message : error
       );
-      setError(error instanceof Error ? error : new Error("Failed to sign in"));
-      setIsLoading(false);
+
+      if (isMounted.current) {
+        setError(
+          error instanceof Error ? error : new Error("Failed to sign in")
+        );
+        setIsLoading(false);
+      }
+
       return { data: null, error };
     }
   };
@@ -256,23 +244,33 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
 
-      setUser(null);
-      setAuthUser(null);
+      if (isMounted.current) {
+        setUser(null);
+        setAuthUser(null);
+        setAccessToken(undefined);
+      }
+
       return { error: null };
     } catch (error) {
       console.error(
         "Error signing out:",
         error instanceof Error ? error.message : error
       );
-      setError(
-        error instanceof Error ? error : new Error("Failed to sign out")
-      );
+
+      if (isMounted.current) {
+        setError(
+          error instanceof Error ? error : new Error("Failed to sign out")
+        );
+      }
+
       return { error };
     }
   };
 
   // Refresh user data
   const refreshUser = async () => {
+    if (!isMounted.current) return;
+
     try {
       setError(null);
       const {
@@ -282,18 +280,24 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      if (session?.user) {
+      if (session && isMounted.current) {
         setAuthUser(session.user);
+        setAccessToken(session.access_token);
         await fetchUser(session.user.id);
-      } else {
+      } else if (isMounted.current) {
         setAuthUser(null);
+        setAccessToken(undefined);
         setUser(null);
       }
     } catch (err) {
       console.error("Refresh user error:", err);
-      setError(
-        err instanceof Error ? err : new Error("Failed to refresh user")
-      );
+
+      if (isMounted.current) {
+        setError(
+          err instanceof Error ? err : new Error("Failed to refresh user")
+        );
+      }
+
       throw err;
     }
   };
@@ -305,8 +309,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (!authUser) throw new Error("No user logged in");
 
-      // Use any for update to bypass generated type constraints if types aren't aligned
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("users")
         .update(updates)
         .eq("id", authUser.id)
@@ -315,12 +318,138 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
 
       if (error) throw error;
 
-      setUser(data as PublicUser);
+      if (isMounted.current) {
+        setUser(data as PublicUser);
+      }
+
       return data as PublicUser;
     } catch (err) {
       console.error("Update user error:", err);
-      setError(err instanceof Error ? err : new Error("Failed to update user"));
+
+      if (isMounted.current) {
+        setError(
+          err instanceof Error ? err : new Error("Failed to update user")
+        );
+      }
+
       throw err;
+    }
+  };
+
+  // Award XP to the current user
+  const awardXP = async (xpAmount: number, reason: string = "general") => {
+    try {
+      setError(null);
+
+      if (!authUser) {
+        return { success: false, newXP: 0, error: "No user logged in" };
+      }
+
+      console.log(`=== AWARDING USER XP ===`);
+      console.log(`User ID: ${authUser.id}`);
+      console.log(`XP Amount: ${xpAmount}`);
+      console.log(`Reason: ${reason}`);
+
+      // Try to get current user data
+      let currentUser = user;
+      let currentXP = user?.xp || 0;
+
+      // If user doesn't exist in context, try to fetch from database
+      if (!currentUser) {
+        const { data: fetchedUser, error: fetchError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", authUser.id)
+          .single();
+
+        if (fetchError) {
+          if (fetchError.code === "PGRST116") {
+            console.log("User not found in database, creating profile...");
+
+            // Create a new user profile with the XP amount
+            const newUserProfile = {
+              id: authUser.id,
+              email: authUser.email!,
+              role: "user" as UserRole,
+              first_name: "",
+              last_name: "",
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              xp: xpAmount,
+              referrals: 0,
+            };
+
+            const { data: createdUser, error: createError } = await supabase
+              .from("users")
+              .insert(newUserProfile)
+              .select()
+              .single();
+
+            if (createError) {
+              console.error("Error creating user profile for XP:", createError);
+              return { success: false, newXP: 0, error: createError.message };
+            }
+
+            // Update context with new user
+            if (isMounted.current) {
+              setUser(createdUser as PublicUser);
+            }
+
+            console.log(`✅ Created user profile with ${xpAmount} XP`);
+            return { success: true, newXP: xpAmount };
+          } else {
+            console.error("Error fetching user for XP award:", fetchError);
+            return { success: false, newXP: 0, error: fetchError.message };
+          }
+        }
+
+        currentUser = fetchedUser as PublicUser;
+        currentXP = fetchedUser.xp || 0;
+      }
+
+      // Calculate new XP
+      const newXP = currentXP + xpAmount;
+
+      console.log(`Current XP: ${currentXP}`);
+      console.log(`New XP: ${newXP}`);
+
+      // Update user XP in database
+      const { data: updatedUser, error: updateError } = await supabase
+        .from("users")
+        .update({
+          xp: newXP,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", authUser.id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Error updating user XP:", updateError);
+        return { success: false, newXP: 0, error: updateError.message };
+      }
+
+      // Update context with new XP
+      if (isMounted.current) {
+        setUser(updatedUser as PublicUser);
+      }
+
+      console.log(
+        `✅ Successfully awarded ${xpAmount} XP. New total: ${newXP}`
+      );
+      return { success: true, newXP };
+    } catch (err) {
+      console.error("Award XP error:", err);
+
+      if (isMounted.current) {
+        setError(err instanceof Error ? err : new Error("Failed to award XP"));
+      }
+
+      return {
+        success: false,
+        newXP: 0,
+        error: err instanceof Error ? err.message : "Failed to award XP",
+      };
     }
   };
 
@@ -337,7 +466,7 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     return (
       user?.role === "moderator" ||
       user?.role === "administrator" ||
-      user?.xp >= 1500
+      (user?.xp ?? 0) >= 1500
     );
   };
 
@@ -349,24 +478,42 @@ export const UserProvider = ({ children }: { children: React.ReactNode }) => {
     return user.role === role;
   };
 
+  const contextValue = useMemo(
+    () => ({
+      user,
+      authUser,
+      isLoading,
+      error,
+      signIn,
+      signOut,
+      refreshUser,
+      updateUser,
+      awardXP,
+      isAuthenticated,
+      hasAdminAccess,
+      hasModeratorAccess,
+      hasRole,
+    }),
+    [
+      user,
+      authUser,
+      isLoading,
+      error,
+      signIn,
+      signOut,
+      refreshUser,
+      updateUser,
+      awardXP,
+      isAuthenticated,
+      hasAdminAccess,
+      hasModeratorAccess,
+      hasRole,
+    ]
+  );
+
   return (
-    <UserContext.Provider
-      value={{
-        user,
-        authUser,
-        isLoading,
-        error,
-        signIn,
-        signOut,
-        refreshUser,
-        updateUser,
-        isAuthenticated,
-        hasAdminAccess,
-        hasModeratorAccess,
-        hasRole,
-      }}
-    >
-      {children}
-    </UserContext.Provider>
+    <UserContext.Provider value={contextValue}>{children}</UserContext.Provider>
   );
 };
+
+export const UserProvider = React.memo(UserProviderComponent);

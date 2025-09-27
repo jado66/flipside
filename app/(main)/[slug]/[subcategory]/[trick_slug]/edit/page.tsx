@@ -7,7 +7,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { getTrickBySlug, updateTrick } from "@/lib/client/tricks-data-client";
-import { useAuth } from "@/contexts/auth-provider";
+
 import { toast } from "sonner";
 import { TrickForm } from "@/components/trick-form";
 import { Trick, TrickData } from "@/types/trick";
@@ -20,7 +20,7 @@ export default function TrickEditPage() {
   const category = params.slug as string;
   const slug = params.trick_slug as string;
   const subcategory = params.subcategory as string;
-  const { user, hasModeratorAccess, loading: authLoading } = useUser();
+  const { user, hasModeratorAccess, isLoading: authLoading } = useUser();
 
   const [trick, setTrick] = useState<Trick | null>(null);
   const [loading, setLoading] = useState(true);

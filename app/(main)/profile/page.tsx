@@ -46,7 +46,7 @@ import {
   Users,
   Star,
 } from "lucide-react";
-import { useAuth } from "@/contexts/auth-provider";
+
 import {
   Select,
   SelectContent,
@@ -386,101 +386,6 @@ export default function ProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    {user && (
-                      <>
-                        <div className="space-y-3">
-                          {/* XP Level Section */}
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                <Trophy className="h-4 w-4 text-muted-foreground" />
-                                <span className="text-sm font-medium">
-                                  Level
-                                </span>
-                              </div>
-                              <div className="text-right">
-                                <div
-                                  className={`text-sm font-bold ${
-                                    calculateLevel(user.xp || 0).currentLevel
-                                      .color
-                                  }`}
-                                >
-                                  {
-                                    calculateLevel(user.xp || 0).currentLevel
-                                      .name
-                                  }
-                                </div>
-                                <div className="text-xs text-muted-foreground">
-                                  Level{" "}
-                                  {
-                                    calculateLevel(user.xp || 0).currentLevel
-                                      .level
-                                  }
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="space-y-1">
-                              <div className="flex items-center justify-between text-xs">
-                                <span className="text-muted-foreground">
-                                  {user.xp || 0} XP
-                                </span>
-                                {calculateLevel(user.xp || 0).nextLevel && (
-                                  <span className="text-muted-foreground">
-                                    {calculateLevel(user.xp || 0).xpToNext} XP
-                                    to next level
-                                  </span>
-                                )}
-                              </div>
-                              <Progress
-                                value={calculateLevel(user.xp || 0).progress}
-                                className="h-2"
-                              />
-                            </div>
-                          </div>
-
-                          {/* Referrals Section */}
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-sm font-medium">
-                                Referrals
-                              </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Star className="h-4 w-4 text-yellow-500" />
-                              <span className="text-sm font-bold">
-                                {user.referrals || 0}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Invite Friends Button */}
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="w-full"
-                            onClick={() => {
-                              const referralLink = `${
-                                window.location.origin
-                              }/signup?ref=${encodeURIComponent(
-                                user.email || ""
-                              )}`;
-                              navigator.clipboard.writeText(referralLink);
-                              toast.success(
-                                "Referral link copied to clipboard. Now go and send it to a friend!"
-                              );
-                            }}
-                          >
-                            <Users className="h-4 w-4 mr-2" />
-                            Invite Friends
-                          </Button>
-                        </div>
-
-                        <Separator className="my-2" />
-                      </>
-                    )}
-
                     <div className="flex items-center gap-3 text-sm">
                       <Mail className="h-4 w-4 text-muted-foreground" />
                       <span>{profileData.email}</span>
@@ -539,6 +444,11 @@ export default function ProfilePage() {
                       )}
                   </CardContent>
                 </Card>
+
+                {/* XP and Referrals Card */}
+                <div className="mt-6">
+                  <MiniContributeCTA variant="profile" />
+                </div>
               </div>
 
               {/* Profile Details Card */}
@@ -558,7 +468,6 @@ export default function ProfilePage() {
                     )}
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <MiniContributeCTA variant="profile" />
                     {/* Personal Information */}
                     <div className="space-y-4">
                       <h3 className="text-lg font-semibold">

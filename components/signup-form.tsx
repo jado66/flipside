@@ -15,8 +15,9 @@ import { Label } from "@/components/ui/label";
 import { useState, useTransition, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
-import { useAuth } from "@/contexts/auth-provider";
+
 import Link from "next/link";
+import { useUser } from "@/contexts/user-provider";
 
 export default function SignUpForm() {
   const [isPending, startTransition] = useTransition();
@@ -25,7 +26,7 @@ export default function SignUpForm() {
   const [isReferralFromUrl, setIsReferralFromUrl] = useState<boolean>(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   // Redirect if already logged in
   useEffect(() => {

@@ -15,7 +15,7 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import dagre from "dagre";
-import { useAuth } from "@/contexts/auth-provider";
+
 import { Trick, MasterCategory, TrickNodeData } from "./skill-tree.types";
 import { levenshtein } from "./levenshtein";
 import TrickNode from "./TrickNode";
@@ -24,6 +24,7 @@ import { ArrowBigLeft, ArrowBigRight, ChevronLeft, Info } from "lucide-react";
 import { supabase } from "@/utils/supabase/client";
 import { useConfetti } from "@/contexts/confetti-provider";
 import { useTheme } from "next-themes";
+import { useUser } from "@/contexts/user-provider";
 
 export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
   const { theme } = useTheme();
@@ -53,7 +54,7 @@ export function SkillTree({ selectedCategory }: { selectedCategory: string }) {
   }, []);
   const [categories, setCategories] = useState<MasterCategory[]>([]);
   const [tricks, setTricks] = useState<Trick[]>([]);
-  const { user } = useAuth();
+  const { user } = useUser();
   const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(
     new Set()
   );

@@ -16,7 +16,7 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Eye, CheckCircle2, Share2, Edit, Trash2, Circle } from "lucide-react";
-import { useAuth } from "@/contexts/auth-provider";
+
 import { PermissionGate } from "@/components/permission-gate";
 import { toast } from "sonner";
 import { incrementTrickViews } from "@/lib/client/tricks-data-client";
@@ -24,6 +24,7 @@ import { useConfetti } from "@/contexts/confetti-provider";
 import { TrickWithLinkedPrerequisites } from "@/types/trick";
 import { MoveTrickDialog } from "./move-trick-dialog";
 import { supabase } from "@/utils/supabase/client";
+import { useUser } from "@/contexts/user-provider";
 
 interface ClientInteractionsProps {
   trick: TrickWithLinkedPrerequisites;
@@ -31,7 +32,7 @@ interface ClientInteractionsProps {
 
 export function ClientInteractions({ trick }: ClientInteractionsProps) {
   const router = useRouter();
-  const { user, hasModeratorAccess } = useAuth();
+  const { user, hasModeratorAccess } = useUser();
   const [canDo, setCanDo] = useState(false);
   const [canDoCount, setCanDoCount] = useState(0);
   const [isUpdating, setIsUpdating] = useState(false);

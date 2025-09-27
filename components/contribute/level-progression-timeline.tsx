@@ -10,7 +10,7 @@ export default function LevelProgressionTimeline() {
   // Dynamically measure vertical line span between first & last icons
   const { containerRef, lineTop, lineHeight } = useTimelineLineMetrics();
   return (
-    <div className="mb-20">
+    <div className="mb-20" id="levels">
       <div className="text-center mb-16">
         <h3 className="text-2xl md:text-3xl font-bold mb-4">
           Level Progression

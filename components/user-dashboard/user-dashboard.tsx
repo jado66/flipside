@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useCallback } from "react";
+import { useEffect, useMemo, useState, useCallback, useRef } from "react";
 import { SportsSelection } from "./sports-selection";
 import { NextTricksSuggestions } from "./new-trick-suggestions";
 import { UserProgressOverview } from "./user-progress-overview";
@@ -19,13 +19,12 @@ import { Wishlist } from "../wishlist";
 import { FeaturePoll } from "../feature-poll";
 import { MiniContributeCTA } from "@/components/xp";
 import { useConfetti } from "@/contexts/confetti-provider";
-import { generateReferralLink } from "@/lib/referral-utils";
 import { useUserReferralData } from "@/hooks/use-user-referral-data";
 import { useUser } from "@/contexts/user-provider";
 import { supabase } from "@/utils/supabase/client";
 import { useMasterCategories } from "@/hooks/use-categories";
 import { useUserProgress } from "@/contexts/user-progress-provider";
-import { getAllTricksBasic } from "@/lib/client/tricks-data-client";
+import { InstallPWAApp } from "../install-pwa-app";
 
 export function UserDashboard() {
   const { celebrate } = useConfetti();
@@ -37,6 +36,10 @@ export function UserDashboard() {
   const [allTricks, setAllTricks] = useState<Trick[]>([]);
   const [tricksLoading, setTricksLoading] = useState(true);
 
+  // Add refs to track component lifecycle and prevent stale queries
+  const isMounted = useRef(true);
+  const fetchController = useRef<AbortController | null>(null);
+
   const [userSportsIds, setUserSportsIds] = useState<string[]>([]);
   const [draftSportsIds, setDraftSportsIds] = useState<string[]>([]);
   const [selectingSports, setSelectingSports] = useState(false);
@@ -47,27 +50,54 @@ export function UserDashboard() {
   const { data: referralData, loading: referralLoading } =
     useUserReferralData();
 
-  // Fetch all tricks only - user tricks come from context
+  // Fetch all tricks with proper cleanup and error handling
   useEffect(() => {
-    let isMounted = true;
+    let isActive = true;
 
     const fetchTricks = async () => {
-      if (!supabase) return;
+      if (!supabase) {
+        console.error("Supabase client not initialized");
+        setTricksLoading(false);
+        return;
+      }
+
+      // Cancel any existing fetch
+      if (fetchController.current) {
+        fetchController.current.abort();
+      }
+
+      // Create new abort controller for this fetch
+      fetchController.current = new AbortController();
 
       try {
         setTricksLoading(true);
-        const tricks = await getAllTricksBasic(supabase);
 
-        if (isMounted) {
+        // Add timeout to prevent indefinite hanging
+        const timeoutId = setTimeout(() => {
+          if (fetchController.current) {
+            fetchController.current.abort();
+          }
+        }, 10000); // 10 second timeout
+
+        const tricks = await getAllTricksBasic(fetchController.current.signal);
+
+        clearTimeout(timeoutId);
+
+        // Only update state if component is still mounted and this fetch wasn't cancelled
+        if (isActive && isMounted.current) {
           setAllTricks(tricks);
         }
-      } catch (error) {
-        console.error("Failed to fetch tricks:", error);
-        if (isMounted) {
+      } catch (error: any) {
+        // Don't log abort errors
+        if (error?.name !== "AbortError") {
+          console.error("Failed to fetch tricks:", error);
+        }
+
+        if (isActive && isMounted.current) {
           setAllTricks([]);
         }
       } finally {
-        if (isMounted) {
+        if (isActive && isMounted.current) {
           setTricksLoading(false);
         }
       }
@@ -75,10 +105,54 @@ export function UserDashboard() {
 
     fetchTricks();
 
+    // Cleanup function
     return () => {
-      isMounted = false;
+      isActive = false;
+      if (fetchController.current) {
+        fetchController.current.abort();
+      }
+    };
+  }, []); // Empty dependency array - only fetch once on mount
+
+  // Track component lifecycle
+  useEffect(() => {
+    isMounted.current = true;
+
+    return () => {
+      isMounted.current = false;
     };
   }, []);
+
+  // Handle page visibility changes to refresh stale data
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && isMounted.current) {
+        // Page became visible again
+        // If tricks haven't loaded yet and we're still loading, retry
+        if (tricksLoading && allTricks.length === 0) {
+          console.log("Page visible again, retrying fetch...");
+
+          // Cancel existing fetch and retry
+          if (fetchController.current) {
+            fetchController.current.abort();
+          }
+
+          // Small delay to ensure clean state
+          setTimeout(() => {
+            if (isMounted.current) {
+              window.location.reload(); // Nuclear option but reliable
+            }
+          }, 100);
+        }
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [tricksLoading, allTricks.length]);
 
   // Update sports when user data becomes available
   useEffect(() => {
@@ -165,11 +239,6 @@ export function UserDashboard() {
               <p className="mt-4 text-muted-foreground">
                 Loading your dashboard...
               </p>
-              {JSON.stringify({
-                authLoading,
-                categoriesLoading,
-                tricksLoading,
-              })}
             </CardContent>
           </Card>
         </div>
@@ -242,75 +311,7 @@ export function UserDashboard() {
               <Wishlist />
               <FeaturePoll />
               <MiniContributeCTA variant="dashboard" />
-              {user && user?.email && (
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                      <Users className="h-4 w-4" />
-                      Help Build Trickipedia
-                    </CardTitle>
-                    <CardDescription className="text-sm">
-                      Earn XP and level up by contributing to the community
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-4">
-                    <div className="text-sm text-muted-foreground">
-                      Every contribution earns you XP towards your next level.
-                      Help grow our trick database and unlock rewards!
-                    </div>
-
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        navigator.clipboard.writeText(
-                          generateReferralLink(user.email)
-                        );
-                        toast.success(
-                          "Referral link copied to clipboard. Now go and send it to a friend!"
-                        );
-                      }}
-                      className="w-full"
-                    >
-                      <Copy className="h-4 w-4 mr-2" />
-                      Copy Referral Link
-                    </Button>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
-                      <div className="bg-muted/50 p-3 rounded-lg text-center">
-                        <div className="font-semibold text-primary">
-                          + 50-100 XP
-                        </div>
-                        <div className="text-muted-foreground">
-                          Add &amp; Edit Tricks
-                        </div>
-                      </div>
-                      <div className="bg-muted/50 p-3 rounded-lg text-center">
-                        <div className="font-semibold text-primary">
-                          + 200 XP
-                        </div>
-                        <div className="text-muted-foreground">Referrals</div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <div className="flex gap-2 justify-between text-xs">
-                        <div className="bg-background border border-border p-2 rounded-lg text-center flex-1">
-                          <div className="font-bold text-primary">
-                            {user.xp || 0}
-                          </div>
-                          <div className="text-muted-foreground">Total XP</div>
-                        </div>
-                        <div className="bg-background border border-border p-2 rounded-lg text-center flex-1">
-                          <div className="font-bold text-primary">
-                            {referralData?.referrals || 0}
-                          </div>
-                          <div className="text-muted-foreground">Referrals</div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <InstallPWAApp />
             </div>
           </div>
         </div>
@@ -325,4 +326,62 @@ export function UserDashboard() {
       )}
     </div>
   );
+}
+
+/**
+ * Get all published tricks with basic info
+ * @param signal - AbortController signal for cancellation
+ */
+export async function getAllTricksBasic(
+  signal?: AbortSignal
+): Promise<Trick[]> {
+  try {
+    // Create a promise that rejects on abort
+    const abortPromise = new Promise<never>((_, reject) => {
+      signal?.addEventListener("abort", () => {
+        reject(new DOMException("Aborted", "AbortError"));
+      });
+    });
+
+    // Race between the actual query and the abort
+    const queryPromise = supabase
+      .from("tricks")
+      .select(
+        `
+          id,
+          name,
+          slug,
+          description,
+          difficulty_level,
+          prerequisite_ids,
+          subcategory:subcategories(
+            id,
+            name,
+            slug,
+            master_category:master_categories(
+              id,
+              name,
+              slug
+            )
+          )
+        `
+      )
+      .eq("is_published", true)
+      .order("name", { ascending: true });
+
+    const result = await Promise.race([queryPromise, abortPromise]);
+
+    const { data: tricks, error } = result as any;
+
+    if (error) throw error;
+
+    return tricks || [];
+  } catch (error: any) {
+    if (error?.name === "AbortError") {
+      console.log("Fetch aborted");
+    } else {
+      console.error("Error fetching tricks:", error);
+    }
+    return [];
+  }
 }

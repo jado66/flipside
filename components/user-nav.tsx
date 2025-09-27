@@ -12,10 +12,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { PublicUser, useUser } from "@/contexts/user-provider";
+import { useUser } from "@/contexts/user-provider";
 
 interface UserNavProps {
-  user: PublicUser;
+  user: any;
 }
 
 export function UserNav({ user }: UserNavProps) {

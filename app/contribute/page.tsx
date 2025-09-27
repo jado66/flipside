@@ -4,7 +4,6 @@ import LevelUpHeader from "@/components/contribute/level-up-header";
 import XPActionsGrid from "@/components/contribute/xp-actions-grid";
 import LevelProgressionTimeline from "@/components/contribute/level-progression-timeline";
 import ContributeCallToAction from "@/components/contribute/contribute-call-to-action";
-import FlipsideInfo from "@/components/contribute/flipside-info";
 
 export default function ContributePage() {
   return (

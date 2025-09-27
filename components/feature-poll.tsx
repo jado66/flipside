@@ -11,8 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, Circle, Calendar, Users } from "lucide-react";
-import { useAuth } from "@/contexts/auth-provider";
+
 import { supabase } from "@/utils/supabase/client";
+import { useUser } from "@/contexts/user-provider";
 
 const pollOptions = [
   {
@@ -68,7 +69,7 @@ const pollOptions = [
 ];
 
 export function FeaturePoll() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const userId = user?.id || "anonymous_user"; // Fallback for unauthenticated users
 
   const [selectedOptions, setSelectedOptions] = useState<string[]>([]);

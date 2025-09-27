@@ -150,10 +150,6 @@ export default function AddTrickGenericPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-4">
         <Loader2 className="h-6 w-6 animate-spin" />
         <p className="text-sm text-muted-foreground">Loading...</p>
-        {JSON.stringify({
-          authLoading,
-          subLoading,
-        })}
       </div>
     );
   }

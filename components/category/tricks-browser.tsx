@@ -34,9 +34,10 @@ import type { Trick } from "@/types/trick";
 import { CompactTrickCard } from "../subcategory/compact-trick-card";
 import { TrickCard } from "../subcategory/trick-card";
 import { cn } from "@/lib/utils";
-import { useAuth } from "@/contexts/auth-provider";
+
 import { toast } from "sonner";
 import { supabase } from "@/utils/supabase/client";
+import { useUser } from "@/contexts/user-provider";
 
 interface EnhancedTricksBrowserProps {
   tricks: Trick[];
@@ -68,7 +69,7 @@ export function TricksBrowser({
   difficultyColors,
   moveName,
 }: EnhancedTricksBrowserProps & { moveName: string }) {
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(
     new Set()

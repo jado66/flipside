@@ -15,13 +15,12 @@ import {
 } from "lucide-react";
 import { UserNav } from "@/components/user-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { useAuth } from "@/contexts/auth-provider";
+//
 import { NotificationBell } from "@/components/notifications";
 
 import { TrickipediaLogo } from "@/components/trickipedia-logo";
 
 import type { User } from "@supabase/supabase-js";
-import { supabase } from "@/utils/supabase/client";
 import { useUser } from "@/contexts/user-provider";
 
 export function TrickipediaHeader({
@@ -30,7 +29,6 @@ export function TrickipediaHeader({
   onMobileMenuClick?: () => void;
 }) {
   const { user } = useUser();
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">

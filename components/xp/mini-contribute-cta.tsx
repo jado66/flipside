@@ -99,7 +99,11 @@ export function MiniContributeCTA({
           />
         </div>
 
-        <div className="text-[11px] bg-muted/40 rounded-md p-2 leading-relaxed flex">
+        <div
+          className={`text-[11px] bg-muted/40 rounded-md p-2 leading-relaxed ${
+            variant === "profile" ? "space-y-1" : "flex"
+          }`}
+        >
           {nextLevel ? (
             <>
               <span className="font-medium flex items-center gap-1 mr-2">
@@ -122,7 +126,9 @@ export function MiniContributeCTA({
           )}
         </div>
 
-        <div className="flex gap-2">
+        <div
+          className={`${variant === "profile" ? "space-y-2" : "flex gap-2"}`}
+        >
           {user ? (
             <Button size="sm" asChild className="h-8 text-xs flex-1">
               <Link

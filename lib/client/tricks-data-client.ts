@@ -1,4 +1,7 @@
 import { Trick } from "@/types/trick";
+import { supabase } from "@/utils/supabase/client";
+import { calculateTrickCreationXP } from "@/lib/xp/trick-xp";
+import { awardUserXP } from "@/lib/xp/user-xp-utils";
 
 // Create new trick
 export async function createTrick(
@@ -163,6 +166,36 @@ export async function createTrick(
 
   console.timeEnd("Fetch components");
 
+  // Award XP for trick creation
+  if (newTrick.created_by) {
+    console.log("=== AWARDING XP FOR TRICK CREATION ===");
+    const xpAmount = calculateTrickCreationXP(newTrick);
+    console.log(`Calculated XP amount: ${xpAmount}`);
+
+    try {
+      const xpResult = await awardUserXP(
+        supabaseClient,
+        newTrick.created_by,
+        xpAmount,
+        "trick_creation"
+      );
+
+      if (xpResult.success) {
+        console.log(
+          `✅ Successfully awarded ${xpAmount} XP to user ${newTrick.created_by}`
+        );
+        console.log(`User's new XP total: ${xpResult.newXP}`);
+      } else {
+        console.warn(`⚠️ Failed to award XP: ${xpResult.error}`);
+      }
+    } catch (xpError) {
+      console.error("XP awarding error:", xpError);
+      // Don't fail the trick creation if XP awarding fails
+    }
+  } else {
+    console.log("No created_by user ID, skipping XP award");
+  }
+
   console.log("=== createTrick SUCCESS ===");
   console.log("Final trick object:", newTrick);
   console.log("Trick ID:", newTrick.id);
@@ -253,6 +286,53 @@ export async function updateTrick(
   // Fetch components to include in return (optional)
   const compData = await getTrickComponents(supabaseClient, id);
   updatedTrick.components = compData;
+
+  // Award XP for trick editing (need original trick data for comparison)
+  if (updatedTrick.created_by) {
+    console.log("=== AWARDING XP FOR TRICK EDIT ===");
+
+    try {
+      // Get original trick data for comparison
+      const { data: originalTrick, error: fetchError } = await supabaseClient
+        .from("tricks")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (!fetchError && originalTrick) {
+        const { calculateTrickEditXP } = await import("@/lib/xp/trick-xp");
+        const xpAmount = calculateTrickEditXP(originalTrick, updatedTrick);
+        console.log(`Calculated edit XP amount: ${xpAmount}`);
+
+        if (xpAmount > 0) {
+          const xpResult = await awardUserXP(
+            supabaseClient,
+            updatedTrick.created_by,
+            xpAmount,
+            "trick_edit"
+          );
+
+          if (xpResult.success) {
+            console.log(
+              `✅ Successfully awarded ${xpAmount} XP to user ${updatedTrick.created_by}`
+            );
+            console.log(`User's new XP total: ${xpResult.newXP}`);
+          } else {
+            console.warn(`⚠️ Failed to award XP: ${xpResult.error}`);
+          }
+        } else {
+          console.log("No significant changes detected, no XP awarded");
+        }
+      } else {
+        console.warn("Could not fetch original trick data for XP comparison");
+      }
+    } catch (xpError) {
+      console.error("XP awarding error:", xpError);
+      // Don't fail the trick update if XP awarding fails
+    }
+  } else {
+    console.log("No created_by user ID, skipping XP award");
+  }
 
   return updatedTrick;
 }
@@ -1048,9 +1128,9 @@ export async function getUserTrickIds(
 /**
  * Get all published tricks with basic info
  */
-export async function getAllTricksBasic(supabaseClient: any): Promise<Trick[]> {
+export async function getAllTricksBasic(): Promise<Trick[]> {
   try {
-    const { data: tricks, error } = await supabaseClient
+    const { data: tricks, error } = await supabase
       .from("tricks")
       .select(
         `
@@ -1077,6 +1157,7 @@ export async function getAllTricksBasic(supabaseClient: any): Promise<Trick[]> {
 
     if (error) throw error;
 
+    // @ts-expect-error fix me
     return tricks || [];
   } catch (error) {
     console.error("Error fetching tricks:", error);

@@ -3,14 +3,14 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { SkillTreeAdmin } from "@/components/skill-tree-admin";
-import { useAuth } from "@/contexts/auth-provider";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
+import { useUser } from "@/contexts/user-provider";
 
 export default function AdminPage() {
   const router = useRouter();
-  const { user, loading: authLoading } = useAuth();
+  const { user, isLoading: authLoading } = useUser();
 
   // Show loading while auth is loading
   if (authLoading) {

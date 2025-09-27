@@ -1,7 +1,6 @@
 // components/permission-gate.tsx
 "use client";
 
-import { useAuth } from "@/contexts/auth-provider";
 import { useUser } from "@/contexts/user-provider";
 
 interface PermissionGateProps {

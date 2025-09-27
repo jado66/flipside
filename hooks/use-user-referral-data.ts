@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { createClient, supabase } from "@/utils/supabase/client";
-import { useAuth } from "@/contexts/auth-provider";
+import { supabase } from "@/utils/supabase/client";
+
 import { useUser } from "@/contexts/user-provider";
 
 export interface ReferredUser {
@@ -39,6 +39,18 @@ export function useUserReferralData() {
           .single();
 
         if (error) {
+          // If user doesn't exist in public.users table, return default values
+          if (error.code === "PGRST116") {
+            console.log("User not found in referral data fetch, returning defaults");
+            setData({
+              referrals: 0,
+              email: user.email || "",
+              referral_user_ids: [],
+              referred_users: [],
+            });
+            setLoading(false);
+            return;
+          }
           setError(error.message);
           return;
         }

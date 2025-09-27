@@ -7,7 +7,6 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { createTrick } from "@/lib/client/tricks-data-client";
 
-import { useAuth } from "@/contexts/auth-provider";
 import { toast } from "sonner";
 import { TrickForm } from "@/components/trick-form";
 import { TrickData } from "@/types/trick";
