@@ -92,7 +92,9 @@ export const GymManagementNavSettingsPanel: React.FC = () => {
     <div className="w-full p-4">
       <div className="mb-3 flex items-start justify-between gap-3">
         <div>
-          <h2 className="text-sm font-semibold leading-none mb-1">Customize Apps</h2>
+          <h2 className="text-sm font-semibold leading-none mb-1">
+            Customize Apps
+          </h2>
           <p className="text-xs text-muted-foreground">
             Drag to reorder. Remove with X. Add hidden apps below.
           </p>
@@ -130,7 +132,7 @@ export const GymManagementNavSettingsPanel: React.FC = () => {
       <div className="mt-4 pt-3 border-t">
         <button
           type="button"
-            onClick={() => setAddOpen((o) => !o)}
+          onClick={() => setAddOpen((o) => !o)}
           className="flex w-full items-center justify-between text-left text-sm font-medium"
           aria-expanded={addOpen}
         >
