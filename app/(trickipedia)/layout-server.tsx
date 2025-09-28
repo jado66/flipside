@@ -1,5 +1,5 @@
 import { createServer } from "@/utils/supabase/server";
-import { TrickipediaLayoutClient } from "./TrickipediaLayoutClient";
+import { TrickipediaLayoutClient } from "../TrickipediaLayoutClient";
 import type { NavigationCategory } from "@/components/side-nav/types";
 
 export const revalidate = 60;

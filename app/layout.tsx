@@ -14,7 +14,7 @@ import {
 } from "@/lib/structured-data-utils";
 import { ThemeProvider } from "@/components/theme-provider";
 import { ConfettiProvider } from "@/contexts/confetti-provider";
-import { TrickipediaLayoutServer } from "./layout-server";
+import { TrickipediaLayoutServer } from "./(trickipedia)/layout-server";
 import { TrickipediaFooter } from "@/components/trickipdedia-footer";
 import { UserProvider } from "@/contexts/user-provider";
 import { UserProgressProvider } from "@/contexts/user-progress-provider";
@@ -79,6 +79,16 @@ export default async function RootLayout({
         {process.env.NODE_ENV === "development" && (
           <script src="/pwa-debug.js" async></script>
         )}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+      (function() {
+        const theme = localStorage.getItem('theme') || 'trickipedia';
+        document.documentElement.classList.add(theme);
+      })();
+    `,
+          }}
+        />
       </head>
       <body className="font-sans antialiased">
         <Toaster position="top-center" closeButton />
@@ -96,12 +106,7 @@ export default async function RootLayout({
             <UserProvider>
               <CategoriesProvider>
                 <UserProgressProvider>
-                  <NotificationsProvider>
-                    <TrickipediaLayoutServer>
-                      {children}
-                      <TrickipediaFooter />
-                    </TrickipediaLayoutServer>
-                  </NotificationsProvider>
+                  <NotificationsProvider>{children}</NotificationsProvider>
                 </UserProgressProvider>
               </CategoriesProvider>
             </UserProvider>

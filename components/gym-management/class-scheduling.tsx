@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGym } from "@/contexts/gym-provider";
 import {
   Card,
   CardContent,
@@ -28,104 +29,32 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Calendar, Clock, Users, MapPin, Plus } from "lucide-react";
-
-interface Class {
-  id: string;
-  name: string;
-  instructor: string;
-  time: string;
-  capacity: number;
-  enrolled: number;
-  location: string;
-  level: string;
-  status: string;
-  description?: string;
-  duration: number;
-  price: number;
-  ageRange: string;
-}
+import {
+  Calendar,
+  Clock,
+  Users,
+  MapPin,
+  Plus,
+  Edit,
+  Trash2,
+} from "lucide-react";
+import { ClassItem } from "@/types/gym-management";
 
 export function ClassScheduling() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editing, setEditing] = useState<ClassItem | null>(null);
+  const { classes, addClass, updateClass, removeClass, demoMode, limits } =
+    useGym();
 
-  // Mock class data
-  const [classes, setClasses] = useState<Class[]>([
-    {
-      id: "1",
-      name: "Youth Gymnastics",
-      instructor: "Sarah Wilson",
-      time: "9:00 AM - 10:30 AM",
-      capacity: 12,
-      enrolled: 8,
-      location: "Main Gym",
-      level: "Beginner",
-      status: "active",
-      description: "Introduction to basic gymnastics skills",
-      duration: 90,
-      price: 25,
-      ageRange: "6-12",
-    },
-    {
-      id: "2",
-      name: "Advanced Tumbling",
-      instructor: "Mike Johnson",
-      time: "11:00 AM - 12:30 PM",
-      capacity: 8,
-      enrolled: 6,
-      location: "Tumbling Area",
-      level: "Advanced",
-      status: "active",
-      description: "Advanced tumbling techniques and tricks",
-      duration: 90,
-      price: 35,
-      ageRange: "13-18",
-    },
-    {
-      id: "3",
-      name: "Parkour Basics",
-      instructor: "Alex Chen",
-      time: "2:00 PM - 3:30 PM",
-      capacity: 15,
-      enrolled: 12,
-      location: "Parkour Zone",
-      level: "Beginner",
-      status: "active",
-      description: "Learn the fundamentals of parkour",
-      duration: 90,
-      price: 40,
-      ageRange: "10-16",
-    },
-    {
-      id: "4",
-      name: "Adult Fitness",
-      instructor: "Emma Davis",
-      time: "6:00 PM - 7:00 PM",
-      capacity: 20,
-      enrolled: 15,
-      location: "Fitness Area",
-      level: "All Levels",
-      status: "active",
-      description: "Fitness class for adults",
-      duration: 60,
-      price: 30,
-      ageRange: "Adult",
-    },
-  ]);
-
-  const handleAddClass = (formData: FormData) => {
+  const handleAddClass = async (formData: FormData) => {
     const startTime = formData.get("startTime") as string;
     const duration = Number.parseInt(formData.get("duration") as string);
     const endTime = new Date(
       new Date(`2000-01-01 ${startTime}`).getTime() + duration * 60000
-    ).toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-
-    const newClass: Class = {
-      id: Date.now().toString(),
+    ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    const result = await addClass({
       name: formData.get("name") as string,
       instructor: formData.get("instructor") as string,
       time: `${startTime} - ${endTime}`,
@@ -135,12 +64,44 @@ export function ClassScheduling() {
       level: formData.get("level") as string,
       status: "active",
       description: formData.get("description") as string,
-      duration: duration,
+      duration,
+      price: Number.parseFloat(formData.get("price") as string),
+      ageRange: formData.get("ageRange") as string,
+    });
+    if (!result.success) return alert(result.error);
+    setIsAddDialogOpen(false);
+  };
+
+  const handleEditClass = async (formData: FormData) => {
+    if (!editing) return;
+    const partial: Partial<ClassItem> = {
+      name: formData.get("name") as string,
+      instructor: formData.get("instructor") as string,
+      location: formData.get("location") as string,
+      level: formData.get("level") as string,
+      description: formData.get("description") as string,
       price: Number.parseFloat(formData.get("price") as string),
       ageRange: formData.get("ageRange") as string,
     };
-    setClasses([...classes, newClass]);
-    setIsAddDialogOpen(false);
+    const durationRaw = formData.get("duration") as string;
+    if (durationRaw) partial.duration = Number.parseInt(durationRaw);
+    const capacityRaw = formData.get("capacity") as string;
+    if (capacityRaw) partial.capacity = Number.parseInt(capacityRaw);
+    const startTime = formData.get("startTime") as string;
+    if (startTime && partial.duration) {
+      const endTime = new Date(
+        new Date(`2000-01-01 ${startTime}`).getTime() + partial.duration * 60000
+      ).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      partial.time = `${startTime} - ${endTime}`;
+    }
+    const res = await updateClass(editing.id, partial);
+    if (!res.success) alert(res.error);
+    setIsEditDialogOpen(false);
+  };
+
+  const handleRemove = async (id: string) => {
+    if (!confirm("Delete this class?")) return;
+    await removeClass(id);
   };
 
   return (
@@ -154,9 +115,11 @@ export function ClassScheduling() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={demoMode && classes.length >= limits.classes}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Class
+              {demoMode && classes.length >= limits.classes
+                ? "Demo Limit"
+                : "Add Class"}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -232,7 +195,7 @@ export function ClassScheduling() {
                       </SelectItem>
                       <SelectItem value="Parkour Zone">Parkour Zone</SelectItem>
                       <SelectItem value="Fitness Area">Fitness Area</SelectItem>
-                      <SelectItem value="Dance Studio">Dance Studio</SelectItem>
+                      <SelectItem value="Studio A">Studio A</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -355,9 +318,23 @@ export function ClassScheduling() {
                       <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
                       {classItem.location}
                     </div>
-                    <div className="flex justify-end">
-                      <Button variant="outline" size="sm">
-                        Manage
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setEditing(classItem);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemove(classItem.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
                   </div>
@@ -390,6 +367,119 @@ export function ClassScheduling() {
           </CardContent>
         </Card>
       </div>
+      {/* Edit Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Class</DialogTitle>
+            <DialogDescription>Modify class details.</DialogDescription>
+          </DialogHeader>
+          {editing && (
+            <form action={handleEditClass} className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-name">Class Name</Label>
+                  <Input
+                    id="edit-name"
+                    name="name"
+                    defaultValue={editing.name}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-instructor">Instructor</Label>
+                  <Input
+                    id="edit-instructor"
+                    name="instructor"
+                    defaultValue={editing.instructor}
+                    required
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-start">Start Time</Label>
+                  <Input id="edit-start" name="startTime" type="time" />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-duration">Duration (min)</Label>
+                  <Input
+                    id="edit-duration"
+                    name="duration"
+                    type="number"
+                    defaultValue={editing.duration}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-capacity">Capacity</Label>
+                  <Input
+                    id="edit-capacity"
+                    name="capacity"
+                    type="number"
+                    defaultValue={editing.capacity}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-location">Location</Label>
+                  <Input
+                    id="edit-location"
+                    name="location"
+                    defaultValue={editing.location}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-level">Level</Label>
+                  <Input
+                    id="edit-level"
+                    name="level"
+                    defaultValue={editing.level}
+                  />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-price">Price ($)</Label>
+                  <Input
+                    id="edit-price"
+                    name="price"
+                    type="number"
+                    step="0.01"
+                    defaultValue={editing.price}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="edit-age">Age Range</Label>
+                  <Input
+                    id="edit-age"
+                    name="ageRange"
+                    defaultValue={editing.ageRange}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="edit-description">Description</Label>
+                <Textarea
+                  id="edit-description"
+                  name="description"
+                  defaultValue={editing.description}
+                />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit">Save Changes</Button>
+              </div>
+            </form>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
