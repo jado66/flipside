@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGym } from "@/contexts/gym-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -35,13 +36,13 @@ import {
   Clock,
 } from "lucide-react";
 
-interface Member {
+interface MemberBasic {
   id: string;
   name: string;
   email: string;
   phone: string;
   membershipType: string;
-  status: "active" | "inactive" | "suspended";
+  status: string;
   joinDate: string;
   lastVisit: string;
   emergencyContact: string;
@@ -51,61 +52,13 @@ interface Member {
 
 export function MemberManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+  const [selectedMember, setSelectedMember] = useState<MemberBasic | null>(
+    null
+  );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  // Mock member data
-  const [members, setMembers] = useState<Member[]>([
-    {
-      id: "1",
-      name: "Sarah Johnson",
-      email: "sarah.johnson@email.com",
-      phone: "(555) 123-4567",
-      membershipType: "Premium Gymnastics",
-      status: "active",
-      joinDate: "2024-01-15",
-      lastVisit: "2024-01-25",
-      emergencyContact: "John Johnson - (555) 987-6543",
-      medicalNotes: "No known allergies",
-    },
-    {
-      id: "2",
-      name: "Mike Chen",
-      email: "mike.chen@email.com",
-      phone: "(555) 234-5678",
-      membershipType: "Parkour Basic",
-      status: "active",
-      joinDate: "2023-11-20",
-      lastVisit: "2024-01-24",
-      emergencyContact: "Lisa Chen - (555) 876-5432",
-      medicalNotes: "Previous ankle injury - cleared for activity",
-    },
-    {
-      id: "3",
-      name: "Emma Davis",
-      email: "emma.davis@email.com",
-      phone: "(555) 345-6789",
-      membershipType: "Youth Tumbling",
-      status: "active",
-      joinDate: "2024-01-10",
-      lastVisit: "2024-01-25",
-      emergencyContact: "Robert Davis - (555) 765-4321",
-      medicalNotes: "None",
-    },
-    {
-      id: "4",
-      name: "Alex Rodriguez",
-      email: "alex.rodriguez@email.com",
-      phone: "(555) 456-7890",
-      membershipType: "Adult Fitness",
-      status: "inactive",
-      joinDate: "2023-08-05",
-      lastVisit: "2023-12-15",
-      emergencyContact: "Maria Rodriguez - (555) 654-3210",
-      medicalNotes: "Asthma - carries inhaler",
-    },
-  ]);
+  const { members, addMember, updateMember, removeMember, demoMode, limits } =
+    useGym();
 
   const filteredMembers = members.filter(
     (member) =>
@@ -140,20 +93,18 @@ export function MemberManagement() {
     }
   };
 
-  const handleAddMember = (formData: FormData) => {
-    const newMember: Member = {
-      id: Date.now().toString(),
+  const handleAddMember = async (formData: FormData) => {
+    const res = await addMember({
       name: formData.get("name") as string,
       email: formData.get("email") as string,
       phone: formData.get("phone") as string,
       membershipType: formData.get("membershipType") as string,
       status: "active",
-      joinDate: new Date().toISOString().split("T")[0],
-      lastVisit: "Never",
       emergencyContact: formData.get("emergencyContact") as string,
-      medicalNotes: formData.get("medicalNotes") as string,
-    };
-    setMembers([...members, newMember]);
+      medicalNotes: (formData.get("medicalNotes") as string) || "",
+      avatar: undefined,
+    });
+    if (!res.success) return alert(res.error);
     setIsAddDialogOpen(false);
   };
 
@@ -172,9 +123,11 @@ export function MemberManagement() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={demoMode && members.length >= limits.members}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Member
+              {demoMode && members.length >= limits.members
+                ? "Demo Limit"
+                : "Add Member"}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -265,7 +218,7 @@ export function MemberManagement() {
 
       {/* Members List */}
       <div className="grid gap-4">
-        {filteredMembers.map((member) => (
+        {filteredMembers.map((member: any) => (
           <Card key={member.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -312,16 +265,25 @@ export function MemberManagement() {
                     </div>
                     <div>Last visit: {member.lastVisit}</div>
                   </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedMember(member);
-                      setIsEditDialogOpen(true);
-                    }}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedMember(member);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeMember(member.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>

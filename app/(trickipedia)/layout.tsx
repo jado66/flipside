@@ -1,5 +1,8 @@
 import { TrickipediaLayoutServer } from "./layout-server";
 import { TrickipediaFooter } from "@/components/trickipdedia-footer";
+import { ThemeProvider } from "@/components/theme-provider";
+
+import "../globals.css";
 
 export default async function Layout({
   children,
@@ -10,9 +13,16 @@ export default async function Layout({
   // The AuthProvider will handle session initialization client-side
 
   return (
-    <TrickipediaLayoutServer>
-      {children}
-      <TrickipediaFooter />
-    </TrickipediaLayoutServer>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="trickipedia"
+      themes={["trickipedia", "dark"]}
+      enableSystem={false}
+    >
+      <TrickipediaLayoutServer>
+        {children}
+        <TrickipediaFooter />
+      </TrickipediaLayoutServer>
+    </ThemeProvider>
   );
 }

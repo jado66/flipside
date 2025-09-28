@@ -1,0 +1,346 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:is(.dark *));
+
+/* IRON FORGE THEME - Dark, industrial gym aesthetic */
+.iron-forge {
+  --background: oklch(0.09 0.005 20); /* Very dark charcoal */
+  --foreground: oklch(0.95 0.01 30); /* Warm white */
+  --card: oklch(0.12 0.01 25); /* Dark steel */
+  --card-foreground: oklch(0.92 0.01 30); /* Light steel */
+  --popover: oklch(0.12 0.01 25);
+  --popover-foreground: oklch(0.92 0.01 30);
+  --primary: oklch(0.65 0.2 15); /* Burning orange-red */
+  --primary-foreground: oklch(0.95 0.01 30);
+  --secondary: oklch(0.25 0.02 220); /* Steel blue */
+  --secondary-foreground: oklch(0.95 0.01 30);
+  --muted: oklch(0.18 0.01 25); /* Darker steel */
+  --muted-foreground: oklch(0.7 0.01 30); /* Muted steel */
+  --accent: oklch(0.7 0.25 45); /* Gold highlight */
+  --accent-foreground: oklch(0.09 0.005 20);
+  --destructive: oklch(0.6 0.22 15); /* Deep red */
+  --destructive-foreground: oklch(0.95 0.01 30);
+  --border: oklch(0.25 0.02 25); /* Steel border */
+  --input: oklch(0.15 0.01 25); /* Dark input */
+  --ring: oklch(0.65 0.2 15 / 0.5); /* Orange focus */
+  --radius: 0.375rem;
+  --sidebar: oklch(0.1 0.01 25);
+  --sidebar-foreground: oklch(0.92 0.01 30);
+  --sidebar-primary: oklch(0.65 0.2 15);
+  --sidebar-primary-foreground: oklch(0.95 0.01 30);
+  --sidebar-accent: oklch(0.7 0.25 45);
+  --sidebar-accent-foreground: oklch(0.09 0.005 20);
+  --sidebar-border: oklch(0.2 0.01 25);
+  --sidebar-ring: oklch(0.65 0.2 15 / 0.5);
+
+  /* Gym-specific colors */
+  --strength: oklch(0.65 0.2 15); /* Orange for strength training */
+  --cardio: oklch(0.55 0.18 120); /* Green for cardio */
+  --flexibility: oklch(0.6 0.15 280); /* Purple for flexibility */
+  --recovery: oklch(0.6 0.12 200); /* Blue for recovery */
+}
+
+/* ENERGY RUSH THEME - Bright, high-energy fitness vibe */
+.energy-rush {
+  --background: oklch(0.98 0.005 100); /* Bright white */
+  --foreground: oklch(0.15 0.02 240); /* Deep navy */
+  --card: oklch(0.96 0.01 80); /* Subtle warm tint */
+  --card-foreground: oklch(0.2 0.02 240);
+  --popover: oklch(1 0 0); /* Pure white */
+  --popover-foreground: oklch(0.15 0.02 240);
+  --primary: oklch(0.55 0.25 130); /* Electric lime green */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.6 0.2 320); /* Hot pink */
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.94 0.01 100); /* Light muted */
+  --muted-foreground: oklch(0.45 0.02 240);
+  --accent: oklch(0.65 0.22 50); /* Energetic yellow */
+  --accent-foreground: oklch(0.15 0.02 240);
+  --destructive: oklch(0.6 0.25 25); /* Bright red */
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.88 0.02 100);
+  --input: oklch(0.95 0.01 100);
+  --ring: oklch(0.55 0.25 130 / 0.5);
+  --radius: 0.75rem; /* More rounded for friendlier feel */
+  --sidebar: oklch(0.97 0.02 130);
+  --sidebar-foreground: oklch(0.15 0.02 240);
+  --sidebar-primary: oklch(0.55 0.25 130);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.6 0.2 320);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.9 0.02 130);
+  --sidebar-ring: oklch(0.55 0.25 130 / 0.5);
+
+  /* Gym-specific colors */
+  --strength: oklch(0.6 0.2 320); /* Hot pink for strength */
+  --cardio: oklch(0.55 0.25 130); /* Lime for cardio */
+  --flexibility: oklch(0.65 0.22 50); /* Yellow for flexibility */
+  --recovery: oklch(0.5 0.18 200); /* Cool blue for recovery */
+}
+
+/* ENERGY RUSH DARK MODE */
+.energy-rush.dark {
+  --background: oklch(0.08 0.02 240); /* Dark navy */
+  --foreground: oklch(0.95 0.005 100); /* Bright white */
+  --card: oklch(0.12 0.02 240);
+  --card-foreground: oklch(0.95 0.005 100);
+  --popover: oklch(0.08 0.02 240);
+  --popover-foreground: oklch(0.95 0.005 100);
+  --primary: oklch(0.65 0.25 130); /* Brighter lime */
+  --primary-foreground: oklch(0.08 0.02 240);
+  --secondary: oklch(0.7 0.2 320); /* Brighter pink */
+  --secondary-foreground: oklch(0.08 0.02 240);
+  --muted: oklch(0.16 0.02 240);
+  --muted-foreground: oklch(0.7 0.01 240);
+  --accent: oklch(0.75 0.22 50); /* Bright yellow */
+  --accent-foreground: oklch(0.08 0.02 240);
+  --destructive: oklch(0.7 0.25 25);
+  --destructive-foreground: oklch(0.08 0.02 240);
+  --border: oklch(0.25 0.02 240);
+  --input: oklch(0.18 0.02 240);
+  --ring: oklch(0.65 0.25 130 / 0.5);
+  --sidebar: oklch(0.1 0.02 240);
+  --sidebar-foreground: oklch(0.95 0.005 100);
+  --sidebar-primary: oklch(0.65 0.25 130);
+  --sidebar-primary-foreground: oklch(0.08 0.02 240);
+  --sidebar-accent: oklch(0.7 0.2 320);
+  --sidebar-accent-foreground: oklch(0.08 0.02 240);
+  --sidebar-border: oklch(0.2 0.02 240);
+  --sidebar-ring: oklch(0.65 0.25 130 / 0.5);
+
+  /* Dark mode gym colors */
+  --strength: oklch(0.7 0.2 320);
+  --cardio: oklch(0.65 0.25 130);
+  --flexibility: oklch(0.75 0.22 50);
+  --recovery: oklch(0.6 0.18 200);
+}
+
+/* OCEAN DEPTHS THEME - Calm, professional aqua theme */
+.ocean-depths {
+  --background: oklch(0.97 0.01 200); /* Light blue-white */
+  --foreground: oklch(0.2 0.03 220); /* Deep ocean blue */
+  --card: oklch(0.95 0.02 190);
+  --card-foreground: oklch(0.25 0.03 220);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.2 0.03 220);
+  --primary: oklch(0.45 0.15 200); /* Deep teal */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.6 0.12 180); /* Aqua */
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.92 0.02 200);
+  --muted-foreground: oklch(0.5 0.03 220);
+  --accent: oklch(0.7 0.18 160); /* Bright aqua */
+  --accent-foreground: oklch(0.2 0.03 220);
+  --destructive: oklch(0.55 0.2 15);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.85 0.03 200);
+  --input: oklch(0.94 0.02 200);
+  --ring: oklch(0.45 0.15 200 / 0.5);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.94 0.02 200);
+  --sidebar-foreground: oklch(0.2 0.03 220);
+  --sidebar-primary: oklch(0.45 0.15 200);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.7 0.18 160);
+  --sidebar-accent-foreground: oklch(0.2 0.03 220);
+  --sidebar-border: oklch(0.88 0.03 200);
+  --sidebar-ring: oklch(0.45 0.15 200 / 0.5);
+
+  /* Gym-specific colors */
+  --strength: oklch(0.45 0.15 200); /* Teal for strength */
+  --cardio: oklch(0.6 0.12 180); /* Aqua for cardio */
+  --flexibility: oklch(0.55 0.18 280); /* Purple-blue for flexibility */
+  --recovery: oklch(0.7 0.18 160); /* Light aqua for recovery */
+}
+
+/* OCEAN DEPTHS DARK MODE */
+.ocean-depths.dark {
+  --background: oklch(0.08 0.03 220); /* Deep ocean */
+  --foreground: oklch(0.9 0.02 180); /* Light aqua */
+  --card: oklch(0.12 0.03 210);
+  --card-foreground: oklch(0.9 0.02 180);
+  --popover: oklch(0.08 0.03 220);
+  --popover-foreground: oklch(0.9 0.02 180);
+  --primary: oklch(0.6 0.18 180); /* Bright teal */
+  --primary-foreground: oklch(0.08 0.03 220);
+  --secondary: oklch(0.7 0.15 200); /* Bright aqua */
+  --secondary-foreground: oklch(0.08 0.03 220);
+  --muted: oklch(0.16 0.03 220);
+  --muted-foreground: oklch(0.65 0.02 200);
+  --accent: oklch(0.75 0.2 160); /* Electric aqua */
+  --accent-foreground: oklch(0.08 0.03 220);
+  --destructive: oklch(0.65 0.22 15);
+  --destructive-foreground: oklch(0.9 0.02 180);
+  --border: oklch(0.25 0.03 220);
+  --input: oklch(0.18 0.03 220);
+  --ring: oklch(0.6 0.18 180 / 0.5);
+  --sidebar: oklch(0.1 0.03 220);
+  --sidebar-foreground: oklch(0.9 0.02 180);
+  --sidebar-primary: oklch(0.6 0.18 180);
+  --sidebar-primary-foreground: oklch(0.08 0.03 220);
+  --sidebar-accent: oklch(0.75 0.2 160);
+  --sidebar-accent-foreground: oklch(0.08 0.03 220);
+  --sidebar-border: oklch(0.2 0.03 220);
+  --sidebar-ring: oklch(0.6 0.18 180 / 0.5);
+
+  /* Dark mode gym colors */
+  --strength: oklch(0.6 0.18 180);
+  --cardio: oklch(0.7 0.15 200);
+  --flexibility: oklch(0.65 0.2 280);
+  --recovery: oklch(0.75 0.2 160);
+}
+
+/* SUNSET POWER THEME - Warm, motivational orange/red gradient feel */
+.sunset-power {
+  --background: oklch(0.98 0.01 40); /* Warm white */
+  --foreground: oklch(0.15 0.02 20); /* Dark brown */
+  --card: oklch(0.96 0.02 35);
+  --card-foreground: oklch(0.2 0.02 20);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.15 0.02 20);
+  --primary: oklch(0.6 0.22 25); /* Sunset orange */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.55 0.18 5); /* Deep red */
+  --secondary-foreground: oklch(1 0 0);
+  --muted: oklch(0.93 0.02 40);
+  --muted-foreground: oklch(0.45 0.02 30);
+  --accent: oklch(0.7 0.2 60); /* Golden yellow */
+  --accent-foreground: oklch(0.15 0.02 20);
+  --destructive: oklch(0.55 0.25 15);
+  --destructive-foreground: oklch(1 0 0);
+  --border: oklch(0.88 0.03 35);
+  --input: oklch(0.95 0.02 40);
+  --ring: oklch(0.6 0.22 25 / 0.5);
+  --radius: 0.5rem;
+  --sidebar: oklch(0.94 0.03 30);
+  --sidebar-foreground: oklch(0.15 0.02 20);
+  --sidebar-primary: oklch(0.6 0.22 25);
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.55 0.18 5);
+  --sidebar-accent-foreground: oklch(1 0 0);
+  --sidebar-border: oklch(0.9 0.03 35);
+  --sidebar-ring: oklch(0.6 0.22 25 / 0.5);
+
+  /* Gym-specific colors */
+  --strength: oklch(0.55 0.18 5); /* Red for strength */
+  --cardio: oklch(0.6 0.22 25); /* Orange for cardio */
+  --flexibility: oklch(0.7 0.2 60); /* Yellow for flexibility */
+  --recovery: oklch(0.5 0.12 280); /* Purple for recovery */
+}
+
+/* SUNSET POWER DARK MODE */
+.sunset-power.dark {
+  --background: oklch(0.1 0.02 20); /* Dark chocolate */
+  --foreground: oklch(0.92 0.02 40); /* Warm white */
+  --card: oklch(0.14 0.02 25);
+  --card-foreground: oklch(0.92 0.02 40);
+  --popover: oklch(0.1 0.02 20);
+  --popover-foreground: oklch(0.92 0.02 40);
+  --primary: oklch(0.7 0.25 25); /* Bright sunset orange */
+  --primary-foreground: oklch(0.1 0.02 20);
+  --secondary: oklch(0.65 0.2 5); /* Bright red */
+  --secondary-foreground: oklch(0.1 0.02 20);
+  --muted: oklch(0.18 0.02 25);
+  --muted-foreground: oklch(0.7 0.02 35);
+  --accent: oklch(0.8 0.22 60); /* Bright gold */
+  --accent-foreground: oklch(0.1 0.02 20);
+  --destructive: oklch(0.65 0.25 15);
+  --destructive-foreground: oklch(0.92 0.02 40);
+  --border: oklch(0.25 0.02 25);
+  --input: oklch(0.2 0.02 25);
+  --ring: oklch(0.7 0.25 25 / 0.5);
+  --sidebar: oklch(0.12 0.02 25);
+  --sidebar-foreground: oklch(0.92 0.02 40);
+  --sidebar-primary: oklch(0.7 0.25 25);
+  --sidebar-primary-foreground: oklch(0.1 0.02 20);
+  --sidebar-accent: oklch(0.65 0.2 5);
+  --sidebar-accent-foreground: oklch(0.1 0.02 20);
+  --sidebar-border: oklch(0.22 0.02 25);
+  --sidebar-ring: oklch(0.7 0.25 25 / 0.5);
+
+  /* Dark mode gym colors */
+  --strength: oklch(0.65 0.2 5);
+  --cardio: oklch(0.7 0.25 25);
+  --flexibility: oklch(0.8 0.22 60);
+  --recovery: oklch(0.6 0.15 280);
+}
+
+/* Shared theme mappings */
+@theme inline {
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* Gym-specific color mappings */
+  --color-strength: var(--strength);
+  --color-cardio: var(--cardio);
+  --color-flexibility: var(--flexibility);
+  --color-recovery: var(--recovery);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* Gym-specific utility classes */
+@layer utilities {
+  .text-strength {
+    color: var(--strength);
+  }
+  .bg-strength {
+    background-color: var(--strength);
+  }
+  .text-cardio {
+    color: var(--cardio);
+  }
+  .bg-cardio {
+    background-color: var(--cardio);
+  }
+  .text-flexibility {
+    color: var(--flexibility);
+  }
+  .bg-flexibility {
+    background-color: var(--flexibility);
+  }
+  .text-recovery {
+    color: var(--recovery);
+  }
+  .bg-recovery {
+    background-color: var(--recovery);
+  }
+}

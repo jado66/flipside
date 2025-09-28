@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGym } from "@/contexts/gym-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -30,12 +31,12 @@ import {
   Calendar,
 } from "lucide-react";
 
-interface Equipment {
+interface EquipmentBasic {
   id: string;
   name: string;
   category: string;
   location: string;
-  status: "excellent" | "good" | "needs-maintenance" | "out-of-service";
+  status: string;
   lastInspection: string;
   nextInspection: string;
   purchaseDate: string;
@@ -45,56 +46,17 @@ interface Equipment {
 
 export function EquipmentManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { equipment, addEquipment, removeEquipment, demoMode, limits } =
+    useGym();
 
-  const [equipment, setEquipment] = useState<Equipment[]>([
-    {
-      id: "1",
-      name: "Balance Beam - Competition",
-      category: "Gymnastics",
-      location: "Main Gym",
-      status: "excellent",
-      lastInspection: "2024-01-15",
-      nextInspection: "2024-04-15",
-      purchaseDate: "2023-06-01",
-      warranty: "2025-06-01",
-      notes: "Recently serviced, all bolts tightened",
-    },
-    {
-      id: "2",
-      name: "Foam Pit",
-      category: "Safety",
-      location: "Tumbling Area",
-      status: "good",
-      lastInspection: "2024-01-10",
-      nextInspection: "2024-02-10",
-      purchaseDate: "2022-03-15",
-      warranty: "Expired",
-      notes: "Foam needs refreshing soon",
-    },
-    {
-      id: "3",
-      name: "Parkour Vault Box",
-      category: "Parkour",
-      location: "Parkour Zone",
-      status: "needs-maintenance",
-      lastInspection: "2024-01-05",
-      nextInspection: "2024-01-20",
-      purchaseDate: "2023-01-10",
-      warranty: "2025-01-10",
-      notes: "Corner padding needs replacement",
-    },
-  ]);
-
-  const handleAddEquipment = (formData: FormData) => {
+  const handleAddEquipment = async (formData: FormData) => {
     const purchaseDate = formData.get("purchaseDate") as string;
     const warrantyMonths = Number.parseInt(
       formData.get("warrantyMonths") as string
     );
     const warrantyDate = new Date(purchaseDate);
     warrantyDate.setMonth(warrantyDate.getMonth() + warrantyMonths);
-
-    const newEquipment: Equipment = {
-      id: Date.now().toString(),
+    const res = await addEquipment({
       name: formData.get("name") as string,
       category: formData.get("category") as string,
       location: formData.get("location") as string,
@@ -105,9 +67,9 @@ export function EquipmentManagement() {
         .split("T")[0],
       purchaseDate: purchaseDate,
       warranty: warrantyDate.toISOString().split("T")[0],
-      notes: formData.get("notes") as string,
-    };
-    setEquipment([...equipment, newEquipment]);
+      notes: (formData.get("notes") as string) || "",
+    });
+    if (!res.success) return alert(res.error);
     setIsAddDialogOpen(false);
   };
 
@@ -151,9 +113,11 @@ export function EquipmentManagement() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={demoMode && equipment.length >= limits.equipment}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Equipment
+              {demoMode && equipment.length >= limits.equipment
+                ? "Demo Limit"
+                : "Add Equipment"}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -253,7 +217,7 @@ export function EquipmentManagement() {
       </div>
 
       <div className="grid gap-4">
-        {equipment.map((item) => (
+        {equipment.map((item: any) => (
           <Card key={item.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -308,14 +272,23 @@ export function EquipmentManagement() {
                   )}
                 </div>
                 <div className="flex flex-col space-y-2">
-                  <Button variant="outline" size="sm">
-                    <Calendar className="h-4 w-4 mr-2" />
-                    Schedule Inspection
-                  </Button>
-                  <Button variant="outline" size="sm">
-                    <Wrench className="h-4 w-4 mr-2" />
-                    Log Maintenance
-                  </Button>
+                  <div className="flex flex-col gap-2">
+                    <Button variant="outline" size="sm">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Schedule Inspection
+                    </Button>
+                    <Button variant="outline" size="sm">
+                      <Wrench className="h-4 w-4 mr-2" />
+                      Log Maintenance
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeEquipment(item.id)}
+                    >
+                      Remove
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>

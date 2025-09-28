@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGym } from "@/contexts/gym-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,80 +32,32 @@ import {
   Search,
 } from "lucide-react";
 
-interface Incident {
+// Local interface left minimal if TS needs shape hints; actual types from provider
+interface IncidentBasic {
   id: string;
   memberName: string;
   incidentType: string;
-  severity: "minor" | "moderate" | "serious";
-  status: "reported" | "investigating" | "resolved";
+  severity: string;
+  status: string;
   dateTime: string;
   location: string;
   description: string;
-  injuryDetails?: string;
-  witnessName?: string;
   staffMember: string;
   actionTaken: string;
   followUpRequired: boolean;
-  parentNotified?: boolean;
 }
 
 export function IncidentReporting() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const { incidents, addIncident, updateIncident, staff, demoMode, limits } =
+    useGym();
 
-  const [incidents, setIncidents] = useState<Incident[]>([
-    {
-      id: "1",
-      memberName: "Emma Davis",
-      incidentType: "Minor Injury",
-      severity: "minor",
-      status: "resolved",
-      dateTime: "2024-01-25T14:30:00",
-      location: "Tumbling Area",
-      description: "Student landed awkwardly during back handspring practice",
-      injuryDetails: "Minor ankle twist, no swelling observed",
-      witnessName: "Sarah Johnson (Coach)",
-      staffMember: "Mike Johnson",
-      actionTaken: "Applied ice pack, student rested for remainder of class",
-      followUpRequired: false,
-      parentNotified: true,
-    },
-    {
-      id: "2",
-      memberName: "Alex Chen",
-      incidentType: "Equipment Issue",
-      severity: "moderate",
-      status: "investigating",
-      dateTime: "2024-01-24T16:15:00",
-      location: "Parkour Zone",
-      description: "Vault box padding came loose during training",
-      staffMember: "Alex Chen",
-      actionTaken: "Equipment removed from use, maintenance scheduled",
-      followUpRequired: true,
-    },
-    {
-      id: "3",
-      memberName: "Mike Chen",
-      incidentType: "Near Miss",
-      severity: "minor",
-      status: "reported",
-      dateTime: "2024-01-23T10:45:00",
-      location: "Main Gym",
-      description:
-        "Student almost collided with another athlete during floor routine",
-      staffMember: "Sarah Wilson",
-      actionTaken: "Reviewed spacing protocols with class",
-      followUpRequired: false,
-    },
-  ]);
-
-  const handleAddIncident = (formData: FormData) => {
-    const newIncident: Incident = {
-      id: Date.now().toString(),
+  const handleAddIncident = async (formData: FormData) => {
+    const res = await addIncident({
       memberName: formData.get("memberName") as string,
       incidentType: formData.get("incidentType") as string,
-      severity: formData.get("severity") as "minor" | "moderate" | "serious",
-      status: "reported",
+      severity: formData.get("severity") as any,
       dateTime: `${formData.get("date")}T${formData.get("time")}:00`,
       location: formData.get("location") as string,
       description: formData.get("description") as string,
@@ -114,8 +67,8 @@ export function IncidentReporting() {
       actionTaken: formData.get("actionTaken") as string,
       followUpRequired: formData.get("followUpRequired") === "yes",
       parentNotified: formData.get("parentNotified") === "yes",
-    };
-    setIncidents([...incidents, newIncident]);
+    });
+    if (!res.success) return alert(res.error);
     setIsAddDialogOpen(false);
   };
 
@@ -201,10 +154,11 @@ export function IncidentReporting() {
                       <SelectValue placeholder="Select staff member" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                      <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
-                      <SelectItem value="Alex Chen">Alex Chen</SelectItem>
-                      <SelectItem value="Emma Davis">Emma Davis</SelectItem>
+                      {staff.map((s: any) => (
+                        <SelectItem key={s.id} value={s.name}>
+                          {s.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -372,19 +326,22 @@ export function IncidentReporting() {
         <div className="flex space-x-4 text-sm">
           <div className="text-center">
             <div className="font-semibold text-blue-600">
-              {incidents.filter((i) => i.status === "reported").length}
+              {incidents.filter((i: any) => i.status === "reported").length}
             </div>
             <div className="text-muted-foreground">Reported</div>
           </div>
           <div className="text-center">
             <div className="font-semibold text-yellow-600">
-              {incidents.filter((i) => i.status === "investigating").length}
+              {
+                incidents.filter((i: any) => i.status === "investigating")
+                  .length
+              }
             </div>
             <div className="text-muted-foreground">Investigating</div>
           </div>
           <div className="text-center">
             <div className="font-semibold text-green-600">
-              {incidents.filter((i) => i.status === "resolved").length}
+              {incidents.filter((i: any) => i.status === "resolved").length}
             </div>
             <div className="text-muted-foreground">Resolved</div>
           </div>
@@ -393,7 +350,7 @@ export function IncidentReporting() {
 
       {/* Incidents List */}
       <div className="grid gap-4">
-        {filteredIncidents.map((incident) => (
+        {filteredIncidents.map((incident: any) => (
           <Card key={incident.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
@@ -405,7 +362,7 @@ export function IncidentReporting() {
                     </h3>
                     <Badge variant="outline">{incident.incidentType}</Badge>
                     <Badge className={getSeverityColor(incident.severity)}>
-                      {incident.severity.toUpperCase()}
+                      {String(incident.severity).toUpperCase()}
                     </Badge>
                     <Badge className={getStatusColor(incident.status)}>
                       {getStatusIcon(incident.status)}
@@ -467,7 +424,17 @@ export function IncidentReporting() {
                     View Full Report
                   </Button>
                   {incident.status !== "resolved" && (
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        const next =
+                          incident.status === "reported"
+                            ? "investigating"
+                            : "resolved";
+                        updateIncident(incident.id, { status: next });
+                      }}
+                    >
                       Update Status
                     </Button>
                   )}

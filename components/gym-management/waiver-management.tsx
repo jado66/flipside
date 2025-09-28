@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGym } from "@/contexts/gym-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,12 +34,13 @@ import {
   Search,
 } from "lucide-react";
 
-interface Waiver {
+// Local interface retained only if needed for TS hints; actual types from provider
+interface WaiverBasic {
   id: string;
   memberName: string;
   memberEmail: string;
   waiverType: string;
-  status: "signed" | "pending" | "expired";
+  status: string;
   signedDate?: string;
   expiryDate: string;
   guardianName?: string;
@@ -49,63 +51,19 @@ interface Waiver {
 export function WaiverManagement() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const { waivers, addWaiver, archiveWaiver, removeWaiver, demoMode, limits } =
+    useGym();
 
-  const [waivers, setWaivers] = useState<Waiver[]>([
-    {
-      id: "1",
-      memberName: "Sarah Johnson",
-      memberEmail: "sarah.johnson@email.com",
-      waiverType: "General Liability",
-      status: "signed",
-      signedDate: "2024-01-15",
-      expiryDate: "2025-01-15",
-      notes: "Adult member, self-signed",
-    },
-    {
-      id: "2",
-      memberName: "Emma Davis",
-      memberEmail: "emma.davis@email.com",
-      waiverType: "Youth Liability",
-      status: "signed",
-      signedDate: "2024-01-10",
-      expiryDate: "2025-01-10",
-      guardianName: "Robert Davis",
-      guardianSignature: true,
-      notes: "Minor - parent signature required",
-    },
-    {
-      id: "3",
-      memberName: "Mike Chen",
-      memberEmail: "mike.chen@email.com",
-      waiverType: "Competition Waiver",
-      status: "pending",
-      expiryDate: "2024-12-31",
-      notes: "Sent reminder email yesterday",
-    },
-    {
-      id: "4",
-      memberName: "Alex Rodriguez",
-      memberEmail: "alex.rodriguez@email.com",
-      waiverType: "General Liability",
-      status: "expired",
-      signedDate: "2023-01-05",
-      expiryDate: "2024-01-05",
-      notes: "Needs renewal - member inactive",
-    },
-  ]);
-
-  const handleSendWaiver = (formData: FormData) => {
-    const newWaiver: Waiver = {
-      id: Date.now().toString(),
+  const handleSendWaiver = async (formData: FormData) => {
+    const res = await addWaiver({
       memberName: formData.get("memberName") as string,
       memberEmail: formData.get("memberEmail") as string,
       waiverType: formData.get("waiverType") as string,
-      status: "pending",
       expiryDate: formData.get("expiryDate") as string,
       guardianName: (formData.get("guardianName") as string) || undefined,
-      notes: formData.get("notes") as string,
-    };
-    setWaivers([...waivers, newWaiver]);
+      notes: (formData.get("notes") as string) || "",
+    });
+    if (!res.success) return alert(res.error);
     setIsAddDialogOpen(false);
   };
 
@@ -153,9 +111,11 @@ export function WaiverManagement() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={demoMode && waivers.length >= limits.waivers}>
               <Plus className="h-4 w-4 mr-2" />
-              Send Waiver
+              {demoMode && waivers.length >= limits.waivers
+                ? "Demo Limit"
+                : "Send Waiver"}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -262,19 +222,19 @@ export function WaiverManagement() {
         <div className="flex space-x-4 text-sm">
           <div className="text-center">
             <div className="font-semibold text-green-600">
-              {waivers.filter((w) => w.status === "signed").length}
+              {waivers.filter((w: any) => w.status === "signed").length}
             </div>
             <div className="text-muted-foreground">Signed</div>
           </div>
           <div className="text-center">
             <div className="font-semibold text-yellow-600">
-              {waivers.filter((w) => w.status === "pending").length}
+              {waivers.filter((w: any) => w.status === "pending").length}
             </div>
             <div className="text-muted-foreground">Pending</div>
           </div>
           <div className="text-center">
             <div className="font-semibold text-red-600">
-              {waivers.filter((w) => w.status === "expired").length}
+              {waivers.filter((w: any) => w.status === "expired").length}
             </div>
             <div className="text-muted-foreground">Expired</div>
           </div>
@@ -283,7 +243,7 @@ export function WaiverManagement() {
 
       {/* Waivers List */}
       <div className="grid gap-4">
-        {filteredWaivers.map((waiver) => (
+        {filteredWaivers.map((waiver: any) => (
           <Card key={waiver.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -350,6 +310,20 @@ export function WaiverManagement() {
                       Resend
                     </Button>
                   )}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => archiveWaiver(waiver.id)}
+                  >
+                    Archive
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => removeWaiver(waiver.id)}
+                  >
+                    Remove
+                  </Button>
                 </div>
               </div>
             </CardContent>

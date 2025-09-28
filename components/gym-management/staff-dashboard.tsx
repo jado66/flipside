@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGym } from "@/contexts/gym-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -25,14 +26,14 @@ import {
 } from "@/components/ui/dialog";
 import { Clock, Calendar, Plus, Phone, Mail } from "lucide-react";
 
-interface StaffMember {
+// Local interface no longer needed (types come from provider) but kept minimal if TS needs shape hints
+interface StaffMemberBasic {
   id: string;
   name: string;
+  role: string;
   email: string;
   phone: string;
-  role: string;
   specialties: string[];
-  status: string;
   schedule: string;
   classes: number;
   hourlyRate: number;
@@ -42,75 +43,35 @@ interface StaffMember {
 
 export function StaffDashboard() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const { staff, addStaff, archiveStaff, removeStaff, demoMode, limits } =
+    useGym();
 
-  const [staff, setStaff] = useState<StaffMember[]>([
-    {
-      id: "1",
-      name: "Sarah Wilson",
-      email: "sarah.wilson@gym.com",
-      phone: "(555) 123-4567",
-      role: "Head Coach",
-      specialties: ["Gymnastics", "Tumbling"],
-      status: "active",
-      schedule: "9:00 AM - 5:00 PM",
-      classes: 4,
-      hourlyRate: 35,
-      certifications: ["USA Gymnastics Safety Certified", "CPR/First Aid"],
-      emergencyContact: "John Wilson - (555) 987-6543",
-    },
-    {
-      id: "2",
-      name: "Mike Johnson",
-      email: "mike.johnson@gym.com",
-      phone: "(555) 234-5678",
-      role: "Gymnastics Coach",
-      specialties: ["Advanced Gymnastics", "Competition Prep"],
-      status: "active",
-      schedule: "10:00 AM - 6:00 PM",
-      classes: 3,
-      hourlyRate: 40,
-      certifications: ["USA Gymnastics Safety Certified"],
-      emergencyContact: "Jane Johnson - (555) 876-5432",
-    },
-    {
-      id: "3",
-      name: "Alex Chen",
-      email: "alex.chen@gym.com",
-      phone: "(555) 345-6789",
-      role: "Parkour Instructor",
-      specialties: ["Parkour", "Freerunning"],
-      status: "active",
-      schedule: "1:00 PM - 9:00 PM",
-      classes: 5,
-      hourlyRate: 45,
-      certifications: ["Parkour Safety Certified"],
-      emergencyContact: "Alice Chen - (555) 765-4321",
-    },
-  ]);
-
-  const handleAddStaff = (formData: FormData) => {
+  const handleAddStaff = async (formData: FormData) => {
     const specialties = (formData.get("specialties") as string)
       .split(",")
-      .map((s) => s.trim());
+      .map((s) => s.trim())
+      .filter(Boolean);
     const certifications = (formData.get("certifications") as string)
       .split(",")
-      .map((s) => s.trim());
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-    const newStaff: StaffMember = {
-      id: Date.now().toString(),
+    const res = await addStaff({
       name: formData.get("name") as string,
       email: formData.get("email") as string,
       phone: formData.get("phone") as string,
       role: formData.get("role") as string,
-      specialties: specialties,
+      specialties,
       status: "active",
       schedule: `${formData.get("startTime")} - ${formData.get("endTime")}`,
-      classes: 0,
       hourlyRate: Number.parseFloat(formData.get("hourlyRate") as string),
-      certifications: certifications,
+      certifications,
       emergencyContact: formData.get("emergencyContact") as string,
-    };
-    setStaff([...staff, newStaff]);
+    });
+    if (!res.success) {
+      alert(res.error);
+      return;
+    }
     setIsAddDialogOpen(false);
   };
 
@@ -125,9 +86,11 @@ export function StaffDashboard() {
         </div>
         <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <Button>
+            <Button disabled={demoMode && staff.length >= limits.staff}>
               <Plus className="h-4 w-4 mr-2" />
-              Add Staff
+              {demoMode && staff.length >= limits.staff
+                ? "Demo Limit"
+                : "Add Staff"}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-2xl">
@@ -246,7 +209,7 @@ export function StaffDashboard() {
       </div>
 
       <div className="grid gap-6">
-        {staff.map((member) => (
+        {staff.map((member: any) => (
           <Card key={member.id}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -296,9 +259,25 @@ export function StaffDashboard() {
                   <div className="text-sm font-medium">
                     ${member.hourlyRate}/hour
                   </div>
-                  <Button variant="outline" size="sm">
-                    View Schedule
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm">
+                      View Schedule
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => archiveStaff(member.id)}
+                    >
+                      Archive
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => removeStaff(member.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>

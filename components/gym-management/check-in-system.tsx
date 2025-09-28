@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useGym } from "@/contexts/gym-provider";
 import {
   Card,
   CardContent,
@@ -16,49 +17,27 @@ import { Search, CheckCircle, Clock, Users } from "lucide-react";
 
 export function CheckInSystem() {
   const [searchTerm, setSearchTerm] = useState("");
+  const { members, classes } = useGym();
 
-  const todayCheckIns = [
-    {
-      id: "1",
-      member: "Sarah Johnson",
-      class: "Youth Gymnastics",
-      time: "9:15 AM",
-      status: "checked-in",
-    },
-    {
-      id: "2",
-      member: "Mike Chen",
-      class: "Parkour Basics",
-      time: "2:05 PM",
-      status: "checked-in",
-    },
-    {
-      id: "3",
-      member: "Emma Davis",
-      class: "Advanced Tumbling",
-      time: "11:10 AM",
-      status: "checked-in",
-    },
-  ];
+  const todayCheckIns = members.slice(0, 5).map((m, i) => ({
+    id: m.id,
+    member: m.name,
+    class: classes[i]?.name || "Open Training",
+    time: new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    }),
+    status: "checked-in",
+  }));
 
-  const upcomingClasses = [
-    {
-      id: "1",
-      name: "Adult Fitness",
-      time: "6:00 PM",
-      instructor: "Emma Davis",
-      capacity: 20,
-      checkedIn: 0,
-    },
-    {
-      id: "2",
-      name: "Open Gym",
-      time: "7:30 PM",
-      instructor: "Staff",
-      capacity: 30,
-      checkedIn: 0,
-    },
-  ];
+  const upcomingClasses = classes.slice(0, 4).map((c) => ({
+    id: c.id,
+    name: c.name,
+    time: c.time.split("-")[0].trim(),
+    instructor: c.instructor,
+    capacity: c.capacity,
+    checkedIn: c.enrolled,
+  }));
 
   return (
     <div className="space-y-6">

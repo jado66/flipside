@@ -15,38 +15,30 @@ import {
   AlertCircle,
   CheckCircle,
   Plus,
+  Trash2,
 } from "lucide-react";
+import { useGym } from "@/contexts/gym-provider";
 
 export function PaymentProcessing() {
-  const payments = [
-    {
-      id: "1",
-      member: "Sarah Johnson",
-      amount: "$120.00",
-      type: "Monthly Membership",
-      status: "paid",
-      date: "2024-01-25",
-      method: "Credit Card",
-    },
-    {
-      id: "2",
-      member: "Mike Chen",
-      amount: "$80.00",
-      type: "Drop-in Class",
-      status: "paid",
-      date: "2024-01-25",
-      method: "Cash",
-    },
-    {
-      id: "3",
-      member: "Emma Davis",
-      amount: "$150.00",
-      type: "Monthly Membership",
-      status: "overdue",
-      date: "2024-01-15",
-      method: "Auto-pay Failed",
-    },
-  ];
+  const { payments, addPayment, removePayment, demoMode, limits } = useGym();
+
+  const handleQuickAdd = async () => {
+    const member = prompt("Member name")?.trim();
+    if (!member) return;
+    const amount = prompt("Amount (numbers only)") || "0";
+    const type = prompt("Type (e.g. Monthly Membership)") || "Misc";
+    const method = prompt("Method (Card/Cash/etc)") || "Card";
+    const status: any = "paid"; // For quick add assume paid
+    const res = await addPayment({
+      member,
+      amount: `$${Number.parseFloat(amount).toFixed(2)}`,
+      type,
+      status,
+      date: new Date().toISOString().split("T")[0],
+      method,
+    });
+    if (!res.success) alert(res.error);
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -81,9 +73,14 @@ export function PaymentProcessing() {
             Manage payments, invoices, and billing
           </p>
         </div>
-        <Button>
+        <Button
+          onClick={handleQuickAdd}
+          disabled={demoMode && payments.length >= limits.payments}
+        >
           <Plus className="h-4 w-4 mr-2" />
-          Process Payment
+          {demoMode && payments.length >= limits.payments
+            ? "Demo Limit"
+            : "Process Payment"}
         </Button>
       </div>
 
@@ -156,6 +153,15 @@ export function PaymentProcessing() {
                       {getStatusIcon(payment.status)}
                       <span className="ml-1 capitalize">{payment.status}</span>
                     </Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => removePayment(payment.id)}
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span className="sr-only">Remove payment</span>
+                    </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
                     {payment.date}

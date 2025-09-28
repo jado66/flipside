@@ -13,19 +13,17 @@ type ThemeToggleProps = {
 };
 
 export function ThemeToggle({ variant = "icon", className }: ThemeToggleProps) {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
 
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
+  React.useEffect(() => setMounted(true), []);
 
-  const isDark = theme === "dark";
+  // Use resolvedTheme to avoid mismatch during hydration
+  const current = (theme === "system" ? resolvedTheme : theme) || "light";
+  const isDark = current === "dark";
   const nextLabel = isDark ? "Light" : "Dark";
 
-  const toggleTheme = () => {
-    setTheme(isDark ? "trickipedia" : "dark");
-  };
+  const toggleTheme = () => setTheme(isDark ? "trickipedia" : "dark");
 
   // Skeleton states
   if (!mounted) {
@@ -46,6 +44,7 @@ export function ThemeToggle({ variant = "icon", className }: ThemeToggleProps) {
         type="button"
         variant="ghost"
         onClick={toggleTheme}
+        aria-pressed={isDark}
         className={cn(
           "w-full justify-start gap-2 h-auto py-2 text-base md:text-sm font-normal",
           "hover:text-white",
@@ -65,6 +64,7 @@ export function ThemeToggle({ variant = "icon", className }: ThemeToggleProps) {
       variant="ghost"
       size="icon"
       onClick={toggleTheme}
+      aria-pressed={isDark}
       className={cn("h-9 w-9", className)}
     >
       {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}

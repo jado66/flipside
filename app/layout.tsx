@@ -1,5 +1,4 @@
 // cspell:disable
-import "./globals.css";
 
 import React from "react";
 import type { Metadata } from "next";
@@ -12,7 +11,6 @@ import {
   generateWebsiteStructuredData,
   generateOrganizationStructuredData,
 } from "@/lib/structured-data-utils";
-import { ThemeProvider } from "@/components/theme-provider";
 import { ConfettiProvider } from "@/contexts/confetti-provider";
 import { TrickipediaLayoutServer } from "./(trickipedia)/layout-server";
 import { TrickipediaFooter } from "@/components/trickipdedia-footer";
@@ -96,22 +94,16 @@ export default async function RootLayout({
         <StructuredData data={generateWebsiteStructuredData()} />
         <StructuredData data={generateOrganizationStructuredData()} />
 
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="trickipedia"
-          themes={["trickipedia", "dark"]}
-          enableSystem={false}
-        >
-          <ConfettiProvider>
-            <UserProvider>
-              <CategoriesProvider>
-                <UserProgressProvider>
-                  <NotificationsProvider>{children}</NotificationsProvider>
-                </UserProgressProvider>
-              </CategoriesProvider>
-            </UserProvider>
-          </ConfettiProvider>
-        </ThemeProvider>
+        <ConfettiProvider>
+          <UserProvider>
+            <CategoriesProvider>
+              <UserProgressProvider>
+                <NotificationsProvider>{children}</NotificationsProvider>
+              </UserProgressProvider>
+            </CategoriesProvider>
+          </UserProvider>
+        </ConfettiProvider>
+
         <Analytics />
       </body>
     </html>
