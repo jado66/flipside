@@ -2,7 +2,7 @@ import { TrickipediaLayoutServer } from "./layout-server";
 import { TrickipediaFooter } from "@/components/trickipdedia-footer";
 import { ThemeProvider } from "@/components/theme-provider";
 
-import "../globals.css";
+import "./globals.css";
 
 export default async function Layout({
   children,
