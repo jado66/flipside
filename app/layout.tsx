@@ -12,8 +12,6 @@ import {
   generateOrganizationStructuredData,
 } from "@/lib/structured-data-utils";
 import { ConfettiProvider } from "@/contexts/confetti-provider";
-import { TrickipediaLayoutServer } from "./(trickipedia)/layout-server";
-import { TrickipediaFooter } from "@/components/trickipdedia-footer";
 import { UserProvider } from "@/contexts/user-provider";
 import { UserProgressProvider } from "@/contexts/user-progress-provider";
 import { NotificationsProvider } from "@/contexts/notifications-provider";
@@ -34,6 +32,8 @@ export const metadata: Metadata = {
     siteName: "Trickipedia",
   },
 };
+
+import "../globals.css";
 
 export default async function RootLayout({
   children,
