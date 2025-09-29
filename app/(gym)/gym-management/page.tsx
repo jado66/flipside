@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import {
   Card,
   CardContent,
@@ -15,6 +15,8 @@ import {
   Activity,
   CheckCircle,
 } from "lucide-react";
+
+// Import existing components
 import { MemberManagement } from "@/components/gym-management/member-management";
 import { ClassScheduling } from "@/components/gym-management/class-scheduling";
 import { Classes } from "@/components/gym-management/classes";
@@ -25,16 +27,34 @@ import { AnalyticsDashboard } from "@/components/gym-management/analytics-dashbo
 import { EquipmentManagement } from "@/components/gym-management/equipment-management";
 import { WaiverManagement } from "@/components/gym-management/waiver-management";
 import { IncidentReporting } from "@/components/gym-management/incident-reporting";
-import { GymManagementLayout } from "@/components/gym-management/gym-management-layout";
-import { GymManagementNavProvider } from "@/contexts/gym-management-nav-provider";
 import StaffPortal from "@/components/gym-management/staff-dashboard";
 import InventoryManagement from "@/components/gym-management/store/store-management";
 
-export default function GymManagementDashboard() {
+// Import the new components we created
+import { GymManagementLayout } from "@/components/gym-management/gym-management-layout";
+import {
+  GymSetupProvider,
+  useGymSetup,
+} from "@/contexts/gym/gym-setup-provider";
+import GymSetupWizard from "@/components/gym-management/setup/GymSetupWizard";
+
+// Main dashboard component that renders after setup
+function GymManagementDashboard() {
   const [activeTab, setActiveTab] = useState("members");
   const [viewMode, setViewMode] = useState<"manager" | "staff">("manager");
+  const { enabledApps } = useGymSetup();
 
-  // TODO replace mock summary stats with derived provider analytics
+  // Set initial active tab to first enabled app
+  React.useEffect(() => {
+    if (
+      enabledApps.length > 0 &&
+      !enabledApps.find((app) => app.id === activeTab)
+    ) {
+      setActiveTab(enabledApps[0].id);
+    }
+  }, [enabledApps, activeTab]);
+
+  // Mock stats - in real app these would come from your data provider
   const stats = [
     {
       title: "Total Members",
@@ -94,111 +114,122 @@ export default function GymManagementDashboard() {
   ];
 
   return (
-    <GymManagementNavProvider>
-      <GymManagementLayout
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        viewMode={viewMode}
-        onChangeViewMode={setViewMode}
-      >
-        {viewMode === "staff" ? (
-          <StaffPortal />
-        ) : (
-          <>
-            {activeTab === "members" && (
-              <div className="space-y-6">
-                {/* Stats Overview */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-                  {stats.map((stat, index) => (
-                    <Card key={index}>
-                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">
-                          {stat.title}
-                        </CardTitle>
-                        <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-2xl font-bold">{stat.value}</div>
-                        <p className="text-xs text-muted-foreground">
-                          {stat.change} from last month
-                        </p>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-
-                {/* Recent Activity */}
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                  <Card className="lg:col-span-2">
-                    <CardHeader>
-                      <CardTitle>Member Management</CardTitle>
-                      <CardDescription>
-                        Manage your gym members, memberships, and profiles
-                      </CardDescription>
+    <GymManagementLayout
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      viewMode={viewMode}
+      onChangeViewMode={setViewMode}
+    >
+      {viewMode === "staff" ? (
+        <StaffPortal />
+      ) : (
+        <>
+          {activeTab === "members" && (
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                {stats.map((stat, index) => (
+                  <Card key={index}>
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium">
+                        {stat.title}
+                      </CardTitle>
+                      <stat.icon className={`h-4 w-4 ${stat.color}`} />
                     </CardHeader>
                     <CardContent>
-                      <MemberManagement />
+                      <div className="text-2xl font-bold">{stat.value}</div>
+                      <p className="text-xs text-muted-foreground">
+                        {stat.change} from last month
+                      </p>
                     </CardContent>
                   </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Recent Activity</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        {recentActivity.map((activity, index) => (
-                          <div
-                            key={index}
-                            className="flex items-start space-x-3"
-                          >
-                            <div className="flex-shrink-0">
-                              {activity.type === "member" && (
-                                <Users className="h-4 w-4 text-blue-600" />
-                              )}
-                              {activity.type === "payment" && (
-                                <DollarSign className="h-4 w-4 text-green-600" />
-                              )}
-                              {activity.type === "checkin" && (
-                                <CheckCircle className="h-4 w-4 text-purple-600" />
-                              )}
-                              {activity.type === "class" && (
-                                <Calendar className="h-4 w-4 text-orange-600" />
-                              )}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-medium text-foreground">
-                                {activity.name}
-                              </p>
-                              <p className="text-sm text-muted-foreground">
-                                {activity.action}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                {activity.time}
-                              </p>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                ))}
               </div>
-            )}
-
-            {activeTab === "classes" && <Classes />}
-            {activeTab === "scheduling" && <ClassScheduling />}
-            {activeTab === "staff" && <StaffManagement />}
-            {activeTab === "equipment" && <EquipmentManagement />}
-            {activeTab === "payments" && <PaymentProcessing />}
-            {activeTab === "checkin" && <CheckInSystem />}
-            {activeTab === "waivers" && <WaiverManagement />}
-            {activeTab === "incidents" && <IncidentReporting />}
-            {activeTab === "analytics" && <AnalyticsDashboard />}
-            {activeTab === "store" && <InventoryManagement />}
-          </>
-        )}
-      </GymManagementLayout>
-    </GymManagementNavProvider>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                <Card className="lg:col-span-2">
+                  <CardHeader>
+                    <CardTitle>Member Management</CardTitle>
+                    <CardDescription>
+                      Manage your gym members, memberships, and profiles
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <MemberManagement />
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardHeader className="pb-3 py-3">
+                    <CardTitle className="text-sm font-semibold">
+                      Recent Activity
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="space-y-2">
+                      {recentActivity.map((activity, index) => (
+                        <div
+                          key={index}
+                          className="flex items-start gap-2 text-xs leading-tight"
+                        >
+                          <div className="mt-0.5 text-muted-foreground">
+                            {activity.type === "member" && (
+                              <Users className="h-3 w-3 text-blue-600" />
+                            )}
+                            {activity.type === "payment" && (
+                              <DollarSign className="h-3 w-3 text-green-600" />
+                            )}
+                            {activity.type === "checkin" && (
+                              <CheckCircle className="h-3 w-3 text-purple-600" />
+                            )}
+                            {activity.type === "class" && (
+                              <Calendar className="h-3 w-3 text-orange-600" />
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium truncate">
+                              {activity.name}
+                            </p>
+                            <p className="text-muted-foreground truncate">
+                              {activity.action}
+                            </p>
+                            <p className="text-[10px] text-muted-foreground">
+                              {activity.time}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          )}
+          {activeTab === "classes" && <Classes />}
+          {activeTab === "scheduling" && <ClassScheduling />}
+          {activeTab === "staff" && <StaffManagement />}
+          {activeTab === "equipment" && <EquipmentManagement />}
+          {activeTab === "payments" && <PaymentProcessing />}
+          {activeTab === "checkin" && <CheckInSystem />}
+          {activeTab === "waivers" && <WaiverManagement />}
+          {activeTab === "incidents" && <IncidentReporting />}
+          {activeTab === "analytics" && <AnalyticsDashboard />}
+          {activeTab === "store" && <InventoryManagement />}
+        </>
+      )}
+    </GymManagementLayout>
   );
+}
+
+// Page export (wrap providers here since this is a page component, not an app root)
+export default function GymManagementPage() {
+  // Single provider handles both setup & dynamic nav; legacy nav provider removed
+  return (
+    <GymSetupProvider>
+      <GymManagementGate />
+    </GymSetupProvider>
+  );
+}
+
+function GymManagementGate() {
+  const { isSetupComplete } = useGymSetup();
+  if (!isSetupComplete) return <GymSetupWizard />;
+  return <GymManagementDashboard />;
 }

@@ -1,7 +1,11 @@
 "use client";
 
 import React from "react";
-import { useGymManagementNav } from "@/contexts/gym-management-nav-provider";
+// Unified navigation comes from gym-setup-provider now; legacy provider removed
+import {
+  useGymManagementNav,
+  useGymSetup,
+} from "@/contexts/gym/gym-setup-provider";
 import { Button } from "@/components/ui/button";
 import {
   GripVertical,
@@ -72,6 +76,7 @@ const SortableRow: React.FC<{
 export const GymManagementNavSettingsPanel: React.FC = () => {
   const { settings, updateOrder, toggleItem, reset, allItems } =
     useGymManagementNav();
+  const { resetSetup } = useGymSetup();
 
   const [addOpen, setAddOpen] = React.useState(false);
 
@@ -102,7 +107,24 @@ export const GymManagementNavSettingsPanel: React.FC = () => {
         <Button
           variant="ghost"
           size="sm"
-          onClick={reset}
+          onClick={() => {
+            const confirmed = window.confirm(
+              "Reset navigation AND setup? This will clear facility info, selected apps, and show the setup wizard again."
+            );
+            if (confirmed) {
+              resetSetup();
+              // After wiping setup, also reset nav ordering to base state
+              reset();
+              // Ensure legacy nav storage (if any) is cleared to prevent flicker rehydrate
+              try {
+                localStorage.removeItem("gymMgmtNavSettings:v1");
+              } catch {}
+              // Force a microtask defer so state updates flush before potential UI gating
+              setTimeout(() => {
+                // Optionally could do a router refresh; for now rely on state
+              }, 0);
+            }
+          }}
           className="gap-1 shrink-0"
         >
           <RotateCcw className="h-3 w-3" /> Reset

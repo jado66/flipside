@@ -9,22 +9,15 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle as ThemePicker } from "@/components/themes/theme-picker";
 import { DemoBadge } from "./demo-badge";
 import { Activity, Menu, Search, Plus, Settings2 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { GymManagementNavSettingsPanel } from "./nav-settings-panel";
-import { useGymManagementNav } from "@/contexts/gym-management-nav-provider";
+import { useGymSetup } from "@/contexts/gym/gym-setup-provider"; // unified setup + nav source
 import {
   Popover,
   PopoverTrigger,
   PopoverContent,
 } from "@/components/ui/popover";
 
-interface NavigationItem {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-}
-
-interface GymManagementLayoutProps {
+interface EnhancedGymManagementLayoutProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
   children: React.ReactNode;
@@ -40,14 +33,19 @@ export function GymManagementLayout({
   className,
   viewMode,
   onChangeViewMode,
-}: GymManagementLayoutProps) {
+}: EnhancedGymManagementLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { items: navigationItems } = useGymManagementNav();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { enabledApps, setupConfig } = useGymSetup();
+
+  // Get facility name from setup config, fallback to default
+  const facilityName = setupConfig?.facilityName || "GymFlow Pro";
+  const facilityShortName =
+    facilityName.length > 12 ? facilityName.split(" ")[0] : facilityName;
 
   const NavigationContent = ({ onItemClick }: { onItemClick?: () => void }) => (
     <div className="space-y-2">
-      {navigationItems.map((item) => (
+      {enabledApps.map((item) => (
         <Button
           key={item.id}
           aria-current={activeTab === item.id ? "page" : undefined}
@@ -62,6 +60,13 @@ export function GymManagementLayout({
           {item.label}
         </Button>
       ))}
+
+      {enabledApps.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          <p className="text-sm">No apps enabled</p>
+          <p className="text-xs mt-1">Use the settings panel to enable apps</p>
+        </div>
+      )}
     </div>
   );
 
@@ -81,7 +86,7 @@ export function GymManagementLayout({
               <SheetContent side="left" className="w-56 p-5">
                 <div className="flex items-center space-x-2 mb-6">
                   <Activity className="h-6 w-6 text-primary" />
-                  <h2 className="text-lg font-bold">GymFlow Pro</h2>
+                  <h2 className="text-lg font-bold">{facilityName}</h2>
                 </div>
                 <NavigationContent onItemClick={() => setSidebarOpen(false)} />
               </SheetContent>
@@ -89,10 +94,15 @@ export function GymManagementLayout({
 
             <div className="flex items-center space-x-2">
               <Activity className="h-8 w-8 text-primary" />
-              <h1 className="text-xl font-bold hidden sm:block">GymFlow Pro</h1>
-              <h1 className="text-lg font-bold sm:hidden">GymFlow</h1>
+              <h1 className="text-xl font-bold hidden sm:block">
+                {facilityName}
+              </h1>
+              <h1 className="text-lg font-bold sm:hidden">
+                {facilityShortName}
+              </h1>
             </div>
           </div>
+
           <div className="ml-auto flex items-center space-x-2 md:space-x-4">
             <div className="relative hidden sm:block">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -104,7 +114,8 @@ export function GymManagementLayout({
             <Button size="icon" className="sm:hidden" aria-label="Search">
               <Search className="h-4 w-4" />
             </Button>
-            {/* Manager / Staff view toggle moved here from page content */}
+
+            {/* Manager / Staff view toggle */}
             <div
               className="hidden md:inline-flex rounded-md overflow-hidden border bg-background"
               role="group"
@@ -135,11 +146,15 @@ export function GymManagementLayout({
                 Staff
               </button>
             </div>
+
             <ThemePicker variant="dropdown" />
-            {/* Demo controls (toggle + reset) - moved here so they are available in all gym apps */}
+
+            {/* Demo controls */}
             <div className="hidden sm:block">
               <DemoBadge />
             </div>
+
+            {/* Navigation Settings */}
             <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -155,6 +170,7 @@ export function GymManagementLayout({
                 <GymManagementNavSettingsPanel />
               </PopoverContent>
             </Popover>
+
             <Button size="sm" className="hidden sm:flex" aria-label="Quick add">
               <Plus className="h-4 w-4 mr-2" />
               Quick Add
@@ -162,9 +178,14 @@ export function GymManagementLayout({
             <Button size="icon" className="sm:hidden" aria-label="Quick add">
               <Plus className="h-4 w-4" />
             </Button>
+
             <Avatar className="h-8 w-8">
               <AvatarImage src="/placeholder.svg?height=32&width=32" />
-              <AvatarFallback>GM</AvatarFallback>
+              <AvatarFallback>
+                {setupConfig?.facilityName
+                  ? setupConfig.facilityName.charAt(0).toUpperCase()
+                  : "GM"}
+              </AvatarFallback>
             </Avatar>
           </div>
         </div>
