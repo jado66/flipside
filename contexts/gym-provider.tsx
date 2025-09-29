@@ -29,6 +29,8 @@ import {
   STORE,
   clearAllData,
 } from "@/contexts/gym-db";
+import { ALL_SEEDS } from "@/contexts/gym-seed";
+import { bulkPut } from "@/contexts/gym-db";
 
 // Demo limits (default)
 const DEMO_LIMITS: DemoLimits = {
@@ -116,6 +118,8 @@ interface GymContextValue {
   unarchiveWaiver: (id: string) => Promise<OperationResult<WaiverItem>>;
   // Hard reset (purge) everything except meta/demo flag
   purgeAllGymData: () => Promise<void>;
+  // Reset DB contents to the bundled seed/demo data (for debugging)
+  resetToSeed: () => Promise<void>;
 }
 
 const GymContext = createContext<GymContextValue | undefined>(undefined);
@@ -137,7 +141,7 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [loading, setLoading] = useState(true);
-  const [demoMode, setDemoMode] = useState(true);
+  const [demoMode, setDemoMode] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
@@ -154,7 +158,7 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
         await initGymDB();
         const meta = await getOrInitMeta();
         if (cancelled) return;
-        setDemoMode(meta.demoMode);
+        setDemoMode(false); //meta.demoMode);
         const [m, c, e, i, w, s, p] = await Promise.all([
           getAll<Member>(STORE.members),
           getAll<ClassItem>(STORE.classes),
@@ -243,7 +247,12 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
         STORE.classes,
         "classes",
         "classes",
-        (partial) => ({ id: crypto.randomUUID(), ...partial })
+        (partial) => ({
+          id: crypto.randomUUID(),
+          students: [],
+          enrolled: 0,
+          ...partial,
+        })
       ),
     [createAdd, classes]
   );
@@ -511,6 +520,42 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
     setPayments([]);
   }, []);
 
+  // Reset to seeded demo data (start over). This clears all stores then writes the
+  // seed rows and refreshes memory state. It preserves meta (demo flag) in meta store.
+  const resetToSeed = useCallback(async () => {
+    setLoading(true);
+    // Clear all non-meta stores
+    await clearAllData();
+    // Bulk seed each store
+    await Promise.all([
+      bulkPut(STORE.members, ALL_SEEDS.members),
+      bulkPut(STORE.classes, ALL_SEEDS.classes),
+      bulkPut(STORE.equipment, ALL_SEEDS.equipment),
+      bulkPut(STORE.incidents, ALL_SEEDS.incidents),
+      bulkPut(STORE.waivers, ALL_SEEDS.waivers),
+      bulkPut(STORE.staff, ALL_SEEDS.staff),
+      bulkPut(STORE.payments, ALL_SEEDS.payments),
+    ]);
+    // Refresh in-memory state from DB
+    const [mRaw, cRaw, eRaw, iRaw, wRaw, sRaw, pRaw] = await Promise.all([
+      getAll<any>(STORE.members),
+      getAll<any>(STORE.classes),
+      getAll<any>(STORE.equipment),
+      getAll<any>(STORE.incidents),
+      getAll<any>(STORE.waivers),
+      getAll<any>(STORE.staff),
+      getAll<any>(STORE.payments),
+    ]);
+    setMembers(mRaw as Member[]);
+    setClasses(cRaw as ClassItem[]);
+    setEquipment(eRaw as EquipmentItem[]);
+    setIncidents(iRaw as IncidentItem[]);
+    setWaivers(wRaw as WaiverItem[]);
+    setStaff(sRaw as StaffMemberItem[]);
+    setPayments(pRaw as PaymentItem[]);
+    setLoading(false);
+  }, []);
+
   const value: GymContextValue = {
     loading,
     demoMode,
@@ -549,7 +594,39 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
     unarchiveStaff,
     unarchiveWaiver,
     purgeAllGymData,
+    // debug helper: reset DB to initial seeds
+    // (keeps meta/demo flag intact)
+    resetToSeed,
   };
+
+  // Expose a dev console helper for quick resets in development only
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    window.__resetGymToSeed = async () => {
+      await resetToSeed();
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+      return true;
+    };
+    return () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        delete window.__resetGymToSeed;
+      } catch {}
+    };
+  }, [resetToSeed]);
+
+  // Avoid rendering children until initial load finishes to prevent
+  // UI showing default/empty state then quickly swapping to indexeddb data
+  // which causes the flicker.
+  if (loading) {
+    // Render nothing while loading; components can read `loading` from context
+    // after GymProvider mounts. This silent gate avoids layout flicker.
+    return <GymContext.Provider value={value}>{null}</GymContext.Provider>;
+  }
 
   return <GymContext.Provider value={value}>{children}</GymContext.Provider>;
 };

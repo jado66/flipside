@@ -7,6 +7,7 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { ThemeToggle as ThemePicker } from "@/components/themes/theme-picker";
+import { DemoBadge } from "./demo-badge";
 import { Activity, Menu, Search, Plus, Settings2 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { GymManagementNavSettingsPanel } from "./nav-settings-panel";
@@ -28,6 +29,8 @@ interface GymManagementLayoutProps {
   setActiveTab: (tab: string) => void;
   children: React.ReactNode;
   className?: string;
+  viewMode: "manager" | "staff";
+  onChangeViewMode: (mode: "manager" | "staff") => void;
 }
 
 export function GymManagementLayout({
@@ -35,6 +38,8 @@ export function GymManagementLayout({
   setActiveTab,
   children,
   className,
+  viewMode,
+  onChangeViewMode,
 }: GymManagementLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { items: navigationItems } = useGymManagementNav();
@@ -73,7 +78,7 @@ export function GymManagementLayout({
                   <span className="sr-only">Toggle navigation</span>
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-6">
+              <SheetContent side="left" className="w-56 p-5">
                 <div className="flex items-center space-x-2 mb-6">
                   <Activity className="h-6 w-6 text-primary" />
                   <h2 className="text-lg font-bold">GymFlow Pro</h2>
@@ -99,7 +104,42 @@ export function GymManagementLayout({
             <Button size="icon" className="sm:hidden" aria-label="Search">
               <Search className="h-4 w-4" />
             </Button>
+            {/* Manager / Staff view toggle moved here from page content */}
+            <div
+              className="hidden md:inline-flex rounded-md overflow-hidden border bg-background"
+              role="group"
+              aria-label="Select view mode"
+            >
+              <button
+                type="button"
+                onClick={() => onChangeViewMode("manager")}
+                aria-pressed={viewMode === "manager"}
+                className={`px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 ${
+                  viewMode === "manager"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground/80 hover:bg-muted"
+                }`}
+              >
+                Manager
+              </button>
+              <button
+                type="button"
+                onClick={() => onChangeViewMode("staff")}
+                aria-pressed={viewMode === "staff"}
+                className={`px-3 py-1 text-xs font-medium transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 border-l ${
+                  viewMode === "staff"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-foreground/80 hover:bg-muted"
+                }`}
+              >
+                Staff
+              </button>
+            </div>
             <ThemePicker variant="dropdown" />
+            {/* Demo controls (toggle + reset) - moved here so they are available in all gym apps */}
+            <div className="hidden sm:block">
+              <DemoBadge />
+            </div>
             <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>
               <PopoverTrigger asChild>
                 <Button
@@ -131,7 +171,7 @@ export function GymManagementLayout({
       </header>
 
       <div className="flex flex-1">
-        <nav className="hidden md:block w-64 border-r bg-card p-6">
+        <nav className="hidden md:block w-56 border-r bg-card p-4">
           <NavigationContent />
         </nav>
         <main className="flex-1 p-4 md:p-6">{children}</main>

@@ -17,7 +17,8 @@ import {
 } from "lucide-react";
 import { MemberManagement } from "@/components/gym-management/member-management";
 import { ClassScheduling } from "@/components/gym-management/class-scheduling";
-import { StaffDashboard } from "@/components/gym-management/staff-dashboard";
+import { Classes } from "@/components/gym-management/classes";
+import { StaffManagement } from "@/components/gym-management/staff-management";
 import { PaymentProcessing } from "@/components/gym-management/payment-processing";
 import { CheckInSystem } from "@/components/gym-management/check-in-system";
 import { AnalyticsDashboard } from "@/components/gym-management/analytics-dashboard";
@@ -26,9 +27,12 @@ import { WaiverManagement } from "@/components/gym-management/waiver-management"
 import { IncidentReporting } from "@/components/gym-management/incident-reporting";
 import { GymManagementLayout } from "@/components/gym-management/gym-management-layout";
 import { GymManagementNavProvider } from "@/contexts/gym-management-nav-provider";
+import StaffPortal from "@/components/gym-management/staff-dashboard";
+import InventoryManagement from "@/components/gym-management/store/store-management";
 
 export default function GymManagementDashboard() {
   const [activeTab, setActiveTab] = useState("members");
+  const [viewMode, setViewMode] = useState<"manager" | "staff">("manager");
 
   // TODO replace mock summary stats with derived provider analytics
   const stats = [
@@ -91,93 +95,109 @@ export default function GymManagementDashboard() {
 
   return (
     <GymManagementNavProvider>
-      <GymManagementLayout activeTab={activeTab} setActiveTab={setActiveTab}>
-        {activeTab === "members" && (
-          <div className="space-y-6">
-            {/* Stats Overview */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-              {stats.map((stat, index) => (
-                <Card key={index}>
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">
-                      {stat.title}
-                    </CardTitle>
-                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stat.value}</div>
-                    <p className="text-xs text-muted-foreground">
-                      {stat.change} from last month
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+      <GymManagementLayout
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        viewMode={viewMode}
+        onChangeViewMode={setViewMode}
+      >
+        {viewMode === "staff" ? (
+          <StaffPortal />
+        ) : (
+          <>
+            {activeTab === "members" && (
+              <div className="space-y-6">
+                {/* Stats Overview */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+                  {stats.map((stat, index) => (
+                    <Card key={index}>
+                      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                        <CardTitle className="text-sm font-medium">
+                          {stat.title}
+                        </CardTitle>
+                        <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                      </CardHeader>
+                      <CardContent>
+                        <div className="text-2xl font-bold">{stat.value}</div>
+                        <p className="text-xs text-muted-foreground">
+                          {stat.change} from last month
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
 
-            {/* Recent Activity */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-              <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Member Management</CardTitle>
-                  <CardDescription>
-                    Manage your gym members, memberships, and profiles
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <MemberManagement />
-                </CardContent>
-              </Card>
+                {/* Recent Activity */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+                  <Card className="lg:col-span-2">
+                    <CardHeader>
+                      <CardTitle>Member Management</CardTitle>
+                      <CardDescription>
+                        Manage your gym members, memberships, and profiles
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <MemberManagement />
+                    </CardContent>
+                  </Card>
 
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Activity</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {recentActivity.map((activity, index) => (
-                      <div key={index} className="flex items-start space-x-3">
-                        <div className="flex-shrink-0">
-                          {activity.type === "member" && (
-                            <Users className="h-4 w-4 text-blue-600" />
-                          )}
-                          {activity.type === "payment" && (
-                            <DollarSign className="h-4 w-4 text-green-600" />
-                          )}
-                          {activity.type === "checkin" && (
-                            <CheckCircle className="h-4 w-4 text-purple-600" />
-                          )}
-                          {activity.type === "class" && (
-                            <Calendar className="h-4 w-4 text-orange-600" />
-                          )}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground">
-                            {activity.name}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {activity.action}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {activity.time}
-                          </p>
-                        </div>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Recent Activity</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        {recentActivity.map((activity, index) => (
+                          <div
+                            key={index}
+                            className="flex items-start space-x-3"
+                          >
+                            <div className="flex-shrink-0">
+                              {activity.type === "member" && (
+                                <Users className="h-4 w-4 text-blue-600" />
+                              )}
+                              {activity.type === "payment" && (
+                                <DollarSign className="h-4 w-4 text-green-600" />
+                              )}
+                              {activity.type === "checkin" && (
+                                <CheckCircle className="h-4 w-4 text-purple-600" />
+                              )}
+                              {activity.type === "class" && (
+                                <Calendar className="h-4 w-4 text-orange-600" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-foreground">
+                                {activity.name}
+                              </p>
+                              <p className="text-sm text-muted-foreground">
+                                {activity.action}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                {activity.time}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        )}
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+            )}
 
-        {activeTab === "classes" && <ClassScheduling />}
-        {activeTab === "staff" && <StaffDashboard />}
-        {activeTab === "equipment" && <EquipmentManagement />}
-        {activeTab === "payments" && <PaymentProcessing />}
-        {activeTab === "checkin" && <CheckInSystem />}
-        {activeTab === "waivers" && <WaiverManagement />}
-        {activeTab === "incidents" && <IncidentReporting />}
-        {activeTab === "analytics" && <AnalyticsDashboard />}
+            {activeTab === "classes" && <Classes />}
+            {activeTab === "scheduling" && <ClassScheduling />}
+            {activeTab === "staff" && <StaffManagement />}
+            {activeTab === "equipment" && <EquipmentManagement />}
+            {activeTab === "payments" && <PaymentProcessing />}
+            {activeTab === "checkin" && <CheckInSystem />}
+            {activeTab === "waivers" && <WaiverManagement />}
+            {activeTab === "incidents" && <IncidentReporting />}
+            {activeTab === "analytics" && <AnalyticsDashboard />}
+            {activeTab === "store" && <InventoryManagement />}
+          </>
+        )}
       </GymManagementLayout>
     </GymManagementNavProvider>
   );

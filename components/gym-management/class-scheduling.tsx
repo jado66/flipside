@@ -38,15 +38,32 @@ import {
   Edit,
   Trash2,
 } from "lucide-react";
+import { DayPicker } from "react-day-picker";
+import "react-day-picker/dist/style.css";
+import { startOfWeek, addDays, format, isSameDay } from "date-fns";
 import { ClassItem } from "@/types/gym-management";
 
 export function ClassScheduling() {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [viewMode, setViewMode] = useState<"week" | "month" | "day">("week");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editing, setEditing] = useState<ClassItem | null>(null);
-  const { classes, addClass, updateClass, removeClass, demoMode, limits } =
-    useGym();
+  const {
+    classes,
+    staff,
+    addClass,
+    updateClass,
+    removeClass,
+    demoMode,
+    limits,
+  } = useGym();
+
+  // helper: gather all class dates into a set for DayPicker modifiers
+  const classDatesSet = new Set<string>();
+  classes.forEach((c: any) =>
+    (c.dates || []).forEach((d: string) => classDatesSet.add(d))
+  );
 
   const handleAddClass = async (formData: FormData) => {
     const startTime = formData.get("startTime") as string;
@@ -147,10 +164,15 @@ export function ClassScheduling() {
                       <SelectValue placeholder="Select instructor" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Sarah Wilson">Sarah Wilson</SelectItem>
-                      <SelectItem value="Mike Johnson">Mike Johnson</SelectItem>
-                      <SelectItem value="Alex Chen">Alex Chen</SelectItem>
-                      <SelectItem value="Emma Davis">Emma Davis</SelectItem>
+                      {staff && staff.length > 0 ? (
+                        staff.map((s: any) => (
+                          <SelectItem key={s.id} value={s.name}>
+                            {s.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="">No staff available</SelectItem>
+                      )}
                     </SelectContent>
                   </Select>
                 </div>
@@ -259,110 +281,234 @@ export function ClassScheduling() {
         </Dialog>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 gap-6">
         {/* Calendar View */}
-        <Card className="lg:col-span-1">
+        <Card>
           <CardHeader>
             <CardTitle>Schedule Calendar</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-center p-8 text-muted-foreground">
-              <Calendar className="h-12 w-12 mx-auto mb-4" />
-              <p>Calendar component would go here</p>
-              <p className="text-sm">Selected: {selectedDate.toDateString()}</p>
-            </div>
-          </CardContent>
-        </Card>
+            <div>
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant={viewMode === "week" ? "default" : "outline"}
+                    onClick={() => setViewMode("week")}
+                  >
+                    Week
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={viewMode === "month" ? "default" : "outline"}
+                    onClick={() => setViewMode("month")}
+                  >
+                    Month
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={viewMode === "day" ? "default" : "outline"}
+                    onClick={() => setViewMode("day")}
+                  >
+                    Day
+                  </Button>
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Selected: {selectedDate.toDateString()}
+                </div>
+              </div>
 
-        {/* Classes List */}
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle>Today&apos;s Classes</CardTitle>
-            <CardDescription>January 25, 2024</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {classes.map((classItem) => (
-                <div
-                  key={classItem.id}
-                  className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
-                      <h3 className="font-semibold text-lg">
-                        {classItem.name}
-                      </h3>
-                      <p className="text-sm text-muted-foreground">
-                        with {classItem.instructor}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={
-                        classItem.level === "Advanced" ? "default" : "secondary"
-                      }
-                    >
-                      {classItem.level}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div className="flex items-center">
-                      <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {classItem.time}
-                    </div>
-                    <div className="flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {classItem.enrolled}/{classItem.capacity}
-                    </div>
-                    <div className="flex items-center">
-                      <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
-                      {classItem.location}
-                    </div>
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditing(classItem);
-                          setIsEditDialogOpen(true);
-                        }}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => handleRemove(classItem.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* Enrollment Progress */}
-                  <div className="mt-3">
-                    <div className="flex justify-between text-xs text-muted-foreground mb-1">
-                      <span>Enrollment</span>
-                      <span>
-                        {Math.round(
-                          (classItem.enrolled / classItem.capacity) * 100
-                        )}
-                        %
-                      </span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{
-                          width: `${
-                            (classItem.enrolled / classItem.capacity) * 100
-                          }%`,
-                        }}
-                      />
-                    </div>
+              {viewMode === "month" ? (
+                <DayPicker
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => d && setSelectedDate(d)}
+                  modifiers={{
+                    hasClass: Array.from(classDatesSet).map((s) => new Date(s)),
+                  }}
+                  modifiersClassNames={{
+                    hasClass: "ring-2 ring-primary/40 rounded",
+                  }}
+                />
+              ) : viewMode === "week" ? (
+                // Week view: render 7 columns for the week containing selectedDate
+                <div>
+                  <div className="grid grid-cols-7 gap-2">
+                    {Array.from({ length: 7 }).map((_, i) => {
+                      const start = startOfWeek(selectedDate, {
+                        weekStartsOn: 1,
+                      });
+                      const day = addDays(start, i);
+                      const dateStr = day.toISOString().split("T")[0];
+                      return (
+                        <div
+                          key={i}
+                          className={`border rounded p-2 ${
+                            isSameDay(day, selectedDate) ? "bg-primary/5" : ""
+                          }`}
+                        >
+                          <div className="font-medium">
+                            {format(day, "EEE")}
+                          </div>
+                          <div className="text-xs text-muted-foreground mb-2">
+                            {format(day, "MMM d")}
+                          </div>
+                          <div className="space-y-2">
+                            {classes
+                              .filter((c: any) =>
+                                (c.dates || []).includes(dateStr)
+                              )
+                              .map((c: any) => (
+                                <div
+                                  key={c.id}
+                                  className="border rounded p-1 flex items-center justify-between"
+                                >
+                                  <div className="text-sm">{c.name}</div>
+                                  <div className="flex items-center gap-1">
+                                    <div className="text-xs text-muted-foreground">
+                                      {c.time}
+                                    </div>
+                                    <Button
+                                      size="sm"
+                                      variant="outline"
+                                      onClick={async () => {
+                                        // unassign this date
+                                        const newDates = (c.dates || []).filter(
+                                          (d: string) => d !== dateStr
+                                        );
+                                        await updateClass(c.id, {
+                                          dates: newDates,
+                                        });
+                                      }}
+                                    >
+                                      Unassign
+                                    </Button>
+                                  </div>
+                                </div>
+                              ))}
+                          </div>
+                          <div className="mt-2">
+                            <div className="text-xs text-muted-foreground">
+                              Available
+                            </div>
+                            {classes
+                              .filter(
+                                (c: any) => !(c.dates || []).includes(dateStr)
+                              )
+                              .slice(0, 3)
+                              .map((c: any) => (
+                                <div
+                                  key={c.id}
+                                  className="flex items-center justify-between text-xs mt-1"
+                                >
+                                  <div>{c.name}</div>
+                                  <Button
+                                    size="sm"
+                                    onClick={async () => {
+                                      const newDates = Array.from(
+                                        new Set([...(c.dates || []), dateStr])
+                                      );
+                                      await updateClass(c.id, {
+                                        dates: newDates,
+                                      });
+                                    }}
+                                  >
+                                    Assign
+                                  </Button>
+                                </div>
+                              ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-              ))}
+              ) : (
+                // Day view: full-width list of classes for the selected date
+                <div>
+                  <div className="mb-4">
+                    <div className="text-sm text-muted-foreground">
+                      {format(selectedDate, "EEEE, MMMM d, yyyy")}
+                    </div>
+                  </div>
+                  <div className="space-y-4">
+                    {(classes || [])
+                      .filter((c: any) =>
+                        (c.dates || []).includes(
+                          selectedDate.toISOString().split("T")[0]
+                        )
+                      )
+                      .map((c: any) => (
+                        <div
+                          key={c.id}
+                          className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center justify-between mb-3">
+                            <div>
+                              <h3 className="font-semibold text-lg">
+                                {c.name}
+                              </h3>
+                              <p className="text-sm text-muted-foreground">
+                                with {c.instructor}
+                              </p>
+                            </div>
+                            <Badge
+                              variant={
+                                c.level === "Advanced" ? "default" : "secondary"
+                              }
+                            >
+                              {c.level}
+                            </Badge>
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div className="flex items-center">
+                              <Clock className="h-4 w-4 mr-2 text-muted-foreground" />
+                              {c.time}
+                            </div>
+                            <div className="flex items-center">
+                              <Users className="h-4 w-4 mr-2 text-muted-foreground" />
+                              {c.enrolled}/{c.capacity}
+                            </div>
+                            <div className="flex items-center">
+                              <MapPin className="h-4 w-4 mr-2 text-muted-foreground" />
+                              {c.location}
+                            </div>
+                          </div>
+
+                          <div className="mt-3 flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                setEditing(c);
+                                setIsEditDialogOpen(true);
+                              }}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleRemove(c.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    {!(classes || []).some((c: any) =>
+                      (c.dates || []).includes(
+                        selectedDate.toISOString().split("T")[0]
+                      )
+                    ) && (
+                      <div className="text-sm text-muted-foreground">
+                        No classes scheduled for this day.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -388,12 +534,22 @@ export function ClassScheduling() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="edit-instructor">Instructor</Label>
-                  <Input
-                    id="edit-instructor"
-                    name="instructor"
-                    defaultValue={editing.instructor}
-                    required
-                  />
+                  <Select name="instructor" defaultValue={editing.instructor}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {staff && staff.length > 0 ? (
+                        staff.map((s: any) => (
+                          <SelectItem key={s.id} value={s.name}>
+                            {s.name}
+                          </SelectItem>
+                        ))
+                      ) : (
+                        <SelectItem value="">No staff available</SelectItem>
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid grid-cols-3 gap-4">

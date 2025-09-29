@@ -19,7 +19,6 @@ import {
 } from "lucide-react";
 import { useGymAnalytics } from "@/contexts/gym-analytics";
 import { useGym } from "@/contexts/gym-provider";
-import { DemoBadge } from "./demo-badge";
 
 export function AnalyticsDashboard() {
   const {
@@ -86,7 +85,6 @@ export function AnalyticsDashboard() {
               {demoMode && "(demo data limits)"}
             </p>
           </div>
-          <DemoBadge />
         </div>
       </div>
 

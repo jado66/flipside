@@ -30,6 +30,10 @@ export interface ClassItem {
   duration: number; // minutes
   price: number; // currency value
   ageRange: string;
+  // Optional list of specific dates (ISO yyyy-mm-dd) when this class occurs
+  dates?: string[];
+  // Optional list of student member IDs enrolled in the class
+  students?: string[];
 }
 
 export interface EquipmentItem {

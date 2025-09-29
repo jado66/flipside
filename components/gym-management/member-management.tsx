@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState, useMemo } from "react";
+import Fuse from "fuse.js";
 import { useGym } from "@/contexts/gym-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,12 +61,29 @@ export function MemberManagement() {
   const { members, addMember, updateMember, removeMember, demoMode, limits } =
     useGym();
 
-  const filteredMembers = members.filter(
-    (member) =>
-      member.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      member.membershipType.toLowerCase().includes(searchTerm.toLowerCase())
+  const fuse = useMemo(
+    () =>
+      new Fuse(members, {
+        keys: ["name", "email", "membershipType"],
+        threshold: 0.3,
+      }),
+    [members]
   );
+
+  const filteredMembers = useMemo(() => {
+    const query = searchTerm.trim();
+    if (!query) return members;
+    const results = fuse.search(query);
+    return results.map((result) => result.item);
+  }, [members, searchTerm, fuse]);
+
+  const [page, setPage] = useState(0);
+  const PAGE_SIZE = 10;
+  const totalPages = Math.ceil(filteredMembers.length / PAGE_SIZE);
+  const pagedMembers = useMemo(() => {
+    const start = page * PAGE_SIZE;
+    return filteredMembers.slice(start, start + PAGE_SIZE);
+  }, [filteredMembers, page]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -218,7 +236,7 @@ export function MemberManagement() {
 
       {/* Members List */}
       <div className="grid gap-4">
-        {filteredMembers.map((member: any) => (
+        {pagedMembers.map((member: any) => (
           <Card key={member.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -290,6 +308,31 @@ export function MemberManagement() {
           </Card>
         ))}
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page === 0}
+            onClick={() => setPage(page - 1)}
+          >
+            Prev
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {page + 1} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={page >= totalPages - 1}
+            onClick={() => setPage(page + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
 
       {/* Member Details Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

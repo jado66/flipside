@@ -8,6 +8,9 @@ import {
   FileText,
   AlertTriangle,
   Activity,
+  School,
+  GraduationCap,
+  Package,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -30,8 +33,14 @@ export const BASE_GYM_NAV_ITEMS: GymNavItem[] = [
   {
     id: "classes",
     label: "Classes",
-    icon: Calendar,
+    icon: GraduationCap,
     description: "Schedule, capacity & attendance for classes.",
+  },
+  {
+    id: "scheduling",
+    label: "Scheduling",
+    icon: Calendar,
+    description: "Visual calendar and date assignment for class sessions.",
   },
   {
     id: "staff",
@@ -74,6 +83,12 @@ export const BASE_GYM_NAV_ITEMS: GymNavItem[] = [
     label: "Analytics",
     icon: Activity,
     description: "KPIs & performance dashboards.",
+  },
+  {
+    id: "store",
+    label: "Store",
+    icon: Package,
+    description: "Manage retail products, inventory & sales.",
   },
 ];
 
