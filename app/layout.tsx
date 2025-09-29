@@ -33,7 +33,7 @@ export const metadata: Metadata = {
   },
 };
 
-import "../globals.css";
+import "./globals.css";
 
 export default async function RootLayout({
   children,
