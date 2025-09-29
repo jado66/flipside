@@ -11,6 +11,7 @@ import { supabase } from "@/utils/supabase/client";
 import { RealtimeChannel } from "@supabase/supabase-js";
 import { useUser } from "./user-provider";
 import { calculateXPProgress, XP_LEVELS } from "@/lib/xp/levels";
+import { soundManager } from "@/utils/sound-manager";
 
 export interface Notification {
   id: string;
@@ -36,6 +37,8 @@ interface NotificationsContextType {
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
+  soundEnabled: boolean;
+  toggleSound: () => void;
 }
 
 const NotificationsContext = createContext<
@@ -65,9 +68,41 @@ export const NotificationsProvider = ({
   const { user, authUser, isAuthenticated } = useUser();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [channel, setChannel] = useState<RealtimeChannel | null>(null);
+  const [soundEnabled, setSoundEnabled] = useState(true);
   const previousReferralsRef = useRef<number | null>(null);
   const previousXPRef = useRef<number | null>(null);
   const hasInitializedRef = useRef(false);
+
+  // Initialize sound manager on mount
+  useEffect(() => {
+    soundManager.initializeNotificationSounds();
+    setSoundEnabled(soundManager.isEnabled());
+  }, []);
+
+  // Toggle sound on/off
+  const toggleSound = useCallback(() => {
+    const newState = !soundEnabled;
+    setSoundEnabled(newState);
+    soundManager.setEnabled(newState);
+  }, [soundEnabled]);
+
+  // Play sound based on notification type
+  const playSoundForNotification = useCallback((type: Notification["type"]) => {
+    switch (type) {
+      case "level_up":
+        soundManager.play("levelup", 0.6);
+        break;
+      case "referral_increase":
+      case "referral_milestone":
+        soundManager.play("referral", 0.5);
+        break;
+      case "xp_gain":
+      case "general":
+      default:
+        soundManager.play("general", 0.4);
+        break;
+    }
+  }, []);
 
   // Generate notification ID
   const generateId = () =>
@@ -155,6 +190,9 @@ export const NotificationsProvider = ({
         read: false,
       };
 
+      // Play sound for the notification
+      playSoundForNotification(newNotification.type);
+
       setNotifications((prev) => {
         const updated = [newNotification, ...prev];
         // Store notifications if user is authenticated
@@ -164,7 +202,7 @@ export const NotificationsProvider = ({
         return updated;
       });
     },
-    [authUser]
+    [authUser, playSoundForNotification]
   );
 
   // Mark notification as read
@@ -510,6 +548,8 @@ export const NotificationsProvider = ({
         markAsRead,
         markAllAsRead,
         clearNotifications,
+        soundEnabled,
+        toggleSound,
       }}
     >
       {children}

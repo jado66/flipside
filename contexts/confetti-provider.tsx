@@ -8,6 +8,7 @@ import React, {
   ReactNode,
 } from "react";
 import confetti from "canvas-confetti";
+import { soundManager } from "@/utils/sound-manager";
 
 // Public API types
 export interface ConfettiContextValue {
@@ -83,6 +84,12 @@ export const ConfettiProvider: React.FC<ConfettiProviderProps> = ({
 
   const celebrate = useCallback(() => {
     if (coolingDown) return;
+    // Play a general notification sound when celebration begins
+    try {
+      // Ensure at least the general sound is available (idempotent if already preloaded elsewhere)
+      soundManager.preload("general", "/sounds/general.mp3");
+      soundManager.play("general", 0.5);
+    } catch {}
     baseFire(0.25, { spread: 26, startVelocity: 55 });
     baseFire(0.2, { spread: 60 });
     baseFire(0.35, { spread: 100, decay: 0.91, scalar: 0.8 });
