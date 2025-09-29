@@ -370,7 +370,7 @@ export default function GymSetupWizard() {
             Welcome to Your Gym Management System
           </h1>
           <p className="text-muted-foreground text-lg text-balance">
-            Let's get your facility set up in just a few steps
+            Let&apos; get your facility set up in just a few steps
           </p>
         </div>
 
@@ -433,7 +433,8 @@ export default function GymSetupWizard() {
                   Facility Information
                 </CardTitle>
                 <CardDescription className="text-base">
-                  Let's start by setting up your facility's basic information
+                  Let&apos; start by setting up your facility&apos; basic
+                  information
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-8 flex-1">
@@ -521,7 +522,7 @@ export default function GymSetupWizard() {
                   Choose Your Facility Type
                 </CardTitle>
                 <CardDescription className="text-base">
-                  Select the type that best describes your facility. We'll
+                  Select the type that best describes your facility. We&apos;ll
                   pre-configure the most relevant apps for you.
                 </CardDescription>
               </CardHeader>
@@ -588,8 +589,8 @@ export default function GymSetupWizard() {
                   Choose Your Theme
                 </CardTitle>
                 <CardDescription className="text-base">
-                  Select a visual theme that matches your facility's brand and
-                  atmosphere
+                  Select a visual theme that matches your facility&apos; brand
+                  and atmosphere
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex-1">

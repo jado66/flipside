@@ -240,7 +240,8 @@ export default function DashboardTab() {
           <div>
             <h1 className="text-3xl font-bold">Event Management Dashboard</h1>
             <p className="text-muted-foreground">
-              Overview of your gym's classes, events, and performance metrics
+              Overview of your gym&apos;s classes, events, and performance
+              metrics
             </p>
           </div>
           <div className="flex items-center gap-2">

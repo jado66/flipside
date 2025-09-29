@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from "react";
-// Lazy import Fuse to avoid type issues if types not present; expect fuse.js installed.
-// fuse.js search (lightweight fuzzy). Using require fallback to avoid TS resolution noise in some setups.
-// @ts-ignore - local ambient declaration may not be picked until restart
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const Fuse = require("fuse.js");
+
 import { useGym } from "@/contexts/gym-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +36,7 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
+import Fuse from "fuse.js";
 
 interface MemberBasic {
   id: string;
@@ -57,7 +54,9 @@ interface MemberBasic {
 
 export function MemberManagement() {
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedMember, setSelectedMember] = useState<MemberBasic | null>(null);
+  const [selectedMember, setSelectedMember] = useState<MemberBasic | null>(
+    null
+  );
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [page, setPage] = useState(0);
@@ -92,9 +91,7 @@ export function MemberManagement() {
       if (av == null) return -1;
       if (bv == null) return 1;
       if (typeof av === "string" && typeof bv === "string") {
-        return sortDir === "asc"
-          ? av.localeCompare(bv)
-          : bv.localeCompare(av);
+        return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
       }
       if (av < (bv as any)) return sortDir === "asc" ? -1 : 1;
       if (av > (bv as any)) return sortDir === "asc" ? 1 : -1;
@@ -239,12 +236,24 @@ export function MemberManagement() {
                         <SelectValue placeholder="Select membership" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="Premium Gymnastics">Premium Gymnastics</SelectItem>
-                        <SelectItem value="Basic Gymnastics">Basic Gymnastics</SelectItem>
-                        <SelectItem value="Parkour Basic">Parkour Basic</SelectItem>
-                        <SelectItem value="Parkour Advanced">Parkour Advanced</SelectItem>
-                        <SelectItem value="Youth Tumbling">Youth Tumbling</SelectItem>
-                        <SelectItem value="Adult Fitness">Adult Fitness</SelectItem>
+                        <SelectItem value="Premium Gymnastics">
+                          Premium Gymnastics
+                        </SelectItem>
+                        <SelectItem value="Basic Gymnastics">
+                          Basic Gymnastics
+                        </SelectItem>
+                        <SelectItem value="Parkour Basic">
+                          Parkour Basic
+                        </SelectItem>
+                        <SelectItem value="Parkour Advanced">
+                          Parkour Advanced
+                        </SelectItem>
+                        <SelectItem value="Youth Tumbling">
+                          Youth Tumbling
+                        </SelectItem>
+                        <SelectItem value="Adult Fitness">
+                          Adult Fitness
+                        </SelectItem>
                         <SelectItem value="Open Gym">Open Gym</SelectItem>
                       </SelectContent>
                     </Select>
@@ -289,15 +298,17 @@ export function MemberManagement() {
           <thead className="bg-muted/40 text-xs uppercase tracking-wide">
             <tr>
               <th className="text-left font-medium p-2 w-10">Avatar</th>
-              {([
-                ["name", "Name"],
-                ["email", "Email"],
-                ["phone", "Phone"],
-                ["membershipType", "Membership"],
-                ["status", "Status"],
-                ["joinDate", "Join Date"],
-                ["lastVisit", "Last Visit"],
-              ] as [keyof MemberBasic, string][]).map(([key, label]) => (
+              {(
+                [
+                  ["name", "Name"],
+                  ["email", "Email"],
+                  ["phone", "Phone"],
+                  ["membershipType", "Membership"],
+                  ["status", "Status"],
+                  ["joinDate", "Join Date"],
+                  ["lastVisit", "Last Visit"],
+                ] as [keyof MemberBasic, string][]
+              ).map(([key, label]) => (
                 <th key={key} className="text-left font-medium p-2">
                   <button
                     type="button"
@@ -320,7 +331,10 @@ export function MemberManagement() {
           <tbody>
             {pagedMembers.length === 0 && (
               <tr>
-                <td colSpan={9} className="p-6 text-center text-muted-foreground">
+                <td
+                  colSpan={9}
+                  className="p-6 text-center text-muted-foreground"
+                >
                   No members found.
                 </td>
               </tr>
@@ -369,15 +383,23 @@ export function MemberManagement() {
                   </Badge>
                 </td>
                 <td className="p-2">
-                  <Badge className={`flex items-center gap-1 ${getStatusColor(member.status)}`}>
+                  <Badge
+                    className={`flex items-center gap-1 ${getStatusColor(
+                      member.status
+                    )}`}
+                  >
                     {getStatusIcon(member.status)}
                     <span className="capitalize">{member.status}</span>
                   </Badge>
                 </td>
                 <td className="p-2 whitespace-nowrap">
-                  {member.joinDate ? new Date(member.joinDate).toLocaleDateString() : "—"}
+                  {member.joinDate
+                    ? new Date(member.joinDate).toLocaleDateString()
+                    : "—"}
                 </td>
-                <td className="p-2 whitespace-nowrap">{member.lastVisit || "—"}</td>
+                <td className="p-2 whitespace-nowrap">
+                  {member.lastVisit || "—"}
+                </td>
                 <td className="p-2 text-right">
                   <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" />
                   <Button
