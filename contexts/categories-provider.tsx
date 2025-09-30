@@ -33,7 +33,7 @@ const STORAGE_KEYS = {
 // Helper functions for localStorage
 const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
   if (typeof window === "undefined") return defaultValue;
-  
+
   try {
     const stored = localStorage.getItem(key);
     if (!stored) return defaultValue;
@@ -46,7 +46,7 @@ const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
 
 const saveToStorage = <T,>(key: string, value: T): void => {
   if (typeof window === "undefined") return;
-  
+
   try {
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
@@ -71,8 +71,9 @@ export function CategoriesProvider({ children }: CategoriesProviderProps) {
       if (result.success) {
         // Only update if data has changed
         setCategories((prev) => {
-          const hasChanged = JSON.stringify(prev) !== JSON.stringify(result.data);
-          
+          const hasChanged =
+            JSON.stringify(prev) !== JSON.stringify(result.data);
+
           if (hasChanged) {
             saveToStorage(STORAGE_KEYS.CATEGORIES, result.data);
             saveToStorage(STORAGE_KEYS.LAST_UPDATED, new Date().toISOString());
