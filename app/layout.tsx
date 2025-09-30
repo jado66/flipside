@@ -16,6 +16,7 @@ import { UserProvider } from "@/contexts/user-provider";
 import { UserProgressProvider } from "@/contexts/user-progress-provider";
 import { NotificationsProvider } from "@/contexts/notifications-provider";
 import { CategoriesProvider } from "@/contexts/categories-provider";
+import { TricksProvider } from "@/contexts/tricks-provider";
 
 export const metadata: Metadata = {
   title: "Trickipedia - Learn New Tricks",
@@ -97,9 +98,11 @@ export default async function RootLayout({
         <ConfettiProvider>
           <UserProvider>
             <CategoriesProvider>
-              <UserProgressProvider>
-                <NotificationsProvider>{children}</NotificationsProvider>
-              </UserProgressProvider>
+              <TricksProvider>
+                <UserProgressProvider>
+                  <NotificationsProvider>{children}</NotificationsProvider>
+                </UserProgressProvider>
+              </TricksProvider>
             </CategoriesProvider>
           </UserProvider>
         </ConfettiProvider>
