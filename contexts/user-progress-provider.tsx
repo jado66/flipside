@@ -44,10 +44,54 @@ interface UserProgressProviderProps {
   children: React.ReactNode;
 }
 
+// LocalStorage keys
+const STORAGE_KEYS = {
+  PROGRESS_STATS: "user_progress_stats",
+  USER_TRICKS: "user_can_do_tricks",
+  LAST_UPDATED: "user_progress_last_updated",
+};
+
+// Helper functions for localStorage
+const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
+  if (typeof window === "undefined") return defaultValue;
+  
+  try {
+    const stored = localStorage.getItem(key);
+    if (!stored) return defaultValue;
+    
+    const parsed = JSON.parse(stored);
+    
+    // Special handling for Set
+    if (key === STORAGE_KEYS.USER_TRICKS && Array.isArray(parsed)) {
+      return new Set(parsed) as T;
+    }
+    
+    return parsed as T;
+  } catch (error) {
+    console.error(`Error loading ${key} from localStorage:`, error);
+    return defaultValue;
+  }
+};
+
+const saveToStorage = <T,>(key: string, value: T): void => {
+  if (typeof window === "undefined") return;
+  
+  try {
+    // Special handling for Set
+    const toStore = value instanceof Set ? Array.from(value) : value;
+    localStorage.setItem(key, JSON.stringify(toStore));
+  } catch (error) {
+    console.error(`Error saving ${key} to localStorage:`, error);
+  }
+};
+
 export function UserProgressProvider({ children }: UserProgressProviderProps) {
-  const [progressStats, setProgressStats] = useState<ProgressStats[]>([]);
-  const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(
-    new Set()
+  // Load from localStorage immediately for instant display
+  const [progressStats, setProgressStats] = useState<ProgressStats[]>(() =>
+    loadFromStorage(STORAGE_KEYS.PROGRESS_STATS, [])
+  );
+  const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(() =>
+    loadFromStorage(STORAGE_KEYS.USER_TRICKS, new Set())
   );
   const [loading, setLoading] = useState(false);
 
@@ -61,18 +105,32 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
   // Fetch user's completed tricks
   const fetchUserTricks = useCallback(async () => {
     if (!user?.id || !supabase) {
-      setUserCanDoTricks(new Set());
-      return new Set<string>();
+      const emptySet = new Set<string>();
+      setUserCanDoTricks(emptySet);
+      saveToStorage(STORAGE_KEYS.USER_TRICKS, emptySet);
+      return emptySet;
     }
 
     try {
       const userTrickIds = await getUserTrickIds(supabase, user.id);
-      setUserCanDoTricks(userTrickIds);
+      
+      // Only update state and storage if data has changed
+      setUserCanDoTricks((prev) => {
+        const hasChanged = prev.size !== userTrickIds.size || 
+          Array.from(userTrickIds).some(id => !prev.has(id));
+        
+        if (hasChanged) {
+          saveToStorage(STORAGE_KEYS.USER_TRICKS, userTrickIds);
+          return userTrickIds;
+        }
+        return prev;
+      });
+      
       return userTrickIds;
     } catch (error) {
       console.error("Failed to fetch user tricks:", error);
-      setUserCanDoTricks(new Set());
-      return new Set<string>();
+      // Keep existing data on error, don't clear it
+      return userCanDoTricks;
     }
   }, [user?.id]);
 
@@ -80,7 +138,9 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
   const fetchProgressStats = useCallback(async () => {
     // Only fetch if we have all required data
     if (!user?.id || userSportsIds.length === 0 || categories.length === 0) {
-      setProgressStats([]);
+      const emptyStats: ProgressStats[] = [];
+      setProgressStats(emptyStats);
+      saveToStorage(STORAGE_KEYS.PROGRESS_STATS, emptyStats);
       return;
     }
 
@@ -113,10 +173,21 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
 
       // Sort by progress descending
       stats.sort((a, b) => b.percentage - a.percentage);
-      setProgressStats(stats);
+      
+      // Only update if data has changed
+      setProgressStats((prev) => {
+        const hasChanged = JSON.stringify(prev) !== JSON.stringify(stats);
+        
+        if (hasChanged) {
+          saveToStorage(STORAGE_KEYS.PROGRESS_STATS, stats);
+          saveToStorage(STORAGE_KEYS.LAST_UPDATED, new Date().toISOString());
+          return stats;
+        }
+        return prev;
+      });
     } catch (error) {
       console.error("Error fetching progress stats:", error);
-      setProgressStats([]);
+      // Keep existing data on error, don't clear it
     }
   }, [user?.id, userSportsIds, categories]);
 
@@ -145,7 +216,11 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
   const updateTrickLearned = useCallback(
     (trickId: string, categorySlug: string) => {
       // Update the tricks set
-      setUserCanDoTricks((prev) => new Set([...prev, trickId]));
+      setUserCanDoTricks((prev) => {
+        const updated = new Set([...prev, trickId]);
+        saveToStorage(STORAGE_KEYS.USER_TRICKS, updated);
+        return updated;
+      });
 
       // Update the progress stats
       setProgressStats((prevStats) => {
@@ -165,6 +240,10 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
           newStats.sort((a, b) => b.percentage - a.percentage);
         }
 
+        // Save updated stats to localStorage
+        saveToStorage(STORAGE_KEYS.PROGRESS_STATS, newStats);
+        saveToStorage(STORAGE_KEYS.LAST_UPDATED, new Date().toISOString());
+
         return newStats;
       });
     },
@@ -183,9 +262,14 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
         return true; // Already learned
       }
 
+      // Store previous state for rollback
+      const previousTricks = userCanDoTricks;
+      const previousStats = progressStats;
+
       // Optimistic update
       const optimisticTricks = new Set([...userCanDoTricks, trickId]);
       setUserCanDoTricks(optimisticTricks);
+      saveToStorage(STORAGE_KEYS.USER_TRICKS, optimisticTricks);
 
       // Update progress if category slug provided
       if (categorySlug) {
@@ -211,12 +295,13 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
       } catch (error) {
         console.error("Failed to mark trick as learned:", error);
 
-        // Revert optimistic update
-        setUserCanDoTricks(userCanDoTricks);
-
-        // Revert progress stats if needed
+        // Revert optimistic update in both state and storage
+        setUserCanDoTricks(previousTricks);
+        saveToStorage(STORAGE_KEYS.USER_TRICKS, previousTricks);
+        
         if (categorySlug) {
-          await fetchProgressStats();
+          setProgressStats(previousStats);
+          saveToStorage(STORAGE_KEYS.PROGRESS_STATS, previousStats);
         }
 
         toast.error("Failed to update trick");
@@ -226,9 +311,9 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
     [
       user?.id,
       userCanDoTricks,
+      progressStats,
       updateTrickLearned,
       refreshProgress,
-      fetchProgressStats,
     ]
   );
 
