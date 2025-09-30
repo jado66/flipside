@@ -52,7 +52,8 @@ function countByCategory(tricks: any[]): Record<string, number> {
   const counts: Record<string, number> = {};
 
   tricks.forEach((trick) => {
-    const category = trick.subcategory?.master_category?.slug || "uncategorized";
+    const category =
+      trick.subcategory?.master_category?.slug || "uncategorized";
     counts[category] = (counts[category] || 0) + 1;
   });
 

@@ -95,11 +95,17 @@ async function fetchAllTricks(signal?: AbortSignal): Promise<Trick[]> {
  */
 function tricksHaveChanged(oldTricks: Trick[], newTricks: Trick[]): boolean {
   if (oldTricks.length !== newTricks.length) return true;
-  
+
   // Create a quick hash of IDs and updated_at timestamps
-  const oldHash = oldTricks.map(t => `${t.id}-${t.slug}`).sort().join("|");
-  const newHash = newTricks.map(t => `${t.id}-${t.slug}`).sort().join("|");
-  
+  const oldHash = oldTricks
+    .map((t) => `${t.id}-${t.slug}`)
+    .sort()
+    .join("|");
+  const newHash = newTricks
+    .map((t) => `${t.id}-${t.slug}`)
+    .sort()
+    .join("|");
+
   return oldHash !== newHash;
 }
 
@@ -138,17 +144,17 @@ export function TricksProvider({ children }: TricksProviderProps) {
 
         if (hasChanged) {
           console.log(`Tricks updated: ${fetchedTricks.length} tricks`);
-          
+
           // Save to IndexedDB
           if (indexedDBAvailable) {
             saveTricksToIndexedDB(fetchedTricks).catch((err) => {
               console.error("Failed to save tricks to IndexedDB:", err);
             });
           }
-          
+
           return fetchedTricks;
         }
-        
+
         console.log("Tricks unchanged, keeping cached version");
         return prev;
       });
@@ -188,7 +194,9 @@ export function TricksProvider({ children }: TricksProviderProps) {
 
   // Helper function to get tricks by subcategory slug
   const getTricksBySubcategory = (subcategorySlug: string): Trick[] => {
-    return tricks.filter((trick) => trick.subcategory?.slug === subcategorySlug);
+    return tricks.filter(
+      (trick) => trick.subcategory?.slug === subcategorySlug
+    );
   };
 
   const value: TricksContextType = {

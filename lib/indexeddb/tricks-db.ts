@@ -25,9 +25,13 @@ export async function initTricksDB(): Promise<IDBDatabase> {
         });
         // Create indexes for efficient querying
         tricksStore.createIndex("slug", "slug", { unique: true });
-        tricksStore.createIndex("category", "subcategory.master_category.slug", {
-          unique: false,
-        });
+        tricksStore.createIndex(
+          "category",
+          "subcategory.master_category.slug",
+          {
+            unique: false,
+          }
+        );
         tricksStore.createIndex("subcategory", "subcategory.slug", {
           unique: false,
         });
@@ -195,10 +199,7 @@ export async function getTricksBySubcategoryFromIndexedDB(
       };
     });
   } catch (error) {
-    console.error(
-      "Error getting tricks by subcategory from IndexedDB:",
-      error
-    );
+    console.error("Error getting tricks by subcategory from IndexedDB:", error);
     return [];
   }
 }
