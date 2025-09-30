@@ -54,18 +54,18 @@ const STORAGE_KEYS = {
 // Helper functions for localStorage
 const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
   if (typeof window === "undefined") return defaultValue;
-  
+
   try {
     const stored = localStorage.getItem(key);
     if (!stored) return defaultValue;
-    
+
     const parsed = JSON.parse(stored);
-    
+
     // Special handling for Set
     if (key === STORAGE_KEYS.USER_TRICKS && Array.isArray(parsed)) {
       return new Set(parsed) as T;
     }
-    
+
     return parsed as T;
   } catch (error) {
     console.error(`Error loading ${key} from localStorage:`, error);
@@ -75,7 +75,7 @@ const loadFromStorage = <T,>(key: string, defaultValue: T): T => {
 
 const saveToStorage = <T,>(key: string, value: T): void => {
   if (typeof window === "undefined") return;
-  
+
   try {
     // Special handling for Set
     const toStore = value instanceof Set ? Array.from(value) : value;
@@ -113,19 +113,20 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
 
     try {
       const userTrickIds = await getUserTrickIds(supabase, user.id);
-      
+
       // Only update state and storage if data has changed
       setUserCanDoTricks((prev) => {
-        const hasChanged = prev.size !== userTrickIds.size || 
-          Array.from(userTrickIds).some(id => !prev.has(id));
-        
+        const hasChanged =
+          prev.size !== userTrickIds.size ||
+          Array.from(userTrickIds).some((id) => !prev.has(id));
+
         if (hasChanged) {
           saveToStorage(STORAGE_KEYS.USER_TRICKS, userTrickIds);
           return userTrickIds;
         }
         return prev;
       });
-      
+
       return userTrickIds;
     } catch (error) {
       console.error("Failed to fetch user tricks:", error);
@@ -173,11 +174,11 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
 
       // Sort by progress descending
       stats.sort((a, b) => b.percentage - a.percentage);
-      
+
       // Only update if data has changed
       setProgressStats((prev) => {
         const hasChanged = JSON.stringify(prev) !== JSON.stringify(stats);
-        
+
         if (hasChanged) {
           saveToStorage(STORAGE_KEYS.PROGRESS_STATS, stats);
           saveToStorage(STORAGE_KEYS.LAST_UPDATED, new Date().toISOString());
@@ -298,7 +299,7 @@ export function UserProgressProvider({ children }: UserProgressProviderProps) {
         // Revert optimistic update in both state and storage
         setUserCanDoTricks(previousTricks);
         saveToStorage(STORAGE_KEYS.USER_TRICKS, previousTricks);
-        
+
         if (categorySlug) {
           setProgressStats(previousStats);
           saveToStorage(STORAGE_KEYS.PROGRESS_STATS, previousStats);
