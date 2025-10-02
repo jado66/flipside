@@ -28,9 +28,9 @@ import {
   updateMeta,
   STORE,
   clearAllData,
-} from "@/contexts/gym-db";
-import { ALL_SEEDS } from "@/contexts/gym-seed";
-import { bulkPut } from "@/contexts/gym-db";
+} from "@/contexts/gym/gym-db";
+import { ALL_SEEDS } from "@/contexts/gym/gym-seed";
+import { bulkPut } from "@/contexts/gym/gym-db";
 
 // Demo limits (default)
 const DEMO_LIMITS: DemoLimits = {
@@ -47,6 +47,8 @@ interface GymContextValue {
   loading: boolean;
   demoMode: boolean;
   toggleDemoMode: () => Promise<void>;
+  allowOverEnrollment: boolean;
+  toggleAllowOverEnrollment: () => Promise<void>;
   limits: DemoLimits;
   // Collections (filtered to exclude archived for staff & waivers by default)
   members: Member[];
@@ -142,6 +144,7 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [loading, setLoading] = useState(true);
   const [demoMode, setDemoMode] = useState(false);
+  const [allowOverEnrollment, setAllowOverEnrollment] = useState(false);
   const [members, setMembers] = useState<Member[]>([]);
   const [classes, setClasses] = useState<ClassItem[]>([]);
   const [equipment, setEquipment] = useState<EquipmentItem[]>([]);
@@ -159,6 +162,7 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
         const meta = await getOrInitMeta();
         if (cancelled) return;
         setDemoMode(false); //meta.demoMode);
+        setAllowOverEnrollment(meta.allowOverEnrollment);
         const [m, c, e, i, w, s, p] = await Promise.all([
           getAll<Member>(STORE.members),
           getAll<ClassItem>(STORE.classes),
@@ -189,6 +193,13 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
     const updated = await updateMeta({ demoMode: !demoMode });
     setDemoMode(updated.demoMode);
   }, [demoMode]);
+
+  const toggleAllowOverEnrollment = useCallback(async () => {
+    const updated = await updateMeta({
+      allowOverEnrollment: !allowOverEnrollment,
+    });
+    setAllowOverEnrollment(updated.allowOverEnrollment);
+  }, [allowOverEnrollment]);
 
   // Generic add factory
   const createAdd = useCallback(
@@ -251,6 +262,7 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
           id: crypto.randomUUID(),
           students: [],
           enrolled: 0,
+          instructors: (partial as any).instructors || [],
           ...partial,
         })
       ),
@@ -560,6 +572,8 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
     loading,
     demoMode,
     toggleDemoMode,
+    allowOverEnrollment,
+    toggleAllowOverEnrollment,
     limits: DEMO_LIMITS,
     members,
     classes,

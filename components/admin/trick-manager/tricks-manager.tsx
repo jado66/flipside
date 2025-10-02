@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   DndContext,
   type DragEndEvent,
@@ -96,9 +96,14 @@ export function TricksDndManager() {
   >("unknown");
   const [activeId, setActiveId] = useState<string | null>(null);
   // Inline difficulty select now always visible (removed toggle state)
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require 8px of movement before dragging starts
+      },
+    }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     })
@@ -234,11 +239,21 @@ export function TricksDndManager() {
 
   function handleDragStart(event: DragStartEvent) {
     setActiveId(event.active.id as string);
+
+    // Reduce scroll speed during drag
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.style.scrollBehavior = "auto";
+    }
   }
 
   function handleDragEnd(event: DragEndEvent) {
     const { active, over } = event;
     setActiveId(null);
+
+    // Restore smooth scrolling after drag
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.style.scrollBehavior = "smooth";
+    }
 
     if (!over) return;
 
@@ -810,21 +825,54 @@ export function TricksDndManager() {
             <div className="mx-auto lg:max-w-[calc(100vw-290px)] max-w-100vw  ">
               {/* Horizontal scrollable subcategory strip */}
               <div
+                ref={scrollContainerRef}
                 className="flex items-start gap-6 overflow-x-auto pb-4 pr-2 -mr-2 scrollbar-thin max-h-[calc(100vh-193px)]"
-                style={{ scrollSnapType: "x proximity" }}
+                style={{
+                  scrollBehavior: "smooth",
+                  overscrollBehavior: "contain",
+                }}
                 aria-label="Subcategories horizontal list"
+                onDragOver={(e) => {
+                  // Custom controlled auto-scroll with very slow speed
+                  if (!activeId || !scrollContainerRef.current) return;
+
+                  const container = scrollContainerRef.current;
+                  const rect = container.getBoundingClientRect();
+                  const mouseX = e.clientX;
+
+                  // Define scroll zones (60px from each edge - smaller zones)
+                  const scrollZoneSize = 60;
+                  const leftZone = rect.left + scrollZoneSize;
+                  const rightZone = rect.right - scrollZoneSize;
+
+                  // Calculate scroll speed based on proximity to edge (max 2px per frame - much slower)
+                  let scrollSpeed = 0;
+
+                  if (mouseX < leftZone) {
+                    // Scroll left
+                    const proximity = (leftZone - mouseX) / scrollZoneSize;
+                    scrollSpeed = -Math.min(2, proximity * 2);
+                  } else if (mouseX > rightZone) {
+                    // Scroll right
+                    const proximity = (mouseX - rightZone) / scrollZoneSize;
+                    scrollSpeed = Math.min(2, proximity * 2);
+                  }
+
+                  if (scrollSpeed !== 0) {
+                    container.scrollLeft += scrollSpeed;
+                  }
+                }}
               >
                 {/* Subcategory Columns */}
                 {subcategories.map((subcategory) => {
                   return (
                     <div
                       key={subcategory.id}
-                      className={`h-fit flex-shrink-0 w-72 scroll-snap-align-start px-2 pb-2 ${
+                      className={`h-fit flex-shrink-0 w-72 ${
                         subcategories[0].id !== subcategory.id
                           ? "border-l border-border pl-4"
                           : ""
                       }`}
-                      style={{ scrollSnapAlign: "start" }}
                     >
                       <div className="pb-3 pt-3">
                         <h3
@@ -887,10 +935,7 @@ export function TricksDndManager() {
 
                 {/* Unassigned Tricks Column */}
                 {(getUnassignedTricks().length > 0 || activeId) && (
-                  <Card
-                    className="h-fit border-dashed border-2 flex-shrink-0 w-72 scroll-snap-align-start"
-                    style={{ scrollSnapAlign: "start" }}
-                  >
+                  <Card className="h-fit border-dashed border-2 flex-shrink-0 w-72">
                     <CardHeader className="pb-3">
                       <CardTitle className="text-lg font-semibold text-center text-muted-foreground">
                         Unassigned

@@ -7,7 +7,9 @@ We've upgraded the TricksProvider from localStorage to **IndexedDB** for better 
 ## 📦 New Files Created
 
 ### 1. `lib/indexeddb/tricks-db.ts`
+
 Complete IndexedDB wrapper with utilities for:
+
 - ✅ Database initialization with schema versioning
 - ✅ Saving/loading tricks with automatic indexing
 - ✅ Indexed queries by category and subcategory
@@ -16,15 +18,18 @@ Complete IndexedDB wrapper with utilities for:
 - ✅ Error handling and fallbacks
 
 ### 2. `lib/indexeddb/index.ts`
+
 Barrel export for easy imports
 
 ## 🔄 Modified Files
 
 ### `contexts/tricks-provider.tsx`
+
 **Before**: Used localStorage (limited to ~5-10MB, synchronous)
 **After**: Uses IndexedDB (supports hundreds of MBs, asynchronous)
 
 **Key Changes**:
+
 - Loads from IndexedDB immediately on mount
 - Shows cached data instantly while fetching fresh data
 - Only updates if data actually changed (efficient)
@@ -32,7 +37,9 @@ Barrel export for easy imports
 - Non-blocking async operations
 
 ### `TRICKS_PROVIDER_README.md`
+
 Updated documentation with:
+
 - IndexedDB architecture explanation
 - Performance comparisons
 - Advanced usage examples
@@ -42,22 +49,25 @@ Updated documentation with:
 ## 🚀 Performance Benefits
 
 ### Storage Capacity
-| Storage Method | Size Limit |
-|----------------|-----------|
-| localStorage | ~5-10MB |
-| IndexedDB | 50MB - 250MB+ (browser dependent) |
+
+| Storage Method | Size Limit                        |
+| -------------- | --------------------------------- |
+| localStorage   | ~5-10MB                           |
+| IndexedDB      | 50MB - 250MB+ (browser dependent) |
 
 ### Load Times
-| Scenario | localStorage | IndexedDB |
-|----------|-------------|-----------|
-| First load (no cache) | 500-2000ms | 500-2000ms |
-| Subsequent loads | ~10-50ms | **~5-20ms** |
-| Large datasets (1000+ tricks) | Slow (sync) | **Fast (async)** |
+
+| Scenario                      | localStorage | IndexedDB        |
+| ----------------------------- | ------------ | ---------------- |
+| First load (no cache)         | 500-2000ms   | 500-2000ms       |
+| Subsequent loads              | ~10-50ms     | **~5-20ms**      |
+| Large datasets (1000+ tricks) | Slow (sync)  | **Fast (async)** |
 
 ### Query Performance
+
 ```typescript
 // localStorage: O(n) - must scan all data
-const trick = allTricks.find(t => t.id === id);
+const trick = allTricks.find((t) => t.id === id);
 
 // IndexedDB: O(1) - indexed lookup
 const trick = await getTrickByIdFromIndexedDB(id);
@@ -83,18 +93,20 @@ TrickipediaDB (v1)
 ## 💡 Usage Examples
 
 ### Basic Usage (No Changes Needed)
+
 ```typescript
 // Same API as before!
 const { tricks, loading } = useTricks();
 ```
 
 ### Advanced: Direct IndexedDB Access
+
 ```typescript
-import { 
+import {
   loadTricksFromIndexedDB,
   getTrickByIdFromIndexedDB,
   getTricksByCategoryFromIndexedDB,
-  clearTricksFromIndexedDB 
+  clearTricksFromIndexedDB,
 } from "@/lib/indexeddb/tricks-db";
 
 // Load all tricks
@@ -113,6 +125,7 @@ await clearTricksFromIndexedDB();
 ## 🔧 How It Works
 
 ### 1. **Initial Load**
+
 ```
 User visits app
     ↓
@@ -128,6 +141,7 @@ Compare: Has data changed?
 ```
 
 ### 2. **Data Flow**
+
 ```
 TricksProvider
     ↓
@@ -143,11 +157,18 @@ TricksProvider
 ```
 
 ### 3. **Update Detection**
+
 ```typescript
 function tricksHaveChanged(oldTricks, newTricks) {
   // Quick comparison using IDs and slugs
-  const oldHash = oldTricks.map(t => `${t.id}-${t.slug}`).sort().join("|");
-  const newHash = newTricks.map(t => `${t.id}-${t.slug}`).sort().join("|");
+  const oldHash = oldTricks
+    .map((t) => `${t.id}-${t.slug}`)
+    .sort()
+    .join("|");
+  const newHash = newTricks
+    .map((t) => `${t.id}-${t.slug}`)
+    .sort()
+    .join("|");
   return oldHash !== newHash;
 }
 ```
@@ -155,12 +176,14 @@ function tricksHaveChanged(oldTricks, newTricks) {
 ## 🎯 Benefits
 
 ### For Users
+
 - ⚡ **Instant loads**: See tricks immediately from cache
 - 📶 **Works offline**: Cached data available without network
 - 🔄 **Auto-updates**: Fresh data synced in background
 - 💾 **Large datasets**: No storage limit concerns
 
 ### For Developers
+
 - 🧹 **Clean API**: Same `useTricks()` hook as before
 - 🛠️ **Easy debugging**: View data in Chrome DevTools
 - 🔍 **Fast queries**: Indexed lookups by category/subcategory
@@ -168,6 +191,7 @@ function tricksHaveChanged(oldTricks, newTricks) {
 - 🔒 **Type-safe**: Full TypeScript support
 
 ### For the App
+
 - 📉 **Reduced server load**: Fewer database queries
 - 💰 **Lower costs**: Less Supabase usage
 - 🎨 **Better UX**: Faster perceived performance
@@ -176,6 +200,7 @@ function tricksHaveChanged(oldTricks, newTricks) {
 ## 🌐 Browser Support
 
 IndexedDB is supported in all modern browsers:
+
 - ✅ Chrome/Edge 24+ (2013)
 - ✅ Firefox 16+ (2012)
 - ✅ Safari 10+ (2016)
@@ -187,13 +212,16 @@ IndexedDB is supported in all modern browsers:
 ## 🐛 Debugging
 
 ### View Data in DevTools
+
 1. Open Chrome DevTools (`F12`)
 2. Go to **Application** tab
 3. Expand **Storage** → **IndexedDB** → **TrickipediaDB**
 4. Explore **tricks** and **metadata** stores
 
 ### Console Logs
+
 The provider logs useful information:
+
 ```
 Loaded 1234 tricks from IndexedDB
 Tricks updated: 1235 tricks
@@ -201,6 +229,7 @@ Tricks unchanged, keeping cached version
 ```
 
 ### Check Storage Usage
+
 ```typescript
 // Chrome only
 const estimate = await navigator.storage.estimate();
@@ -218,6 +247,7 @@ console.log(`Using ${estimate.usage} bytes of ${estimate.quota}`);
 ## 📈 Monitoring
 
 ### Track Cache Hit Rate
+
 ```typescript
 let cacheHits = 0;
 let cacheMisses = 0;
@@ -225,7 +255,11 @@ let cacheMisses = 0;
 // In loadTricks:
 if (cachedTricks.length > 0) {
   cacheHits++;
-  console.log(`Cache hit rate: ${(cacheHits / (cacheHits + cacheMisses) * 100).toFixed(2)}%`);
+  console.log(
+    `Cache hit rate: ${((cacheHits / (cacheHits + cacheMisses)) * 100).toFixed(
+      2
+    )}%`
+  );
 } else {
   cacheMisses++;
 }
@@ -234,6 +268,7 @@ if (cachedTricks.length > 0) {
 ## 🚦 Migration from localStorage
 
 No migration needed! The system will:
+
 1. Try to load from IndexedDB (initially empty)
 2. Fetch from server
 3. Save to IndexedDB

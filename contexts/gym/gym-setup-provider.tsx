@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   FileText,
   Package,
+  CalendarClock,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -37,6 +38,7 @@ interface SetupContextValue {
   // Setup state
   isSetupComplete: boolean;
   setupConfig: SetupConfig | null;
+  isLoading: boolean;
 
   // Setup actions
   completeSetup: (
@@ -70,6 +72,12 @@ const ALL_NAVIGATION_ITEMS: NavigationItem[] = [
     label: "Classes",
     icon: Calendar,
     description: "Manage class schedules, instructors, and enrollment",
+  },
+  {
+    id: "scheduling",
+    label: "Scheduler",
+    icon: CalendarClock,
+    description: "Drag-and-drop schedule builder for classes and events",
   },
   {
     id: "staff",
@@ -145,6 +153,7 @@ export const GymSetupProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [setupConfig, setSetupConfig] = useState<SetupConfig | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [navSettings, setNavSettings] = useState({
     order: [] as string[],
     disabled: [] as string[],
@@ -156,23 +165,33 @@ export const GymSetupProvider: React.FC<{ children: React.ReactNode }> = ({
       const savedSetup = localStorage.getItem(SETUP_STORAGE_KEY);
       if (savedSetup) {
         const config = JSON.parse(savedSetup) as SetupConfig;
+        console.log("Loaded setup config from localStorage:", config);
         setSetupConfig(config);
 
         // Initialize navigation based on setup config
         if (config.isSetupComplete && config.selectedApps.length > 0) {
+          console.log(
+            "Initializing navigation with apps:",
+            config.selectedApps
+          );
           initializeNavigation(config.selectedApps);
         }
       } else {
+        console.log("No saved setup found, using defaults");
         setSetupConfig(DEFAULT_SETUP);
       }
 
       const savedNav = localStorage.getItem(NAV_STORAGE_KEY);
       if (savedNav) {
-        setNavSettings(JSON.parse(savedNav));
+        const navData = JSON.parse(savedNav);
+        console.log("Loaded navigation settings:", navData);
+        setNavSettings(navData);
       }
     } catch (error) {
       console.error("Error loading setup config:", error);
       setSetupConfig(DEFAULT_SETUP);
+    } finally {
+      setIsLoading(false);
     }
   }, []);
 
@@ -215,8 +234,13 @@ export const GymSetupProvider: React.FC<{ children: React.ReactNode }> = ({
       setupDate: new Date().toISOString(),
     };
 
+    console.log("Completing setup with config:", finalConfig);
     saveSetupConfig(finalConfig);
     initializeNavigation(config.selectedApps);
+    console.log(
+      "Setup complete, navigation initialized with apps:",
+      config.selectedApps
+    );
   };
 
   const updateFacilityName = (name: string) => {
@@ -290,12 +314,8 @@ export const GymSetupProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // Get available apps based on setup config
-  const availableApps =
-    setupConfig?.isSetupComplete && setupConfig.selectedApps.length > 0
-      ? ALL_NAVIGATION_ITEMS.filter((item) =>
-          setupConfig.selectedApps.includes(item.id)
-        )
-      : ALL_NAVIGATION_ITEMS;
+  // ALL apps are always available - setup just determines initial enabled state
+  const availableApps = ALL_NAVIGATION_ITEMS;
 
   // Get enabled apps (available apps minus disabled ones)
   const enabledApps = availableApps
@@ -312,6 +332,7 @@ export const GymSetupProvider: React.FC<{ children: React.ReactNode }> = ({
   const value: SetupContextValue = {
     isSetupComplete: setupConfig?.isSetupComplete ?? false,
     setupConfig,
+    isLoading,
     completeSetup,
     updateFacilityName,
     resetSetup,

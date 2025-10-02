@@ -1,4 +1,4 @@
-import { GymProvider } from "@/contexts/gym-provider";
+import { GymProvider } from "@/contexts/gym/gym-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import "../gym-themes.css";
 import "../globals.css";

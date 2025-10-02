@@ -82,7 +82,10 @@ export const GymManagementNavSettingsPanel: React.FC = () => {
 
   // Derive enabled & disabled lists
   const disabledSet = new Set(settings.disabled);
-  const enabledOrdered = settings.order.filter((id) => !disabledSet.has(id));
+  // Filter out any IDs that don't exist in allItems to prevent undefined errors
+  const enabledOrdered = settings.order
+    .filter((id) => !disabledSet.has(id))
+    .filter((id) => allItems.find((item) => item.id === id));
   const disabledItems = allItems.filter((i) => disabledSet.has(i.id));
 
   const handleDragEnd = (e: DragEndEvent) => {
@@ -137,7 +140,9 @@ export const GymManagementNavSettingsPanel: React.FC = () => {
         >
           <div className="flex flex-col gap-2">
             {enabledOrdered.map((id) => {
-              const item = allItems.find((i) => i.id === id)!;
+              const item = allItems.find((i) => i.id === id);
+              // Safety check: skip if item not found
+              if (!item) return null;
               return (
                 <SortableRow
                   key={id}

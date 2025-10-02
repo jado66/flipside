@@ -1,16 +1,19 @@
 # Tricks Provider
 
 ## Overview
+
 The `TricksProvider` is a centralized data management solution for all tricks in the application. It implements **IndexedDB** caching and in-memory storage to provide instant data access across the entire app.
 
 ## Features
 
 ### 🚀 Instant Loading
+
 - Tricks load from IndexedDB immediately on mount
 - No waiting for database queries - users see data instantly
 - Background sync updates data if changed
 
 ### 💾 IndexedDB Storage
+
 - **No Size Limits**: Unlike localStorage (5-10MB), IndexedDB can store large datasets
 - **Structured Data**: Optimized for complex objects like tricks
 - **Indexed Queries**: Fast lookups by ID, category, or subcategory
@@ -18,23 +21,25 @@ The `TricksProvider` is a centralized data management solution for all tricks in
 - **Automatic Fallback**: Gracefully handles browsers without IndexedDB support
 
 ### 🔍 Helper Methods
+
 The provider includes utility methods for common operations:
 
 ```typescript
-const { 
-  tricks,              // All tricks array
-  loading,             // Loading state
-  error,               // Error state
-  refetch,             // Manually refetch data
-  getTrickById,        // Get a single trick by ID
+const {
+  tricks, // All tricks array
+  loading, // Loading state
+  error, // Error state
+  refetch, // Manually refetch data
+  getTrickById, // Get a single trick by ID
   getTricksByCategory, // Get all tricks in a category
-  getTricksBySubcategory // Get all tricks in a subcategory
+  getTricksBySubcategory, // Get all tricks in a subcategory
 } = useTricks();
 ```
 
 ## Usage
 
 ### Basic Usage
+
 ```typescript
 import { useTricks } from "@/contexts/tricks-provider";
 
@@ -46,7 +51,7 @@ function MyComponent() {
 
   return (
     <div>
-      {tricks.map(trick => (
+      {tricks.map((trick) => (
         <div key={trick.id}>{trick.name}</div>
       ))}
     </div>
@@ -55,24 +60,28 @@ function MyComponent() {
 ```
 
 ### Get Specific Trick
+
 ```typescript
 const { getTrickById } = useTricks();
 const trick = getTrickById("trick-id-123");
 ```
 
 ### Get Tricks by Category
+
 ```typescript
 const { getTricksByCategory } = useTricks();
 const parkourTricks = getTricksByCategory("parkour");
 ```
 
 ### Get Tricks by Subcategory
+
 ```typescript
 const { getTricksBySubcategory } = useTricks();
 const flipTricks = getTricksBySubcategory("flips");
 ```
 
 ### Manual Refetch
+
 ```typescript
 const { refetch } = useTricks();
 await refetch(); // Force refresh from database
@@ -81,12 +90,15 @@ await refetch(); // Force refresh from database
 ## Storage Implementation
 
 ### IndexedDB Structure
+
 The app uses IndexedDB with the following schema:
 
 **Database**: `TrickipediaDB`
 
 **Stores**:
+
 1. **tricks** - Main tricks data
+
    - Key Path: `id`
    - Indexes:
      - `slug` (unique) - For URL lookups
@@ -99,22 +111,26 @@ The app uses IndexedDB with the following schema:
 
 ### Why IndexedDB?
 
-| Feature | localStorage | IndexedDB |
-|---------|-------------|-----------|
-| **Size Limit** | ~5-10MB | Hundreds of MB to GBs |
-| **Data Type** | Strings only | Structured objects |
+| Feature         | localStorage           | IndexedDB                   |
+| --------------- | ---------------------- | --------------------------- |
+| **Size Limit**  | ~5-10MB                | Hundreds of MB to GBs       |
+| **Data Type**   | Strings only           | Structured objects          |
 | **Performance** | Synchronous (blocking) | Asynchronous (non-blocking) |
-| **Indexing** | None | Multiple indexes |
-| **Queries** | Manual filtering | Indexed lookups |
-| **Best For** | Simple key-value | Complex data structures |
+| **Indexing**    | None                   | Multiple indexes            |
+| **Queries**     | Manual filtering       | Indexed lookups             |
+| **Best For**    | Simple key-value       | Complex data structures     |
 
 ### Storage Keys
+
 IndexedDB stores are accessed via:
+
 - `tricks` - All tricks data with indexes
 - `metadata.last_updated` - Last update timestamp
 
 ## Data Structure
+
 Each trick includes:
+
 - `id` - Unique identifier
 - `name` - Trick name
 - `slug` - URL-friendly slug
@@ -126,17 +142,20 @@ Each trick includes:
 ## Benefits
 
 ### Performance
+
 - **Instant Load**: No database round-trip on initial render
 - **Single Fetch**: Data loaded once and shared across all components
 - **Optimized Re-renders**: Only updates when data actually changes
 
 ### Developer Experience
+
 - **Type-Safe**: Full TypeScript support
 - **Easy to Use**: Simple hook-based API
 - **Helper Methods**: Common operations built-in
 - **Centralized**: One source of truth for all tricks
 
 ### User Experience
+
 - **Fast**: Instant data display from cache
 - **Reliable**: Falls back to cached data on errors
 - **Seamless**: Background updates don't disrupt UI
@@ -144,27 +163,28 @@ Each trick includes:
 ## Implementation Details
 
 ### Provider Hierarchy
+
 The TricksProvider should be placed in the provider tree where it can access necessary dependencies:
 
 ```tsx
 <UserProvider>
   <CategoriesProvider>
     <TricksProvider>
-      <UserProgressProvider>
-        {/* Your app */}
-      </UserProgressProvider>
+      <UserProgressProvider>{/* Your app */}</UserProgressProvider>
     </TricksProvider>
   </CategoriesProvider>
 </UserProvider>
 ```
 
 ### Error Handling
+
 - Preserves cached data on fetch errors
 - Handles abort signals gracefully
 - Provides clear error messages via context
 - Gracefully falls back if IndexedDB is unavailable
 
 ### Cleanup
+
 - Aborts in-flight requests on unmount
 - Prevents memory leaks
 - Handles component lifecycle properly
@@ -173,6 +193,7 @@ The TricksProvider should be placed in the provider tree where it can access nec
 ## Advanced Usage
 
 ### Direct IndexedDB Access
+
 For advanced use cases, you can access IndexedDB utilities directly:
 
 ```typescript
@@ -198,7 +219,9 @@ await clearTricksFromIndexedDB();
 ```
 
 ### Browser Compatibility
+
 IndexedDB is supported in all modern browsers:
+
 - ✅ Chrome/Edge 24+
 - ✅ Firefox 16+
 - ✅ Safari 10+
@@ -210,11 +233,12 @@ The provider automatically detects support and handles fallbacks.
 ## Migration Guide
 
 ### Before (Old Approach)
+
 ```typescript
 function MyComponent() {
   const [tricks, setTricks] = useState([]);
   const [loading, setLoading] = useState(true);
-  
+
   useEffect(() => {
     async function fetchTricks() {
       setLoading(true);
@@ -224,31 +248,32 @@ function MyComponent() {
     }
     fetchTricks();
   }, []);
-  
+
   // Use tricks...
 }
 ```
 
 ### After (New Approach)
+
 ```typescript
 function MyComponent() {
   const { tricks, loading } = useTricks();
-  
+
   // Use tricks - that's it!
 }
 ```
 
 ## Performance Comparison
 
-| Metric | Old Approach | localStorage | IndexedDB (Current) |
-|--------|-------------|--------------|---------------------|
-| **Initial Load** | 500-2000ms | ~10-50ms | ~5-20ms |
-| **Storage Limit** | N/A | 5-10MB | 50MB-250MB+ |
-| **Re-renders** | Every component | Once globally | Once globally |
-| **Network Requests** | Per component | Once per session | Once per session |
-| **Memory Usage** | Duplicated data | Shared reference | Shared reference |
-| **Query Speed** | N/A | Linear scan | Indexed lookup |
-| **Blocking UI** | N/A | Yes (sync) | No (async) |
+| Metric               | Old Approach    | localStorage     | IndexedDB (Current) |
+| -------------------- | --------------- | ---------------- | ------------------- |
+| **Initial Load**     | 500-2000ms      | ~10-50ms         | ~5-20ms             |
+| **Storage Limit**    | N/A             | 5-10MB           | 50MB-250MB+         |
+| **Re-renders**       | Every component | Once globally    | Once globally       |
+| **Network Requests** | Per component   | Once per session | Once per session    |
+| **Memory Usage**     | Duplicated data | Shared reference | Shared reference    |
+| **Query Speed**      | N/A             | Linear scan      | Indexed lookup      |
+| **Blocking UI**      | N/A             | Yes (sync)       | No (async)          |
 
 ## Best Practices
 
@@ -263,12 +288,14 @@ function MyComponent() {
 ## Debugging
 
 ### Check IndexedDB in DevTools
+
 1. Open Chrome DevTools
 2. Go to **Application** tab
 3. Expand **IndexedDB** → **TrickipediaDB**
 4. View **tricks** and **metadata** stores
 
 ### Clear Cache
+
 ```typescript
 import { clearTricksFromIndexedDB } from "@/lib/indexeddb/tricks-db";
 
@@ -277,9 +304,10 @@ await clearTricksFromIndexedDB();
 ```
 
 ### Monitor Storage Usage
+
 ```typescript
 // Check how much storage is used (Chrome only)
-if ('storage' in navigator && 'estimate' in navigator.storage) {
+if ("storage" in navigator && "estimate" in navigator.storage) {
   const estimate = await navigator.storage.estimate();
   console.log(`Using ${estimate.usage} of ${estimate.quota} bytes`);
 }
@@ -288,6 +316,7 @@ if ('storage' in navigator && 'estimate' in navigator.storage) {
 ## Future Enhancements
 
 Potential improvements:
+
 - [ ] Add cache expiration (e.g., 24 hours)
 - [ ] Implement optimistic updates for trick edits
 - [ ] Add filtering/sorting helpers
@@ -302,25 +331,31 @@ Potential improvements:
 ## Troubleshooting
 
 ### "QuotaExceededError"
+
 **Problem**: IndexedDB storage quota exceeded  
 **Solution**: Clear old data or implement automatic cleanup
+
 ```typescript
 await clearTricksFromIndexedDB();
 ```
 
 ### Data Not Updating
+
 **Problem**: Cached data showing instead of fresh data  
 **Solution**: Use refetch to force update
+
 ```typescript
 const { refetch } = useTricks();
 await refetch();
 ```
 
 ### IndexedDB Not Available
+
 **Problem**: Browser doesn't support IndexedDB  
 **Solution**: Provider automatically handles this, but data won't persist between sessions
 
 ### Slow Initial Load
+
 **Problem**: First load is slow with no cache  
 **Solution**: This is expected - subsequent loads will be instant from IndexedDB
 

@@ -6,5 +6,5 @@ export * from "./tricks-provider";
 export * from "./confetti-provider";
 export * from "./notifications-provider";
 export * from "./navigation-provider";
-export * from "./gym-management-nav-provider";
-export * from "./gym-provider";
+export * from "./gym/gym-management-nav-provider";
+export * from "./gym/gym-provider";

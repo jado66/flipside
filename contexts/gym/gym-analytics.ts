@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { useGym } from "@/contexts/gym-provider";
+import { useGym } from "@/contexts/gym/gym-provider";
 import { ClassItem, PaymentItem, Member } from "@/types/gym-management";
 
 interface PopularClass {

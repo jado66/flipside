@@ -17,7 +17,7 @@ import {
   Plus,
   Trash2,
 } from "lucide-react";
-import { useGym } from "@/contexts/gym-provider";
+import { useGym } from "@/contexts/gym/gym-provider";
 
 export function PaymentProcessing() {
   const { payments, addPayment, removePayment, demoMode, limits } = useGym();

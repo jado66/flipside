@@ -1,28 +1,34 @@
 "use client";
-import React, {
+
+import {
   createContext,
+  useContext,
   useState,
   useEffect,
-  useContext,
-  ReactNode,
+  useCallback,
 } from "react";
-import { supabase } from "@/utils/supabase/client";
-import type { Trick } from "@/types/trick";
 import {
-  loadTricksFromIndexedDB,
-  saveTricksToIndexedDB,
-  isIndexedDBSupported,
-} from "@/lib/indexeddb/tricks-db";
+  cacheTricks,
+  getCachedTricks,
+  setLastSync,
+  getLastSync,
+} from "@/lib/offline-storage";
+import { toast } from "sonner";
+import type { Trick } from "@/types/trick";
 
-// Initialize debug utilities in development
-if (process.env.NODE_ENV === "development") {
-  import("@/lib/indexeddb/debug");
-}
+const SYNC_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
 
 interface TricksContextType {
+  // Connectivity / sync
+  isOnline: boolean;
+  lastSyncTime: number | null;
+  isSyncing: boolean;
+  syncData: () => Promise<void>; // kept for backward compatibility
+  // Data
   tricks: Trick[];
   loading: boolean;
   error: string | null;
+  // Helpers
   refetch: () => Promise<void>;
   getTrickById: (id: string) => Trick | undefined;
   getTricksByCategory: (categorySlug: string) => Trick[];
@@ -31,198 +37,161 @@ interface TricksContextType {
 
 const TricksContext = createContext<TricksContextType | undefined>(undefined);
 
-interface TricksProviderProps {
-  children: ReactNode;
-}
+export function TricksProvider({ children }: { children: React.ReactNode }) {
+  const [isOnline, setIsOnline] = useState(true);
+  const [lastSyncTime, setLastSyncTime] = useState<number | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
 
-/**
- * Fetch all published tricks with basic info
- */
-async function fetchAllTricks(signal?: AbortSignal): Promise<Trick[]> {
-  try {
-    // Create a promise that rejects on abort
-    const abortPromise = new Promise<never>((_, reject) => {
-      signal?.addEventListener("abort", () => {
-        reject(new DOMException("Aborted", "AbortError"));
-      });
-    });
-
-    // Race between the actual query and the abort
-    const queryPromise = supabase
-      .from("tricks")
-      .select(
-        `
-          id,
-          name,
-          slug,
-          description,
-          difficulty_level,
-          prerequisite_ids,
-          subcategory:subcategories(
-            id,
-            name,
-            slug,
-            master_category:master_categories(
-              id,
-              name,
-              slug
-            )
-          )
-        `
-      )
-      .eq("is_published", true)
-      .order("name", { ascending: true });
-
-    const result = await Promise.race([queryPromise, abortPromise]);
-
-    const { data: tricks, error } = result as any;
-
-    if (error) throw error;
-
-    return tricks || [];
-  } catch (error: any) {
-    if (error?.name === "AbortError") {
-      console.log("Fetch aborted");
-    } else {
-      console.error("Error fetching tricks:", error);
-    }
-    throw error;
-  }
-}
-
-/**
- * Compare two arrays of tricks to see if they're different
- */
-function tricksHaveChanged(oldTricks: Trick[], newTricks: Trick[]): boolean {
-  if (oldTricks.length !== newTricks.length) return true;
-
-  // Create a quick hash of IDs and updated_at timestamps
-  const oldHash = oldTricks
-    .map((t) => `${t.id}-${t.slug}`)
-    .sort()
-    .join("|");
-  const newHash = newTricks
-    .map((t) => `${t.id}-${t.slug}`)
-    .sort()
-    .join("|");
-
-  return oldHash !== newHash;
-}
-
-export function TricksProvider({ children }: TricksProviderProps) {
+  // Tricks data state
   const [tricks, setTricks] = useState<Trick[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [indexedDBAvailable, setIndexedDBAvailable] = useState(false);
 
-  // Check IndexedDB availability
-  useEffect(() => {
-    setIndexedDBAvailable(isIndexedDBSupported());
+  // Moved effect below function declarations (see below)
+
+  const checkAndSync = useCallback(async () => {
+    const lastSync = await getLastSync();
+    const now = Date.now();
+
+    if (!lastSync || now - lastSync > SYNC_INTERVAL) {
+      await syncData();
+    }
   }, []);
 
-  async function loadTricks(signal?: AbortSignal) {
+  const syncData = useCallback(async () => {
+    if (!navigator.onLine || isSyncing) return;
+    setIsSyncing(true);
+    setError(null);
     try {
-      setLoading(true);
-      setError(null);
-
-      // Load from IndexedDB first for instant display
-      if (indexedDBAvailable) {
-        const cachedTricks = await loadTricksFromIndexedDB();
-        if (cachedTricks.length > 0) {
-          console.log(`Loaded ${cachedTricks.length} tricks from IndexedDB`);
-          setTricks(cachedTricks);
-          setLoading(false); // Show cached data immediately
-        }
-      }
-
-      // Fetch fresh data from server in background
-      const fetchedTricks = await fetchAllTricks(signal);
-
-      // Only update if data has changed
-      setTricks((prev) => {
-        const hasChanged = tricksHaveChanged(prev, fetchedTricks);
-
-        if (hasChanged) {
-          console.log(`Tricks updated: ${fetchedTricks.length} tricks`);
-
-          // Save to IndexedDB
-          if (indexedDBAvailable) {
-            saveTricksToIndexedDB(fetchedTricks).catch((err) => {
-              console.error("Failed to save tricks to IndexedDB:", err);
-            });
-          }
-
-          return fetchedTricks;
-        }
-
-        console.log("Tricks unchanged, keeping cached version");
-        return prev;
-      });
-    } catch (err: any) {
-      // Don't set error for abort
-      if (err?.name !== "AbortError") {
-        console.error("Error loading tricks:", err);
-        setError(err instanceof Error ? err.message : String(err));
-      }
-      // Keep existing cached data on error
+      const response = await fetch("/api/tricks/all");
+      if (!response.ok) throw new Error("Failed to fetch tricks");
+      const freshTricks: Trick[] = await response.json();
+      setTricks(freshTricks);
+      // Cache in IndexedDB
+      await cacheTricks(freshTricks);
+      await setLastSync();
+      const newSyncTime = Date.now();
+      setLastSyncTime(newSyncTime);
+      console.log(
+        "Data synced successfully",
+        freshTricks.length,
+        "tricks cached"
+      );
+    } catch (e: any) {
+      console.error("Sync failed:", e);
+      setError(e?.message || "Failed to sync data");
+      toast.error("Failed to sync data");
     } finally {
-      setLoading(false);
+      setIsSyncing(false);
     }
-  }
+  }, [isSyncing]);
 
+  const refetch = useCallback(async () => {
+    await syncData();
+  }, [syncData]);
+
+  // Helper methods (memoized via useCallback where needed)
+  const getTrickById = useCallback(
+    (id: string) => tricks.find((t) => t.id === id),
+    [tricks]
+  );
+
+  const getTricksByCategory = useCallback(
+    (categorySlug: string) =>
+      tricks.filter(
+        (t) => t.subcategory?.master_category?.slug === categorySlug
+      ),
+    [tricks]
+  );
+
+  const getTricksBySubcategory = useCallback(
+    (subcategorySlug: string) =>
+      tricks.filter((t) => t.subcategory?.slug === subcategorySlug),
+    [tricks]
+  );
+
+  // INITIAL LOAD / EVENT LISTENERS EFFECT
   useEffect(() => {
-    const controller = new AbortController();
+    let cancelled = false;
 
-    loadTricks(controller.signal);
+    // Check online status
+    setIsOnline(navigator.onLine);
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      toast.success("Back online! Syncing data...");
+      syncData();
+    };
+
+    const handleOffline = () => {
+      setIsOnline(false);
+      toast.info("You're offline. Using cached data.");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    // Load last sync time and cached tricks immediately
+    (async () => {
+      try {
+        const [lastSync, cached] = await Promise.all([
+          getLastSync(),
+          getCachedTricks(),
+        ]);
+        if (!cancelled) {
+          setLastSyncTime(lastSync);
+          if (cached && cached.length) {
+            setTricks(cached as Trick[]);
+          }
+        }
+      } catch (e) {
+        if (!cancelled) setError("Failed loading cached tricks");
+        console.error("Failed to load cached tricks", e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+
+      // After showing cached data, attempt network sync if online
+      if (navigator.onLine) {
+        checkAndSync();
+      }
+    })();
 
     return () => {
-      controller.abort();
+      cancelled = true;
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
-  }, [indexedDBAvailable]);
-
-  // Helper function to get a trick by ID
-  const getTrickById = (id: string): Trick | undefined => {
-    return tricks.find((trick) => trick.id === id);
-  };
-
-  // Helper function to get tricks by category slug
-  const getTricksByCategory = (categorySlug: string): Trick[] => {
-    return tricks.filter(
-      (trick) => trick.subcategory?.master_category?.slug === categorySlug
-    );
-  };
-
-  // Helper function to get tricks by subcategory slug
-  const getTricksBySubcategory = (subcategorySlug: string): Trick[] => {
-    return tricks.filter(
-      (trick) => trick.subcategory?.slug === subcategorySlug
-    );
-  };
-
-  const value: TricksContextType = {
-    tricks,
-    loading,
-    error,
-    refetch: () => loadTricks(),
-    getTrickById,
-    getTricksByCategory,
-    getTricksBySubcategory,
-  };
+  }, [checkAndSync, syncData]);
 
   return (
-    <TricksContext.Provider value={value}>{children}</TricksContext.Provider>
+    <TricksContext.Provider
+      value={{
+        // connectivity
+        isOnline,
+        lastSyncTime,
+        isSyncing,
+        syncData,
+        // data
+        tricks,
+        loading,
+        error,
+        // helpers
+        refetch,
+        getTrickById,
+        getTricksByCategory,
+        getTricksBySubcategory,
+      }}
+    >
+      {children}
+    </TricksContext.Provider>
   );
 }
 
-/**
- * Hook to use tricks from context
- */
 export function useTricks() {
   const context = useContext(TricksContext);
-
-  if (context === undefined) {
-    throw new Error("useTricks must be used within a TricksProvider");
+  if (!context) {
+    throw new Error("useTricks must be used within TricksProvider");
   }
-
   return context;
 }

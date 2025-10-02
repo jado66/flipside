@@ -61,7 +61,9 @@ export function NextTricksSuggestions({
     relevantTricks.forEach((trick) => {
       if (userCanDoTricks.has(trick.id)) return;
 
-      const prerequisites = trick.prerequisite_ids || [];
+      const prerequisites = Array.isArray(trick.prerequisite_ids)
+        ? trick.prerequisite_ids
+        : [];
       const missingPrereqs = prerequisites
         .filter((prereqId) => !userCanDoTricks.has(prereqId))
         .map((prereqId) => trickById.get(prereqId)?.name || "Unknown")
@@ -82,7 +84,7 @@ export function NextTricksSuggestions({
       suggestions.push({
         ...trick,
         user_can_do: false,
-        missing_prerequisites: missingPrereqs,
+        missing_prerequisites: missingPrereqs || [],
         category_progress: categoryProgress,
       });
     });
@@ -90,16 +92,11 @@ export function NextTricksSuggestions({
     // Sort by difficulty and prerequisites
     const sorted = suggestions.sort((a, b) => {
       // Prioritize tricks with no missing prerequisites
-      if (
-        a.missing_prerequisites.length === 0 &&
-        b.missing_prerequisites.length > 0
-      )
-        return -1;
-      if (
-        b.missing_prerequisites.length === 0 &&
-        a.missing_prerequisites.length > 0
-      )
-        return 1;
+      const aMissingLength = a.missing_prerequisites?.length ?? 0;
+      const bMissingLength = b.missing_prerequisites?.length ?? 0;
+
+      if (aMissingLength === 0 && bMissingLength > 0) return -1;
+      if (bMissingLength === 0 && aMissingLength > 0) return 1;
 
       // Then sort by difficulty
       return (a.difficulty_level || 0) - (b.difficulty_level || 0);
@@ -218,7 +215,7 @@ export function NextTricksSuggestions({
                   {trick.subcategory?.master_category?.name} •{" "}
                   {trick.subcategory?.name}
                 </p>
-                {trick.missing_prerequisites.length > 0 && (
+                {trick.missing_prerequisites?.length > 0 && (
                   <p className="text-xs text-orange-600 dark:text-orange-400">
                     Prerequisites needed:{" "}
                     {trick.missing_prerequisites.join(", ")}

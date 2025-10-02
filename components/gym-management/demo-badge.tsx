@@ -1,13 +1,42 @@
 "use client";
 
-import { useGym } from "@/contexts/gym-provider";
+import { useGym } from "@/contexts/gym/gym-provider";
+import { useGymSetup } from "@/contexts/gym/gym-setup-provider";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Sparkles } from "lucide-react";
 
 export function DemoBadge() {
   const { demoMode, resetToSeed } = useGym();
+  const { resetSetup } = useGymSetup();
   const isDev = process.env.NODE_ENV !== "production";
+  
+  const handleReset = async () => {
+    if (
+      !confirm(
+        "Reset gym completely? This will reset all data to seed data and return to setup wizard."
+      )
+    )
+      return;
+    
+    try {
+      // First reset the setup configuration
+      resetSetup();
+      
+      // Then reset gym data in the background
+      // We don't await this since we're going to reload anyway
+      resetToSeed().catch(console.error);
+      
+      // Give it a tiny moment to write to localStorage, then reload
+      setTimeout(() => {
+        window.location.reload();
+      }, 100);
+    } catch (error) {
+      console.error("Reset failed:", error);
+      alert("Reset failed. Please refresh the page manually.");
+    }
+  };
+  
   return (
     <div className="flex items-center gap-2">
       {demoMode && (
@@ -19,18 +48,7 @@ export function DemoBadge() {
         <Button
           size="sm"
           variant="destructive"
-          onClick={async () => {
-            if (
-              !confirm(
-                "Reset all gym data to seed data? This will overwrite local data."
-              )
-            )
-              return;
-            await resetToSeed();
-            // Small feedback; in-app components should update automatically
-            // but an alert gives quick confirmation for manual debugging flows.
-            alert("Gym data reset to seed data.");
-          }}
+          onClick={handleReset}
           className="ml-2"
         >
           Reset

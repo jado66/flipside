@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 
-import { useGym } from "@/contexts/gym-provider";
+import { useGym } from "@/contexts/gym/gym-provider";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -26,6 +26,14 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   Search,
   Plus,
@@ -158,6 +166,29 @@ export function MemberManagement() {
     });
     if (!res.success) return alert(res.error);
     setIsAddDialogOpen(false);
+  };
+
+  const handleEditMember = async (formData: FormData) => {
+    if (!selectedMember) return;
+
+    const status = formData.get("status") as string;
+    const validStatus = ["active", "inactive", "suspended"].includes(status)
+      ? (status as "active" | "inactive" | "suspended")
+      : "active";
+
+    const res = await updateMember(selectedMember.id, {
+      name: formData.get("name") as string,
+      email: formData.get("email") as string,
+      phone: formData.get("phone") as string,
+      membershipType: formData.get("membershipType") as string,
+      status: validStatus,
+      emergencyContact: formData.get("emergencyContact") as string,
+      medicalNotes: (formData.get("medicalNotes") as string) || "",
+    });
+
+    if (!res.success) return alert(res.error);
+    setIsEditDialogOpen(false);
+    setSelectedMember(null);
   };
 
   return (
@@ -293,11 +324,11 @@ export function MemberManagement() {
       </div>
 
       {/* Data Table */}
-      <div className="rounded-md border overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-xs uppercase tracking-wide">
-            <tr>
-              <th className="text-left font-medium p-2 w-10">Avatar</th>
+      <div className="rounded-md border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="w-[60px]">Avatar</TableHead>
               {(
                 [
                   ["name", "Name"],
@@ -309,126 +340,132 @@ export function MemberManagement() {
                   ["lastVisit", "Last Visit"],
                 ] as [keyof MemberBasic, string][]
               ).map(([key, label]) => (
-                <th key={key} className="text-left font-medium p-2">
+                <TableHead key={key}>
                   <button
                     type="button"
                     onClick={() => toggleSort(key)}
-                    className="inline-flex items-center gap-1 hover:underline"
+                    className="inline-flex items-center gap-1 hover:underline font-medium"
                     aria-label={`Sort by ${label}`}
                   >
                     {label}
                     <ArrowUpDown
-                      className={`h-3 w-3 ${
+                      className={`h-3 w-3 transition-opacity ${
                         sortKey === key ? "opacity-100" : "opacity-30"
                       }`}
                     />
                   </button>
-                </th>
+                </TableHead>
               ))}
-              <th className="p-2 text-right font-medium">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {pagedMembers.length === 0 && (
-              <tr>
-                <td
-                  colSpan={9}
-                  className="p-6 text-center text-muted-foreground"
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {pagedMembers.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={9} className="h-24 text-center">
+                  <div className="text-muted-foreground">
+                    {searchTerm
+                      ? "No members found matching your search."
+                      : "No members yet. Add your first member to get started."}
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : (
+              pagedMembers.map((member) => (
+                <TableRow
+                  key={member.id}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    setSelectedMember(member as MemberBasic);
+                    setIsEditDialogOpen(true);
+                  }}
                 >
-                  No members found.
-                </td>
-              </tr>
+                  <TableCell>
+                    <Avatar className="h-8 w-8">
+                      <AvatarImage
+                        src={
+                          member.avatar ||
+                          `/placeholder.svg?height=32&width=32&query=${member.name}`
+                        }
+                        alt={member.name}
+                      />
+                      <AvatarFallback>
+                        {member.name
+                          .split(" ")
+                          .map((n) => n[0])
+                          .join("")}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TableCell>
+                  <TableCell className="font-medium">
+                    <div className="max-w-[180px] truncate">{member.name}</div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 text-muted-foreground max-w-[200px]">
+                      <Mail className="h-3 w-3 flex-shrink-0" />
+                      <span className="truncate">{member.email}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1.5 text-muted-foreground">
+                      <Phone className="h-3 w-3 flex-shrink-0" />
+                      <span>{member.phone}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      variant="secondary"
+                      className="max-w-[140px] truncate"
+                    >
+                      {member.membershipType}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge
+                      className={`inline-flex items-center gap-1.5 ${getStatusColor(
+                        member.status
+                      )}`}
+                    >
+                      {getStatusIcon(member.status)}
+                      <span className="capitalize">{member.status}</span>
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    {member.joinDate
+                      ? new Date(member.joinDate).toLocaleDateString()
+                      : "—"}
+                  </TableCell>
+                  <TableCell>{member.lastVisit || "—"}</TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedMember(member as MemberBasic);
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        View
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removeMember(member.id);
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
             )}
-            {pagedMembers.map((member) => (
-              <tr
-                key={member.id}
-                className="border-t hover:bg-muted/30 cursor-pointer"
-                onClick={() => {
-                  setSelectedMember(member as MemberBasic);
-                  setIsEditDialogOpen(true);
-                }}
-              >
-                <td className="p-2">
-                  <Avatar className="h-8 w-8">
-                    <AvatarImage
-                      src={
-                        member.avatar ||
-                        `/placeholder.svg?height=32&width=32&query=${member.name}`
-                      }
-                    />
-                    <AvatarFallback>
-                      {member.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </AvatarFallback>
-                  </Avatar>
-                </td>
-                <td className="p-2 font-medium whitespace-nowrap max-w-[180px] truncate">
-                  {member.name}
-                </td>
-                <td className="p-2 text-muted-foreground max-w-[200px] truncate">
-                  <span className="inline-flex items-center gap-1">
-                    <Mail className="h-3 w-3" /> {member.email}
-                  </span>
-                </td>
-                <td className="p-2 text-muted-foreground whitespace-nowrap">
-                  <span className="inline-flex items-center gap-1">
-                    <Phone className="h-3 w-3" /> {member.phone}
-                  </span>
-                </td>
-                <td className="p-2">
-                  <Badge variant="secondary" className="max-w-[140px] truncate">
-                    {member.membershipType}
-                  </Badge>
-                </td>
-                <td className="p-2">
-                  <Badge
-                    className={`flex items-center gap-1 ${getStatusColor(
-                      member.status
-                    )}`}
-                  >
-                    {getStatusIcon(member.status)}
-                    <span className="capitalize">{member.status}</span>
-                  </Badge>
-                </td>
-                <td className="p-2 whitespace-nowrap">
-                  {member.joinDate
-                    ? new Date(member.joinDate).toLocaleDateString()
-                    : "—"}
-                </td>
-                <td className="p-2 whitespace-nowrap">
-                  {member.lastVisit || "—"}
-                </td>
-                <td className="p-2 text-right">
-                  <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setSelectedMember(member as MemberBasic);
-                      setIsEditDialogOpen(true);
-                    }}
-                  >
-                    View
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeMember(member.id);
-                    }}
-                    className="ml-2"
-                  >
-                    Remove
-                  </Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
 
       {/* Footer / Pagination */}
@@ -473,37 +510,94 @@ export function MemberManagement() {
             </DialogDescription>
           </DialogHeader>
           {selectedMember && (
-            <Tabs defaultValue="profile" className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="profile">Profile</TabsTrigger>
-                <TabsTrigger value="membership">Membership</TabsTrigger>
-                <TabsTrigger value="activity">Activity</TabsTrigger>
-              </TabsList>
-              <TabsContent value="profile" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-name">Full Name</Label>
-                    <Input id="edit-name" defaultValue={selectedMember.name} />
+            <form action={handleEditMember}>
+              <Tabs defaultValue="profile" className="w-full">
+                <TabsList className="grid w-full grid-cols-3">
+                  <TabsTrigger value="profile" type="button">
+                    Profile
+                  </TabsTrigger>
+                  <TabsTrigger value="membership" type="button">
+                    Membership
+                  </TabsTrigger>
+                  <TabsTrigger value="activity" type="button">
+                    Activity
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="profile" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-name">Full Name</Label>
+                      <Input
+                        id="edit-name"
+                        name="name"
+                        defaultValue={selectedMember.name}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-email">Email</Label>
+                      <Input
+                        id="edit-email"
+                        name="email"
+                        type="email"
+                        defaultValue={selectedMember.email}
+                        required
+                      />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-email">Email</Label>
-                    <Input
-                      id="edit-email"
-                      defaultValue={selectedMember.email}
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-phone">Phone</Label>
-                    <Input
-                      id="edit-phone"
-                      defaultValue={selectedMember.phone}
-                    />
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-phone">Phone</Label>
+                      <Input
+                        id="edit-phone"
+                        name="phone"
+                        defaultValue={selectedMember.phone}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-membershipType">
+                        Membership Type
+                      </Label>
+                      <Select
+                        name="membershipType"
+                        defaultValue={selectedMember.membershipType}
+                        required
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Premium Gymnastics">
+                            Premium Gymnastics
+                          </SelectItem>
+                          <SelectItem value="Basic Gymnastics">
+                            Basic Gymnastics
+                          </SelectItem>
+                          <SelectItem value="Parkour Basic">
+                            Parkour Basic
+                          </SelectItem>
+                          <SelectItem value="Parkour Advanced">
+                            Parkour Advanced
+                          </SelectItem>
+                          <SelectItem value="Youth Tumbling">
+                            Youth Tumbling
+                          </SelectItem>
+                          <SelectItem value="Adult Fitness">
+                            Adult Fitness
+                          </SelectItem>
+                          <SelectItem value="Open Gym">Open Gym</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-status">Status</Label>
-                    <Select defaultValue={selectedMember.status}>
+                    <Select
+                      name="status"
+                      defaultValue={selectedMember.status}
+                      required
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -514,93 +608,103 @@ export function MemberManagement() {
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-emergency">Emergency Contact</Label>
-                  <Input
-                    id="edit-emergency"
-                    defaultValue={selectedMember.emergencyContact}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="edit-medical">Medical Notes</Label>
-                  <Textarea
-                    id="edit-medical"
-                    defaultValue={selectedMember.medicalNotes}
-                  />
-                </div>
-              </TabsContent>
-              <TabsContent value="membership" className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-emergency">Emergency Contact</Label>
+                    <Input
+                      id="edit-emergency"
+                      name="emergencyContact"
+                      defaultValue={selectedMember.emergencyContact}
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-medical">Medical Notes</Label>
+                    <Textarea
+                      id="edit-medical"
+                      name="medicalNotes"
+                      defaultValue={selectedMember.medicalNotes}
+                    />
+                  </div>
+                </TabsContent>
+                <TabsContent value="membership" className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm">
+                          Current Membership
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="font-semibold">
+                          {selectedMember.membershipType}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Active since{" "}
+                          {new Date(
+                            selectedMember.joinDate
+                          ).toLocaleDateString()}
+                        </p>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="text-sm">
+                          Payment Status
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="font-semibold text-green-600">Current</p>
+                        <p className="text-sm text-muted-foreground">
+                          Next payment: Feb 15, 2024
+                        </p>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </TabsContent>
+                <TabsContent value="activity" className="space-y-4">
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-sm">
-                        Current Membership
+                        Recent Check-ins
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <p className="font-semibold">
-                        {selectedMember.membershipType}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Active since{" "}
-                        {new Date(selectedMember.joinDate).toLocaleDateString()}
-                      </p>
+                      <div className="space-y-2">
+                        <div className="flex justify-between text-sm">
+                          <span>Advanced Tumbling</span>
+                          <span className="text-muted-foreground">
+                            Jan 25, 2024
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Open Gym</span>
+                          <span className="text-muted-foreground">
+                            Jan 23, 2024
+                          </span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                          <span>Strength Training</span>
+                          <span className="text-muted-foreground">
+                            Jan 20, 2024
+                          </span>
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">Payment Status</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="font-semibold text-green-600">Current</p>
-                      <p className="text-sm text-muted-foreground">
-                        Next payment: Feb 15, 2024
-                      </p>
-                    </CardContent>
-                  </Card>
-                </div>
-              </TabsContent>
-              <TabsContent value="activity" className="space-y-4">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm">Recent Check-ins</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <div className="flex justify-between text-sm">
-                        <span>Advanced Tumbling</span>
-                        <span className="text-muted-foreground">
-                          Jan 25, 2024
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Open Gym</span>
-                        <span className="text-muted-foreground">
-                          Jan 23, 2024
-                        </span>
-                      </div>
-                      <div className="flex justify-between text-sm">
-                        <span>Strength Training</span>
-                        <span className="text-muted-foreground">
-                          Jan 20, 2024
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </Tabs>
+                </TabsContent>
+              </Tabs>
+              <div className="flex justify-end space-x-2 mt-4">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setIsEditDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button type="submit">Save Changes</Button>
+              </div>
+            </form>
           )}
-          <div className="flex justify-end space-x-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsEditDialogOpen(false)}
-            >
-              Close
-            </Button>
-            <Button>Save Changes</Button>
-          </div>
         </DialogContent>
       </Dialog>
     </div>

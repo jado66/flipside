@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useGym } from "@/contexts/gym-provider";
+import { useGym } from "@/contexts/gym/gym-provider";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -299,7 +299,7 @@ export function StaffManagement() {
                 {(classes || [])
                   .filter((c: any) =>
                     selectedStaffMember
-                      ? c.instructor === selectedStaffMember.name
+                      ? (c.instructors || []).includes(selectedStaffMember.name)
                       : true
                   )
                   .filter((c: any) =>

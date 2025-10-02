@@ -143,6 +143,9 @@ dependencies:
   geist:
     specifier: ^1.4.2
     version: 1.5.1(next@15.5.2)
+  idb:
+    specifier: ^8.0.3
+    version: 8.0.3
   input-otp:
     specifier: ^1.4.2
     version: 1.4.2(react-dom@19.1.0)(react@19.1.0)
@@ -4878,6 +4881,10 @@ packages:
     transitivePeerDependencies:
       - supports-color
     dev: true
+
+  /idb@8.0.3:
+    resolution: {integrity: sha512-LtwtVyVYO5BqRvcsKuB2iUMnHwPVByPCXFXOpuU96IZPPoPN6xjOGxZQ74pgSVVLQWtUOYgyeL4GE98BY5D3wg==}
+    dev: false
 
   /ignore@5.3.2:
     resolution: {integrity: sha512-hsBTNUqQTDwkWtcdYI2i06Y/nUBEsNEDJKjWdigLvegy8kDuJAS8uRlpkkcQpyEXL0Z/pjDy5HBmMjRCJ2gq+g==}

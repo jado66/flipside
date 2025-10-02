@@ -24,18 +24,25 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import {
-  CreateClassDialog,
-  ManageStudentsDialog,
-} from "./classes/class-dialogs";
-import { GridView, ListView, TableView } from "./classes/class-views";
-import type { ViewMode, SortField, SortOrder } from "./classes/class-utils";
-import { getCapacityStatus } from "./classes/class-utils";
+
+import { GridView, ListView, TableView } from "./class-views";
+import type { ViewMode, SortField, SortOrder } from "./class-utils";
+import { getCapacityStatus } from "./class-utils";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import { CreateClassDialog, ManageStudentsDialog } from "./class-dialogs";
+import { ViewStudentsDialog } from "./view-students-dialog";
 
 export function Classes() {
-  const { classes, members, addClass, updateClass, demoMode, limits } =
-    useGym();
+  const {
+    classes,
+    members,
+    addClass,
+    updateClass,
+    demoMode,
+    limits,
+    allowOverEnrollment,
+    staff,
+  } = useGym();
   const [isOpen, setIsOpen] = useState(false);
 
   const [viewMode, setViewMode] = useLocalStorage<ViewMode>(
@@ -54,14 +61,18 @@ export function Classes() {
   const [page, setPage] = useState(0);
   const PAGE_SIZE = 25;
 
+  // View students dialog state
+  const [viewOpen, setViewOpen] = useState(false);
+  const [viewClass, setViewClass] = useState<ClassItem | null>(null);
+
   const handleCreate = async (formData: FormData) => {
     const name = formData.get("name") as string;
+    // Support multiple instructors (comma separated)
     const instructorsRaw = (formData.get("instructors") as string) || "";
     const instructors = instructorsRaw
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
-    const instructor = instructors[0] || "";
     const capacity = Number.parseInt(
       (formData.get("capacity") as string) || "0"
     );
@@ -72,7 +83,6 @@ export function Classes() {
     const price = Number.parseFloat((formData.get("price") as string) || "0");
     await addClass({
       name,
-      instructor,
       instructors,
       time: "TBD",
       capacity,
@@ -91,7 +101,7 @@ export function Classes() {
 
   const enroll = async (classItem: ClassItem, member: Member) => {
     if ((classItem.students || []).includes(member.id)) return;
-    if (classItem.enrolled >= classItem.capacity) {
+    if (!allowOverEnrollment && classItem.enrolled >= classItem.capacity) {
       alert("Class is full");
       return;
     }
@@ -122,9 +132,6 @@ export function Classes() {
     setManageOpen(true);
   };
 
-  // View students dialog state (simple variant for this file)
-  const [viewOpen, setViewOpen] = useState(false);
-  const [viewClass, setViewClass] = useState<ClassItem | null>(null);
   const openView = (c: ClassItem) => {
     setViewClass(c);
     setViewOpen(true);
@@ -153,10 +160,16 @@ export function Classes() {
     return classes.find((c: any) => c.id === manageClass.id) || manageClass;
   }, [classes, manageClass]);
 
+  // Keep viewClass in sync with the updated class data
+  const currentViewClass = useMemo(() => {
+    if (!viewClass) return null;
+    return classes.find((c: any) => c.id === viewClass.id) || viewClass;
+  }, [classes, viewClass]);
+
   const filteredAndSortedClasses = useMemo(() => {
     let filtered = [...classes];
 
-    // Apply search filter (supports multi-instructors)
+    // Apply search filter
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter((c: any) => {
@@ -196,16 +209,8 @@ export function Classes() {
           bVal = b.name.toLowerCase();
           break;
         case "instructor":
-          aVal = (
-            a.instructors && a.instructors.length
-              ? a.instructors.join(" ")
-              : a.instructor || ""
-          ).toLowerCase();
-          bVal = (
-            b.instructors && b.instructors.length
-              ? b.instructors.join(" ")
-              : b.instructor || ""
-          ).toLowerCase();
+          aVal = (a.instructors || []).join(" ").toLowerCase();
+          bVal = (b.instructors || []).join(" ").toLowerCase();
           break;
         case "enrolled":
           aVal = a.enrolled;
@@ -255,6 +260,7 @@ export function Classes() {
           onSubmit={handleCreate}
           disabled={demoMode && classes.length >= limits.classes}
           disabledMessage="Demo Limit Reached"
+          staff={staff.map((s: any) => ({ id: s.id, name: s.name }))}
         />
       </div>
 
@@ -384,6 +390,7 @@ export function Classes() {
         onOpenChange={(v) => setManageOpen(v)}
         classItem={currentManageClass}
         members={members}
+        staff={staff.map((s: any) => ({ id: s.id, name: s.name }))}
         search={search}
         setSearch={setSearch}
         page={page}
@@ -391,15 +398,24 @@ export function Classes() {
         pageSize={PAGE_SIZE}
         pagedMembers={pagedMembers as any}
         filteredCount={filteredMembers.length}
+        allowOverEnrollment={allowOverEnrollment}
         enroll={async (c, m) => {
           await enroll(c, m);
         }}
         unenroll={async (c, m) => {
           await unenroll(c, m);
         }}
+        onUpdateInstructors={async (c, instructors) => {
+          await updateClass(c.id, { instructors });
+        }}
       />
-      {/* Simple view dialog reuse */}
-      {viewOpen && viewClass && <div />}
+
+      <ViewStudentsDialog
+        open={viewOpen}
+        onOpenChange={(v) => setViewOpen(v)}
+        classItem={currentViewClass}
+        membersById={membersById}
+      />
     </div>
   );
 }

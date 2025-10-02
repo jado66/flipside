@@ -17,8 +17,8 @@ import {
   Activity,
   Sparkles,
 } from "lucide-react";
-import { useGymAnalytics } from "@/contexts/gym-analytics";
-import { useGym } from "@/contexts/gym-provider";
+import { useGymAnalytics } from "@/contexts/gym/gym-analytics";
+import { useGym } from "@/contexts/gym/gym-provider";
 
 export function AnalyticsDashboard() {
   const {

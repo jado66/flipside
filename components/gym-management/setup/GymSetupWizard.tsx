@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useGymSetup } from "@/contexts/gym/gym-setup-provider";
+import { useTheme } from "next-themes";
 
 const facilityTypes = [
   {
@@ -295,6 +296,7 @@ export default function GymSetupWizard() {
   const [contactEmail, setContactEmail] = useState("");
   const [timezone, setTimezone] = useState("America/New_York");
   const { completeSetup } = useGymSetup();
+  const { setTheme } = useTheme();
 
   const steps = [
     { id: "facility", name: "Facility Info", icon: Building2 },
@@ -347,6 +349,18 @@ export default function GymSetupWizard() {
     const finalSelectedApps = Array.from(
       new Set([...essentialAppIds, ...selectedApps])
     );
+
+    console.log("Setup configuration:", {
+      facilityName,
+      facilityType,
+      selectedTheme,
+      selectedApps: finalSelectedApps,
+      contactEmail,
+      timezone,
+    });
+
+    // Apply the selected theme
+    setTheme(selectedTheme);
 
     completeSetup({
       facilityName,

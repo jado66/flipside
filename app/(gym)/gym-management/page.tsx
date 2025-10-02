@@ -15,11 +15,13 @@ import {
   Activity,
   CheckCircle,
 } from "lucide-react";
+import { useTheme } from "next-themes";
 
 // Import existing components
 import { MemberManagement } from "@/components/gym-management/member-management";
 import { ClassScheduling } from "@/components/gym-management/class-scheduling";
-import { Classes } from "@/components/gym-management/classes";
+import SchedulerTab from "@/components/gym-management/scheduler/scheduler-tab";
+import { Classes } from "@/components/gym-management/classes/classes";
 import { StaffManagement } from "@/components/gym-management/staff-management";
 import { PaymentProcessing } from "@/components/gym-management/payment-processing";
 import { CheckInSystem } from "@/components/gym-management/check-in-system";
@@ -37,12 +39,22 @@ import {
   useGymSetup,
 } from "@/contexts/gym/gym-setup-provider";
 import GymSetupWizard from "@/components/gym-management/setup/GymSetupWizard";
+import { useGym } from "@/contexts/gym/gym-provider";
 
 // Main dashboard component that renders after setup
 function GymManagementDashboard() {
   const [activeTab, setActiveTab] = useState("members");
   const [viewMode, setViewMode] = useState<"manager" | "staff">("manager");
-  const { enabledApps } = useGymSetup();
+  const { enabledApps, setupConfig } = useGymSetup();
+  const { setTheme } = useTheme();
+  const { members, classes, payments } = useGym();
+
+  // Apply saved theme on mount
+  React.useEffect(() => {
+    if (setupConfig?.selectedTheme) {
+      setTheme(setupConfig.selectedTheme);
+    }
+  }, [setupConfig?.selectedTheme, setTheme]);
 
   // Set initial active tab to first enabled app
   React.useEffect(() => {
@@ -54,33 +66,56 @@ function GymManagementDashboard() {
     }
   }, [enabledApps, activeTab]);
 
-  // Mock stats - in real app these would come from your data provider
+  // Calculate real stats from gym data
+  const totalMembers = members.length;
+  const activeMembers = members.filter((m) => m.status === "active").length;
+  const activeClasses = classes.filter((c) => c.status === "active").length;
+
+  // Calculate monthly revenue from payments in current month
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const monthlyRevenue = payments
+    .filter((p) => {
+      const paymentDate = new Date(p.date);
+      return (
+        paymentDate.getMonth() === currentMonth &&
+        paymentDate.getFullYear() === currentYear &&
+        p.status === "paid"
+      );
+    })
+    .reduce((sum, p) => sum + parseFloat(p.amount.replace(/[^0-9.-]/g, "")), 0);
+
+  // Calculate today's check-ins (members with lastVisit === today)
+  const today = now.toISOString().split("T")[0];
+  const checkInsToday = members.filter((m) => m.lastVisit === today).length;
+
   const stats = [
     {
       title: "Total Members",
-      value: "1,234",
-      change: "+12%",
+      value: totalMembers.toString(),
+      change: `${activeMembers} active`,
       icon: Users,
       color: "text-blue-600",
     },
     {
       title: "Active Classes",
-      value: "45",
-      change: "+3",
+      value: activeClasses.toString(),
+      change: `${classes.length} total`,
       icon: Calendar,
       color: "text-green-600",
     },
     {
       title: "Monthly Revenue",
-      value: "$24,500",
-      change: "+8%",
+      value: `$${monthlyRevenue.toFixed(2)}`,
+      change: `${payments.filter((p) => p.status === "paid").length} payments`,
       icon: DollarSign,
       color: "text-purple-600",
     },
     {
       title: "Check-ins Today",
-      value: "89",
-      change: "+15%",
+      value: checkInsToday.toString(),
+      change: `${totalMembers} total members`,
       icon: Activity,
       color: "text-orange-600",
     },
@@ -144,8 +179,8 @@ function GymManagementDashboard() {
                   </Card>
                 ))}
               </div>
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
-                <Card className="lg:col-span-2">
+              <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
+                <Card className="lg:col-span-3">
                   <CardHeader>
                     <CardTitle>Member Management</CardTitle>
                     <CardDescription>
@@ -203,7 +238,7 @@ function GymManagementDashboard() {
             </div>
           )}
           {activeTab === "classes" && <Classes />}
-          {activeTab === "scheduling" && <ClassScheduling />}
+          {activeTab === "scheduling" && <SchedulerTab />}
           {activeTab === "staff" && <StaffManagement />}
           {activeTab === "equipment" && <EquipmentManagement />}
           {activeTab === "payments" && <PaymentProcessing />}
@@ -229,7 +264,20 @@ export default function GymManagementPage() {
 }
 
 function GymManagementGate() {
-  const { isSetupComplete } = useGymSetup();
+  const { isSetupComplete, isLoading } = useGymSetup();
+
+  // Show loading state while checking setup status
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isSetupComplete) return <GymSetupWizard />;
   return <GymManagementDashboard />;
 }

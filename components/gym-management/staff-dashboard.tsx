@@ -250,7 +250,7 @@ export default function StaffPortal() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow">
               <div className="p-6 border-b">
-                <h2 className="text-lg font-semibold">Today&pos;s Classes</h2>
+                <h2 className="text-lg font-semibold">Today&apos;s Classes</h2>
               </div>
 
               {todaysClasses.length > 0 ? (

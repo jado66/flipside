@@ -8,8 +8,9 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { ThemeToggle as ThemePicker } from "@/components/themes/theme-picker";
 import { DemoBadge } from "./demo-badge";
-import { Activity, Menu, Search, Plus, Settings2 } from "lucide-react";
+import { Activity, Menu, Search, Plus, Settings2, Sliders } from "lucide-react";
 import { GymManagementNavSettingsPanel } from "./nav-settings-panel";
+import { GymOptionsPanel } from "./gym-options-panel";
 import { useGymSetup } from "@/contexts/gym/gym-setup-provider"; // unified setup + nav source
 import {
   Popover,
@@ -36,6 +37,7 @@ export function GymManagementLayout({
 }: EnhancedGymManagementLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [optionsOpen, setOptionsOpen] = useState(false);
   const { enabledApps, setupConfig } = useGymSetup();
 
   // Get facility name from setup config, fallback to default
@@ -147,12 +149,29 @@ export function GymManagementLayout({
               </button>
             </div>
 
-            <ThemePicker variant="dropdown" />
+            {/* <ThemePicker variant="dropdown" /> */}
 
             {/* Demo controls */}
             <div className="hidden sm:block">
               <DemoBadge />
             </div>
+
+            {/* Gym Options/Settings */}
+            <Popover open={optionsOpen} onOpenChange={setOptionsOpen}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Gym options"
+                  className="hidden sm:inline-flex"
+                >
+                  <Sliders className="h-4 w-4" />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-80 p-0">
+                <GymOptionsPanel />
+              </PopoverContent>
+            </Popover>
 
             {/* Navigation Settings */}
             <Popover open={settingsOpen} onOpenChange={setSettingsOpen}>

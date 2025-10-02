@@ -19,7 +19,8 @@ export interface Member {
 export interface ClassItem {
   id: string;
   name: string;
-  instructor: string;
+  /** One or more instructor/teacher display names. */
+  instructors: string[];
   time: string; // e.g. "9:00 AM - 10:30 AM"
   capacity: number;
   enrolled: number;

@@ -39,6 +39,10 @@ import { toast } from "sonner";
 import { supabase } from "@/utils/supabase/client";
 import { useUser } from "@/contexts/user-provider";
 
+import { getCachedTricks } from "@/lib/offline-storage";
+import { useOfflineSync } from "@/hooks/use-offline-data";
+import { useTricks } from "@/contexts";
+
 interface EnhancedTricksBrowserProps {
   tricks: Trick[];
   categorySlug: string;
@@ -69,7 +73,10 @@ export function TricksBrowser({
   difficultyColors,
   moveName,
 }: EnhancedTricksBrowserProps & { moveName: string }) {
+  const { isOnline } = useTricks();
+
   const { user } = useUser();
+  const [tricks, setTricks] = useState(serverTricks);
 
   const [userCanDoTricks, setUserCanDoTricks] = useState<Set<string>>(
     new Set()
@@ -122,6 +129,23 @@ export function TricksBrowser({
 
     fetchUserCanDoTricks();
   }, [user, supabase]);
+
+  useEffect(() => {
+    if (!isOnline) {
+      loadCachedData();
+    }
+  }, [isOnline, categorySlug]);
+
+  const loadCachedData = async () => {
+    try {
+      const cached = await getCachedTricks(categorySlug);
+      if (cached.length > 0) {
+        setTricks(cached);
+      }
+    } catch (error) {
+      console.error("Failed to load cached data:", error);
+    }
+  };
 
   // Merge server tricks with user's can-do status
   const tricksWithUserStatus = useMemo(() => {

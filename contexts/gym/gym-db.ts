@@ -155,17 +155,26 @@ export async function clearAllData(): Promise<void> {
 export interface MetaSettings {
   id: string; // always 'settings'
   demoMode: boolean;
+  allowOverEnrollment: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export async function getOrInitMeta(): Promise<MetaSettings> {
   const existing = await getById<MetaSettings>(STORE.meta, "settings");
-  if (existing) return existing;
+  if (existing) {
+    // Migrate old settings without allowOverEnrollment
+    if (existing.allowOverEnrollment === undefined) {
+      existing.allowOverEnrollment = false;
+      await putItem(STORE.meta, existing);
+    }
+    return existing;
+  }
   const now = new Date().toISOString();
   const defaults: MetaSettings = {
     id: "settings",
     demoMode: true,
+    allowOverEnrollment: false,
     createdAt: now,
     updatedAt: now,
   };
