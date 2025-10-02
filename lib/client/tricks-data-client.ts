@@ -645,17 +645,19 @@ export async function fetchPrerequisiteTricksByIds(
 // Get trick by slug
 export async function getTrickBySlug(
   supabaseClient,
+  categorySlug: string,
+  subcategorySlug: string,
   slug: string
 ): Promise<Trick | null> {
-  const { data, error } = await supabaseClient
+  let query = supabaseClient
     .from("tricks")
     .select(
       `
       *,
-      subcategory:subcategories(
+      subcategory:subcategories!inner(
         name,
         slug,
-        master_category:master_categories(name, slug, color)
+        master_category:master_categories!inner(name, slug, color)
       ),
       inventor:users!tricks_inventor_user_id_fkey(first_name, last_name, username, profile_image_url),
       trick_components!trick_id(
@@ -666,10 +668,21 @@ export async function getTrickBySlug(
     `
     )
     .eq("slug", slug)
-    .eq("is_published", true)
-    .single()
+    .eq("is_published", true);
 
-    .order("sequence", { foreignTable: "trick_components", ascending: true });
+  // Apply category filter if provided
+  if (categorySlug) {
+    query = query.eq("subcategories.master_categories.slug", categorySlug);
+  }
+
+  // Apply subcategory filter if provided
+  if (subcategorySlug) {
+    query = query.eq("subcategories.slug", subcategorySlug);
+  }
+
+  const { data, error } = await query
+    .order("sequence", { foreignTable: "trick_components", ascending: true })
+    .single();
 
   if (error) {
     if (error.code === "PGRST116") {
@@ -687,14 +700,22 @@ export async function getTrickBySlug(
 
   return data;
 }
+
 /**
  * Enhanced getTrickBySlug that includes linked prerequisite tricks
  */
 export async function getTrickBySlugWithLinks(
   supabaseClient,
+  categorySlug: string,
+  subcategorySlug: string,
   slug: string
 ): Promise<TrickWithLinkedPrerequisites | null> {
-  const trick = await getTrickBySlug(supabaseClient, slug);
+  const trick = await getTrickBySlug(
+    supabaseClient,
+    categorySlug,
+    subcategorySlug,
+    slug
+  );
 
   if (
     !trick ||

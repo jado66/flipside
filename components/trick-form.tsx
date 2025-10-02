@@ -127,7 +127,7 @@ export function TrickForm({
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="max-w-4xl mx-auto lg:p-6 space-y-8">
       {/* <LivePreview formData={formData} mode={mode} /> */}
 
       <div className="flex-1">

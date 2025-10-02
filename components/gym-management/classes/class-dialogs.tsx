@@ -43,7 +43,7 @@ import {
   ChevronsUpDown,
   Check,
 } from "lucide-react";
-import { getInitials } from "./class-utils";
+import { getInitials, computeAge } from "./class-utils";
 
 interface CreateClassDialogProps {
   isOpen: boolean;
@@ -510,6 +510,16 @@ export function ManageStudentsDialog({
                             <>
                               <span>•</span>
                               <span>{m.phone}</span>
+                            </>
+                          )}
+                          {((m as any).ageYears ?? computeAge(m.birthDate)) !==
+                            undefined && (
+                            <>
+                              <span>•</span>
+                              <span>
+                                {(m as any).ageYears ?? computeAge(m.birthDate)}{" "}
+                                yrs
+                              </span>
                             </>
                           )}
                         </div>

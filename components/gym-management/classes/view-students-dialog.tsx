@@ -24,7 +24,7 @@ import {
   Mail,
   Phone,
 } from "lucide-react";
-import { getInitials } from "./class-utils";
+import { getInitials, computeAge } from "./class-utils";
 import { useState, useMemo } from "react";
 
 interface ViewStudentsDialogProps {
@@ -191,6 +191,11 @@ export function ViewStudentsDialog({
                           <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                             <Phone className="h-3 w-3 flex-shrink-0" />
                             <span>{m.phone}</span>
+                          </div>
+                        )}
+                        {((m as any).ageYears ?? computeAge(m.birthDate)) !== undefined && (
+                          <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                            <span className="truncate">{((m as any).ageYears ?? computeAge(m.birthDate))} yrs</span>
                           </div>
                         )}
                       </div>

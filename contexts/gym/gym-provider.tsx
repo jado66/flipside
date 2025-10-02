@@ -139,6 +139,21 @@ function useEnforceLimit<T>(
   return null;
 }
 
+// Reusable age computation (years) from an ISO birth date string
+function computeAge(birthDate: string): number | undefined {
+  try {
+    const today = new Date();
+    const dob = new Date(birthDate);
+    if (isNaN(dob.getTime())) return undefined;
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+    return age;
+  } catch {
+    return undefined;
+  }
+}
+
 export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -173,7 +188,14 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
           getAll<PaymentItem>(STORE.payments),
         ]);
         if (cancelled) return;
-        setMembers(m);
+        // Enrich with computed age if birthDate present
+        setMembers(
+          m.map((mem: any) =>
+            mem.birthDate && typeof mem.ageYears === "undefined"
+              ? { ...mem, ageYears: computeAge(mem.birthDate) }
+              : mem
+          )
+        );
         setClasses(c);
         setEquipment(e);
         setIncidents(i);
@@ -244,6 +266,24 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
           id: crypto.randomUUID(),
           joinDate: new Date().toISOString().split("T")[0],
           lastVisit: "Never",
+          ...(partial.birthDate
+            ? {
+                ageYears: (() => {
+                  try {
+                    const today = new Date();
+                    const dob = new Date(partial.birthDate);
+                    let age = today.getFullYear() - dob.getFullYear();
+                    const m = today.getMonth() - dob.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                      age--;
+                    }
+                    return age;
+                  } catch {
+                    return undefined;
+                  }
+                })(),
+              }
+            : {}),
           ...partial,
         })
       ),

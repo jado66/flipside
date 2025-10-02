@@ -32,6 +32,19 @@ export function getInitials(name: string): string {
     .slice(0, 2);
 }
 
+export function computeAge(birthDate?: string): number | undefined {
+  if (!birthDate) return undefined;
+  const d = new Date(birthDate);
+  if (Number.isNaN(d.getTime())) return undefined;
+  const today = new Date();
+  let age = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) {
+    age -= 1;
+  }
+  return age;
+}
+
 export function getEnrollmentPercentage(
   enrolled: number,
   capacity: number

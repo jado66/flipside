@@ -132,9 +132,38 @@ export default function AddTrickGenericPage() {
         router.push(`/${masterCategorySlug}`); // generic redirect; user can refine later
       }
       return true;
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      toast.error("Failed to create trick");
+      // Try to extract a useful message from the error object.
+      let message = "Failed to create trick";
+      const errMsg =
+        (
+          e &&
+          (e.message ||
+            e.error ||
+            (typeof e === "string" ? e : JSON.stringify(e)))
+        )?.toString() || "";
+
+      // Database unique constraint / duplicate key
+      if (
+        errMsg.toLowerCase().includes("duplicate key") ||
+        errMsg.toLowerCase().includes("unique constraint") ||
+        errMsg.includes("tricks_subcategory_id_slug_key")
+      ) {
+        message =
+          "A trick with that url or name already exists in this category. It's likely already a trick.";
+      } else if (
+        errMsg.toLowerCase().includes("permission") ||
+        errMsg.toLowerCase().includes("insufficient")
+      ) {
+        message =
+          "You don't have permission to create a trick. Please sign in or contact an admin.";
+      } else if (errMsg) {
+        // Show the raw error message as a fallback (trimmed)
+        message = errMsg.replace(/\s+/g, " ").trim();
+      }
+
+      toast.error(message);
       return false;
     } finally {
       setSaving(false);
@@ -209,15 +238,6 @@ export default function AddTrickGenericPage() {
                 </SelectContent>
               </Select>
             </div>
-            {selectedSubcategoryId && (
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setSelectedSubcategoryId("")}
-              >
-                Change
-              </Button>
-            )}
           </div>
           {!selectedSubcategoryId && (
             <p className="text-sm text-muted-foreground">

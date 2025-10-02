@@ -7,6 +7,8 @@ export interface Member {
   name: string;
   email: string;
   phone: string;
+  /** ISO date string (yyyy-mm-dd) representing the member's date of birth */
+  birthDate?: string;
   membershipType: string;
   status: "active" | "inactive" | "suspended";
   joinDate: string; // ISO date string
@@ -14,6 +16,8 @@ export interface Member {
   emergencyContact: string;
   medicalNotes: string;
   avatar?: string;
+  /** Optionally we may cache a computed age (years); prefer computing on the fly when possible */
+  ageYears?: number;
 }
 
 export interface ClassItem {

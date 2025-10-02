@@ -51,6 +51,8 @@ interface MemberBasic {
   name: string;
   email: string;
   phone: string;
+  birthDate?: string;
+  ageYears?: number;
   membershipType: string;
   status: string;
   joinDate: string;
@@ -58,6 +60,22 @@ interface MemberBasic {
   emergencyContact: string;
   medicalNotes: string;
   avatar?: string;
+}
+
+// small helper to compute age in years from ISO birth date
+function calculateAge(birthDate: string | undefined): number | undefined {
+  if (!birthDate) return undefined;
+  try {
+    const today = new Date();
+    const dob = new Date(birthDate);
+    if (isNaN(dob.getTime())) return undefined;
+    let age = today.getFullYear() - dob.getFullYear();
+    const m = today.getMonth() - dob.getMonth();
+    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) age--;
+    return age;
+  } catch {
+    return undefined;
+  }
 }
 
 export function MemberManagement() {
@@ -183,6 +201,7 @@ export function MemberManagement() {
       membershipType: formData.get("membershipType") as string,
       status: validStatus,
       emergencyContact: formData.get("emergencyContact") as string,
+      birthDate: (formData.get("birthDate") as string) || undefined,
       medicalNotes: (formData.get("medicalNotes") as string) || "",
     });
 
@@ -290,6 +309,12 @@ export function MemberManagement() {
                     </Select>
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="birthDate">Birth Date</Label>
+                    <Input id="birthDate" name="birthDate" type="date" />
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="emergencyContact">Emergency Contact</Label>
                   <Input
@@ -356,6 +381,7 @@ export function MemberManagement() {
                   </button>
                 </TableHead>
               ))}
+              <TableHead className="w-[60px]">Age</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
@@ -371,98 +397,111 @@ export function MemberManagement() {
                 </TableCell>
               </TableRow>
             ) : (
-              pagedMembers.map((member) => (
-                <TableRow
-                  key={member.id}
-                  className="cursor-pointer"
-                  onClick={() => {
-                    setSelectedMember(member as MemberBasic);
-                    setIsEditDialogOpen(true);
-                  }}
-                >
-                  <TableCell>
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage
-                        src={
-                          member.avatar ||
-                          `/placeholder.svg?height=32&width=32&query=${member.name}`
-                        }
-                        alt={member.name}
-                      />
-                      <AvatarFallback>
-                        {member.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                  </TableCell>
-                  <TableCell className="font-medium">
-                    <div className="max-w-[180px] truncate">{member.name}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-muted-foreground max-w-[200px]">
-                      <Mail className="h-3 w-3 flex-shrink-0" />
-                      <span className="truncate">{member.email}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1.5 text-muted-foreground">
-                      <Phone className="h-3 w-3 flex-shrink-0" />
-                      <span>{member.phone}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      variant="secondary"
-                      className="max-w-[140px] truncate"
-                    >
-                      {member.membershipType}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    <Badge
-                      className={`inline-flex items-center gap-1.5 ${getStatusColor(
-                        member.status
-                      )}`}
-                    >
-                      {getStatusIcon(member.status)}
-                      <span className="capitalize">{member.status}</span>
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {member.joinDate
-                      ? new Date(member.joinDate).toLocaleDateString()
-                      : "—"}
-                  </TableCell>
-                  <TableCell>{member.lastVisit || "—"}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex justify-end gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedMember(member as MemberBasic);
-                          setIsEditDialogOpen(true);
-                        }}
+              pagedMembers.map((member) => {
+                const age =
+                  (member as MemberBasic).ageYears ??
+                  (member.birthDate
+                    ? calculateAge(member.birthDate)
+                    : undefined);
+                return (
+                  <TableRow
+                    key={member.id}
+                    className="cursor-pointer"
+                    onClick={() => {
+                      setSelectedMember(member as MemberBasic);
+                      setIsEditDialogOpen(true);
+                    }}
+                  >
+                    <TableCell>
+                      <Avatar className="h-8 w-8">
+                        <AvatarImage
+                          src={
+                            member.avatar ||
+                            `/placeholder.svg?height=32&width=32&query=${member.name}`
+                          }
+                          alt={member.name}
+                        />
+                        <AvatarFallback>
+                          {member.name
+                            .split(" ")
+                            .map((n) => n[0])
+                            .join("")}
+                        </AvatarFallback>
+                      </Avatar>
+                    </TableCell>
+                    <TableCell className="font-medium">
+                      <div className="max-w-[180px] truncate">
+                        {member.name}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-muted-foreground max-w-[200px]">
+                        <Mail className="h-3 w-3 flex-shrink-0" />
+                        <span className="truncate">{member.email}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1.5 text-muted-foreground">
+                        <Phone className="h-3 w-3 flex-shrink-0" />
+                        <span>{member.phone}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge
+                        variant="secondary"
+                        className="max-w-[140px] truncate"
                       >
-                        View
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeMember(member.id);
-                        }}
+                        {member.membershipType}
+                      </Badge>
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge
+                        className={`inline-flex items-center gap-1.5 ${getStatusColor(
+                          member.status
+                        )}`}
                       >
-                        Remove
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))
+                        {getStatusIcon(member.status)}
+                        <span className="capitalize">{member.status}</span>
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      {member.joinDate
+                        ? new Date(member.joinDate).toLocaleDateString()
+                        : "—"}
+                    </TableCell>
+                    <TableCell>{member.lastVisit || "—"}</TableCell>
+                    <TableCell className="text-sm">
+                      {age != null ? `${age} yrs` : "—"}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedMember(member as MemberBasic);
+                            setIsEditDialogOpen(true);
+                          }}
+                        >
+                          View
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            removeMember(member.id);
+                          }}
+                        >
+                          Remove
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })
             )}
           </TableBody>
         </Table>
@@ -607,6 +646,15 @@ export function MemberManagement() {
                         <SelectItem value="suspended">Suspended</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-birthDate">Birth Date</Label>
+                    <Input
+                      id="edit-birthDate"
+                      name="birthDate"
+                      type="date"
+                      defaultValue={(selectedMember as any).birthDate}
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-emergency">Emergency Contact</Label>

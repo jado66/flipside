@@ -566,8 +566,15 @@ export function TricksBrowser({
             </Badge>
           )}
         </div>
-        {user && (
-          <div className="flex items-center gap-2">
+
+        <div className="flex items-center gap-2">
+          <Link href={`/${categorySlug}/add-trick`}>
+            <Button variant="default" size="sm" className="h-8">
+              Add New Trick
+            </Button>
+          </Link>
+
+          {user && (
             <Button
               variant={showUnlearnedOnly ? "default" : "outline"}
               size="sm"
@@ -576,8 +583,8 @@ export function TricksBrowser({
             >
               {showUnlearnedOnly ? "Show All" : "Show Unlearned"}
             </Button>
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* Tricks Grid */}
@@ -625,7 +632,6 @@ export function TricksBrowser({
               );
             })}
           </div>
-
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 pt-4">
               <Button
@@ -676,6 +682,15 @@ export function TricksBrowser({
               </Button>
             </div>
           )}
+
+          {/* Always show Add New Trick at the bottom when there are tricks */}
+          <div className="flex justify-center pt-6">
+            <Link href={`/${categorySlug}/add-trick`}>
+              <Button variant="default" className="mx-2">
+                Add New Trick
+              </Button>
+            </Link>
+          </div>
         </>
       ) : (
         <div className="text-center py-12 bg-muted/30 rounded-lg">

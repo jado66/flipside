@@ -43,7 +43,12 @@ export default function TrickEditPage() {
       }
 
       try {
-        const data = await getTrickBySlug(supabase, slug);
+        const data = await getTrickBySlug(
+          supabase,
+          category,
+          subcategory,
+          slug
+        );
 
         if (!data) {
           toast.error("Trick not found");
