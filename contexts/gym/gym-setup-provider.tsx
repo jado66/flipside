@@ -31,6 +31,7 @@ export interface NavigationItem {
   id: string;
   label: string;
   icon: LucideIcon;
+  beta?: boolean;
   description?: string;
 }
 
@@ -78,6 +79,7 @@ const ALL_NAVIGATION_ITEMS: NavigationItem[] = [
     label: "Scheduler",
     icon: CalendarClock,
     description: "Drag-and-drop schedule builder for classes and events",
+    beta: true,
   },
   {
     id: "staff",
@@ -90,12 +92,14 @@ const ALL_NAVIGATION_ITEMS: NavigationItem[] = [
     label: "Equipment",
     icon: Wrench,
     description: "Monitor equipment maintenance, usage, and inventory",
+    beta: true,
   },
   {
     id: "payments",
     label: "Payments",
     icon: DollarSign,
     description: "Process membership fees, class payments, and transactions",
+    beta: true,
   },
   {
     id: "checkin",
@@ -108,6 +112,7 @@ const ALL_NAVIGATION_ITEMS: NavigationItem[] = [
     label: "Waivers",
     icon: FileText,
     description: "Digital waivers and liability documentation",
+    beta: true,
   },
   {
     id: "incidents",
@@ -120,6 +125,7 @@ const ALL_NAVIGATION_ITEMS: NavigationItem[] = [
     label: "Analytics",
     icon: ClipboardList,
     description: "Business insights, reports, and performance metrics",
+    beta: true,
   },
   {
     id: "store",

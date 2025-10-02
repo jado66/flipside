@@ -97,6 +97,9 @@ export default function InventoryManagement() {
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedStockFilter, setSelectedStockFilter] = useState<
+    "all" | "low" | "out"
+  >("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [viewMode, setViewMode] = useLocalStorage<"grid" | "list">(
     "inventory-view-mode",
@@ -117,6 +120,12 @@ export default function InventoryManagement() {
         item.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
     const matchesCategory =
       selectedCategory === "all" || item.category === selectedCategory;
+    const matchesStock =
+      selectedStockFilter === "all" ||
+      (selectedStockFilter === "low" &&
+        item.quantity > 0 &&
+        item.quantity <= item.reorderLevel) ||
+      (selectedStockFilter === "out" && item.quantity === 0);
     return matchesSearch && matchesCategory;
   });
 
@@ -232,6 +241,35 @@ export default function InventoryManagement() {
                   {category}
                 </Button>
               ))}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={
+                    selectedStockFilter === "all" ? "default" : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setSelectedStockFilter("all")}
+                >
+                  All
+                </Button>
+                <Button
+                  variant={
+                    selectedStockFilter === "low" ? "destructive" : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setSelectedStockFilter("low")}
+                >
+                  Low Stock
+                </Button>
+                <Button
+                  variant={
+                    selectedStockFilter === "out" ? "destructive" : "outline"
+                  }
+                  size="sm"
+                  onClick={() => setSelectedStockFilter("out")}
+                >
+                  Out of Stock
+                </Button>
+              </div>
             </div>
           </div>
 

@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
 import { ThemeToggle as ThemePicker } from "@/components/themes/theme-picker";
 import { DemoBadge } from "./demo-badge";
+import { Badge } from "@/components/ui/badge";
 import { Activity, Menu, Search, Plus, Settings2, Sliders } from "lucide-react";
 import { GymManagementNavSettingsPanel } from "./nav-settings-panel";
 import { GymOptionsPanel } from "./gym-options-panel";
@@ -59,7 +60,14 @@ export function GymManagementLayout({
           }}
         >
           <item.icon className="h-4 w-4 mr-2" />
-          {item.label}
+          	  <span className="flex items-center gap-2">
+            <span>{item.label}</span>
+            {item.beta && (
+              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                BETA
+              </Badge>
+            )}
+          </span>
         </Button>
       ))}
 

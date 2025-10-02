@@ -61,6 +61,7 @@ export function ProductCard({
   const [isRestockDialogOpen, setIsRestockDialogOpen] = useState(false);
 
   const isLowStock = product.quantity <= product.reorderLevel;
+  const isOutOfStock = product.quantity === 0;
   const profitMargin = (
     ((product.price - product.cost) / product.price) *
     100
@@ -94,12 +95,17 @@ export function ProductCard({
               <Badge variant="secondary" className="text-xs">
                 {product.category}
               </Badge>
-              {isLowStock && (
+              {isOutOfStock ? (
+                <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                  <AlertTriangle className="w-3 h-3 mr-1" />
+                  Out of stock
+                </Badge>
+              ) : isLowStock ? (
                 <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                   <AlertTriangle className="w-3 h-3 mr-1" />
                   Low Stock
                 </Badge>
-              )}
+              ) : null}
             </div>
           </div>
           <DropdownMenu>

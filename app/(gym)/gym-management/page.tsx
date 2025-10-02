@@ -22,7 +22,7 @@ import { MemberManagement } from "@/components/gym-management/member-management"
 import { ClassScheduling } from "@/components/gym-management/class-scheduling";
 import SchedulerTab from "@/components/gym-management/scheduler/scheduler-tab";
 import { Classes } from "@/components/gym-management/classes/classes";
-import { StaffManagement } from "@/components/gym-management/staff-management";
+import { StaffManagement } from "@/components/gym-management/staff/staff-management";
 import { PaymentProcessing } from "@/components/gym-management/payment-processing";
 import { CheckInSystem } from "@/components/gym-management/check-in-system";
 import { AnalyticsDashboard } from "@/components/gym-management/analytics-dashboard";
@@ -161,6 +161,14 @@ function GymManagementDashboard() {
         <>
           {activeTab === "members" && (
             <div className="space-y-6">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <h2 className="text-2xl font-bold tracking-tight">Members</h2>
+                  <p className="text-muted-foreground">
+                    Manage your gym members and their profiles
+                  </p>
+                </div>
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {stats.map((stat, index) => (
                   <Card key={index}>
@@ -181,12 +189,6 @@ function GymManagementDashboard() {
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
                 <Card className="lg:col-span-3">
-                  <CardHeader>
-                    <CardTitle>Member Management</CardTitle>
-                    <CardDescription>
-                      Manage your gym members, memberships, and profiles
-                    </CardDescription>
-                  </CardHeader>
                   <CardContent>
                     <MemberManagement />
                   </CardContent>

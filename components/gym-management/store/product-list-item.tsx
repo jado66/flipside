@@ -60,6 +60,7 @@ export function ProductListItem({
   const [isRestockDialogOpen, setIsRestockDialogOpen] = useState(false);
 
   const isLowStock = product.quantity <= product.reorderLevel;
+  const isOutOfStock = product.quantity === 0;
   const profitMargin = (
     ((product.price - product.cost) / product.price) *
     100
@@ -90,12 +91,17 @@ export function ProductListItem({
             <Badge variant="secondary" className="text-xs shrink-0">
               {product.category}
             </Badge>
-            {isLowStock && (
+            {isOutOfStock ? (
+              <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 shrink-0">
+                <AlertTriangle className="w-3 h-3 mr-1" />
+                Out of stock
+              </Badge>
+            ) : isLowStock ? (
               <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 shrink-0">
                 <AlertTriangle className="w-3 h-3 mr-1" />
                 Low Stock
               </Badge>
-            )}
+            ) : null}
           </div>
           <div className="flex items-center gap-4 text-sm text-muted-foreground">
             <span>SKU: {product.sku}</span>

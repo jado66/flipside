@@ -7,6 +7,7 @@ import {
   useGymSetup,
 } from "@/contexts/gym/gym-setup-provider";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import {
   GripVertical,
   RotateCcw,
@@ -30,7 +31,8 @@ const SortableRow: React.FC<{
   label: string;
   onRemove(): void;
   icon: React.ComponentType<any>;
-}> = ({ id, label, onRemove, icon: Icon }) => {
+  beta?: boolean;
+}> = ({ id, label, onRemove, icon: Icon, beta }) => {
   const {
     attributes,
     listeners,
@@ -59,7 +61,17 @@ const SortableRow: React.FC<{
         <GripVertical className="h-4 w-4" />
       </button>
       <Icon className="h-4 w-4" />
-      <span className="flex-1 text-sm">{label}</span>
+          <span className="flex-1 text-sm">
+            <span className="flex items-center gap-2">
+              <span>{label}</span>
+              {beta && (
+                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+                  BETA
+                </Badge>
+              )}
+            </span>
+          </span>
+      {/** keep remove button at end */}
       <Button
         variant="ghost"
         size="icon"
@@ -148,6 +160,7 @@ export const GymManagementNavSettingsPanel: React.FC = () => {
                   key={id}
                   id={id}
                   label={item.label}
+                  beta={item.beta}
                   icon={item.icon}
                   onRemove={() => toggleItem(id)}
                 />
@@ -192,7 +205,14 @@ export const GymManagementNavSettingsPanel: React.FC = () => {
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-xs font-medium leading-none mb-1">
-                    {item.label}
+                    <span className="flex items-center gap-2">
+                      <span>{item.label}</span>
+                      {item.beta && (
+                        <span className="text-[10px] h-5 px-1.5 inline-flex items-center rounded bg-muted/80 text-muted-foreground">
+                          BETA
+                        </span>
+                      )}
+                    </span>
                   </p>
                   {item.description && (
                     <p className="text-[10px] leading-snug text-muted-foreground line-clamp-3">

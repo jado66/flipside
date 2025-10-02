@@ -57,6 +57,7 @@ interface GymContextValue {
   incidents: IncidentItem[];
   waivers: WaiverItem[]; // active (non-archived) only
   staff: StaffMemberItem[]; // active (non-archived) only
+  staffAll: StaffMemberItem[]; // full list including archived
   payments: PaymentItem[];
   // CRUD helpers (auto-enforce limits in demo mode)
   addMember: (
@@ -621,6 +622,7 @@ export const GymProvider: React.FC<{ children: React.ReactNode }> = ({
     incidents,
     waivers: waivers.filter((w) => !w.archived),
     staff: staff.filter((s) => !s.archived),
+    staffAll: staff,
     payments,
     addMember,
     addClass,

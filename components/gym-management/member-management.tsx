@@ -213,6 +213,7 @@ export function MemberManagement() {
   return (
     <div className="space-y-4">
       {/* Controls Row */}
+
       <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
         <div className="flex gap-3 flex-1">
           <div className="relative w-full max-w-sm">
