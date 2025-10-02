@@ -61,16 +61,16 @@ const SortableRow: React.FC<{
         <GripVertical className="h-4 w-4" />
       </button>
       <Icon className="h-4 w-4" />
-          <span className="flex-1 text-sm">
-            <span className="flex items-center gap-2">
-              <span>{label}</span>
-              {beta && (
-                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                  BETA
-                </Badge>
-              )}
-            </span>
-          </span>
+      <span className="flex-1 text-sm">
+        <span className="flex items-center gap-2">
+          <span>{label}</span>
+          {beta && (
+            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
+              BETA
+            </Badge>
+          )}
+        </span>
+      </span>
       {/** keep remove button at end */}
       <Button
         variant="ghost"

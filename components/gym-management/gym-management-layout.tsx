@@ -60,7 +60,7 @@ export function GymManagementLayout({
           }}
         >
           <item.icon className="h-4 w-4 mr-2" />
-          	  <span className="flex items-center gap-2">
+          <span className="flex items-center gap-2">
             <span>{item.label}</span>
             {item.beta && (
               <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
