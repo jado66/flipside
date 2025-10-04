@@ -137,17 +137,19 @@ export function TrickipediaFooter() {
                 </a>
               </div>
             </div>
-            <div className="flex items-center space-x-6 text-sm text-muted-foreground">
+            <div className="flex flex-col md:flex-row items-center xs:space-y-2 md:space-y-0 md:space-x-6 text-sm text-muted-foreground">
               <span>Community-driven platform</span>
-              <span>•</span>
+              <span className="hidden md:inline-block">•</span>
               <span>Free forever</span>
-              <span>•</span>
-              <Link
-                href="/dmca"
-                className="hover:text-primary transition-colors"
-              >
-                DMCA
-              </Link>
+              <span className="hidden md:inline-block">•</span>
+              <span>
+                <Link
+                  href="/dmca"
+                  className="hover:text-primary transition-colors"
+                >
+                  DMCA
+                </Link>
+              </span>
             </div>
           </div>
         </div>

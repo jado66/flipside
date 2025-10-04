@@ -246,10 +246,10 @@ export function FeaturesShowcase() {
           {primaryFeatures.map((feature, index) => (
             <Card
               key={feature.title}
-              className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300"
+              className="overflow-hidden sm:p-1 border-2 hover:border-primary/50 transition-all duration-300"
             >
               <div
-                className={`grid md:grid-cols-2 gap-8 p-8 lg:p-12 items-center ${
+                className={`grid md:grid-cols-2 gap-8 p-2 lg:p-12 items-center ${
                   index % 2 === 1 ? "md:grid-flow-dense" : ""
                 }`}
               >
@@ -284,15 +284,30 @@ export function FeaturesShowcase() {
 
           {combinedFeatures.length === 2 && (
             <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
-              <div className="p-8 lg:p-12">
-                <div className="md:flex md:items-start md:gap-12 md:divide-x md:divide-border">
+              <div className="p-2 lg:p-12">
+                {/* Mobile: split into two separate cards */}
+                <div className="space-y-8 md:hidden">
+                  <Card className="border-2 hover:border-primary/50 transition-all duration-300">
+                    <div className="p-6">
+                      <MiniFeature feature={combinedFeatures[0]} />
+                    </div>
+                  </Card>
+                  <Card className="border-2 hover:border-primary/50 transition-all duration-300">
+                    <div className="p-6">
+                      <MiniFeature feature={combinedFeatures[1]} />
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Desktop: original combined layout */}
+                <div className="hidden md:flex md:items-start md:gap-12 md:divide-x md:divide-border">
                   <MiniFeature
                     feature={combinedFeatures[0]}
                     className="md:w-1/2"
                   />
                   <MiniFeature
                     feature={combinedFeatures[1]}
-                    className="md:w-1/2 md:pl-12 mt-12 md:mt-0"
+                    className="md:w-1/2 md:pl-12"
                   />
                 </div>
               </div>

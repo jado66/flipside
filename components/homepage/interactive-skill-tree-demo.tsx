@@ -176,7 +176,7 @@ export function InteractiveSkillTreeDemo() {
         ref={(el) => {
           nodeRefs.current[trick.id] = el;
         }}
-        className={`px-4 py-3 rounded-lg border-2 cursor-pointer transition-all min-w-[140px] text-center font-bold text-sm relative
+        className={`px-3 py-2 md:px-4 md:py-3 rounded-lg border-2 cursor-pointer transition-all min-w-[110px] md:min-w-[140px] text-center font-bold text-xs md:text-sm relative flex-shrink-0
           ${
             isCompleted
               ? "border-[#32792cff] bg-[#36b32bff] shadow-xl text-white"
@@ -199,7 +199,7 @@ export function InteractiveSkillTreeDemo() {
       {/* Mobile vertical layout */}
       <div
         ref={verticalContainerRef}
-        className="md:hidden relative w-full h-full min-h-[400px] bg-background/50 rounded-lg border-2 border-muted overflow-hidden p-6 flex flex-col"
+        className="md:hidden relative w-full h-full min-h-[400px] bg-background/50 rounded-lg border-2 border-muted overflow-hidden py-6 flex flex-col"
       >
         {/* SVG connectors */}
         <svg
@@ -223,11 +223,11 @@ export function InteractiveSkillTreeDemo() {
             );
           })}
         </svg>
-        <div className="flex-1 flex flex-col justify-center gap-12">
+        <div className="flex-1 flex flex-col justify-center gap-8">
           {verticalLevels.map((level, li) => (
             <div
               key={li}
-              className={`flex gap-4 justify-center ${
+              className={`flex gap-3 sm:gap-4 justify-center ${
                 level.length > 1 ? "flex-wrap" : ""
               }`}
             >
@@ -324,7 +324,7 @@ export function InteractiveSkillTreeDemo() {
               onClick={() => handleToggle(trick.id)}
               className={`
               absolute px-4 py-3 rounded-lg border-2 cursor-pointer transition-all
-              min-w-[140px] text-center font-bold text-sm
+              min-w-[140px] text-center font-bold text-sm md:text-sm
               ${
                 isCompleted
                   ? "border-[#32792cff] bg-[#36b32bff] shadow-xl text-white"
