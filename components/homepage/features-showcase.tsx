@@ -249,7 +249,7 @@ export function FeaturesShowcase() {
               className="overflow-hidden sm:p-1 border-2 hover:border-primary/50 transition-all duration-300"
             >
               <div
-                className={`grid md:grid-cols-2 gap-8 p-2 lg:p-12 items-center ${
+                className={`grid md:grid-cols-2 gap-8 p-4 lg:p-12 items-center ${
                   index % 2 === 1 ? "md:grid-flow-dense" : ""
                 }`}
               >
@@ -283,35 +283,37 @@ export function FeaturesShowcase() {
           ))}
 
           {combinedFeatures.length === 2 && (
-            <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
-              <div className="p-2 lg:p-12">
-                {/* Mobile: split into two separate cards */}
-                <div className="space-y-8 md:hidden">
-                  <Card className="border-2 hover:border-primary/50 transition-all duration-300">
-                    <div className="p-6">
-                      <MiniFeature feature={combinedFeatures[0]} />
-                    </div>
-                  </Card>
-                  <Card className="border-2 hover:border-primary/50 transition-all duration-300">
-                    <div className="p-6">
-                      <MiniFeature feature={combinedFeatures[1]} />
-                    </div>
-                  </Card>
-                </div>
-
-                {/* Desktop: original combined layout */}
-                <div className="hidden md:flex md:items-start md:gap-12 md:divide-x md:divide-border">
-                  <MiniFeature
-                    feature={combinedFeatures[0]}
-                    className="md:w-1/2"
-                  />
-                  <MiniFeature
-                    feature={combinedFeatures[1]}
-                    className="md:w-1/2 md:pl-12"
-                  />
-                </div>
+            <>
+              {/* Mobile: render as two independent cards (no nesting) */}
+              <div className="space-y-8 md:hidden">
+                <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
+                  <div className="p-6">
+                    <MiniFeature feature={combinedFeatures[0]} />
+                  </div>
+                </Card>
+                <Card className="overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
+                  <div className="p-6">
+                    <MiniFeature feature={combinedFeatures[1]} />
+                  </div>
+                </Card>
               </div>
-            </Card>
+
+              {/* Desktop: combined side-by-side layout inside a single card */}
+              <Card className="hidden md:block overflow-hidden border-2 hover:border-primary/50 transition-all duration-300">
+                <div className="p-2 lg:p-12">
+                  <div className="flex items-start gap-12 divide-x divide-border">
+                    <MiniFeature
+                      feature={combinedFeatures[0]}
+                      className="md:w-1/2 pr-12"
+                    />
+                    <MiniFeature
+                      feature={combinedFeatures[1]}
+                      className="md:w-1/2 pl-12"
+                    />
+                  </div>
+                </div>
+              </Card>
+            </>
           )}
         </div>
       </div>

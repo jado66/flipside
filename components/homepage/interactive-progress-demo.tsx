@@ -20,7 +20,8 @@ const demoSports: Sport[] = [
 
 export function InteractiveProgressDemo() {
   const [sports, setSports] = useState(demoSports);
-  const [animatingIndex, setAnimatingIndex] = useState<number | null>(null);
+  // Track which sport was just incremented by name (avoids any potential index mismatch)
+  const [animatingSport, setAnimatingSport] = useState<string | null>(null);
   const [showCelebration, setShowCelebration] = useState(false);
   // Track when the demo is actually visible on screen (works for mobile & desktop)
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -31,32 +32,32 @@ export function InteractiveProgressDemo() {
 
     const interval = setInterval(() => {
       setSports((prev) => {
-        const randomIndex = Math.floor(Math.random() * prev.length);
-        const sport = prev[randomIndex];
+        // Gather indices that are not yet complete to avoid repeatedly picking finished sports
+        const available = prev
+          .map((s, i) => (s.mastered < s.total ? i : -1))
+          .filter((i) => i !== -1);
 
-        if (sport.mastered < sport.total) {
-          setAnimatingIndex(randomIndex);
+        if (available.length === 0) return prev; // all complete
 
-          const newSports = [...prev];
-          newSports[randomIndex] = {
-            ...sport,
-            mastered: sport.mastered + 1,
-          };
+        const chosenIndex =
+          available[Math.floor(Math.random() * available.length)];
+        const chosen = prev[chosenIndex];
 
-          // Show celebration if milestone reached
-          const percentage =
-            (newSports[randomIndex].mastered / newSports[randomIndex].total) *
-            100;
-          if (percentage % 25 === 0) {
-            setShowCelebration(true);
-            setTimeout(() => setShowCelebration(false), 1000);
-          }
+        const updated = [...prev];
+        updated[chosenIndex] = { ...chosen, mastered: chosen.mastered + 1 };
 
-          setTimeout(() => setAnimatingIndex(null), 400);
+        setAnimatingSport(chosen.name);
 
-          return newSports;
+        const percentage =
+          (updated[chosenIndex].mastered / updated[chosenIndex].total) * 100;
+        if (percentage % 25 === 0) {
+          setShowCelebration(true);
+          setTimeout(() => setShowCelebration(false), 1000);
         }
-        return prev;
+
+        setTimeout(() => setAnimatingSport(null), 400);
+
+        return updated;
       });
     }, 1500);
 
@@ -66,7 +67,7 @@ export function InteractiveProgressDemo() {
   return (
     <div
       ref={containerRef}
-      className="relative w-full h-full min-h-[400px] bg-background/50 rounded-lg border-2 border-muted p-8 flex flex-col justify-center transition-all duration-300 hover:border-primary/50"
+      className="relative w-full h-full min-h-[400px] bg-background/50 lg:rounded-lg lg:border-2 lg:border-muted p-4 lg:p-8 flex flex-col justify-center transition-all duration-300 hover:border-primary/50"
     >
       <div className="space-y-8">
         <motion.div
@@ -84,7 +85,7 @@ export function InteractiveProgressDemo() {
 
         {sports.map((sport, index) => {
           const percentage = Math.round((sport.mastered / sport.total) * 100);
-          const isAnimating = animatingIndex === index;
+          const isAnimating = animatingSport === sport.name;
 
           return (
             <motion.div
@@ -117,11 +118,14 @@ export function InteractiveProgressDemo() {
                   </AnimatePresence>
                 </div>
                 <motion.span
-                  className="text-sm text-muted-foreground font-medium"
-                  key={`${sport.name}-${sport.mastered}`}
-                  initial={{ scale: 1.5, color: "hsl(var(--primary))" }}
-                  animate={{ scale: 1, color: "hsl(var(--muted-foreground))" }}
-                  transition={{ duration: 0.2 }}
+                  className="text-sm font-medium"
+                  // Drive animation explicitly off of isAnimating so StrictMode remounts don't cause random highlights
+                  animate={
+                    isAnimating
+                      ? { scale: [1, 1.3, 1], color: "hsl(var(--primary))" }
+                      : { scale: 1, color: "hsl(var(--muted-foreground))" }
+                  }
+                  transition={{ duration: 0.5, times: [0, 0.25, 1] }}
                 >
                   {sport.mastered}/{sport.total} mastered ({percentage}%)
                 </motion.span>

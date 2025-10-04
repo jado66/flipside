@@ -199,7 +199,7 @@ export function InteractiveSkillTreeDemo() {
       {/* Mobile vertical layout */}
       <div
         ref={verticalContainerRef}
-        className="md:hidden relative w-full h-full min-h-[400px] bg-background/50 rounded-lg border-2 border-muted overflow-hidden py-6 flex flex-col"
+        className="md:hidden relative w-full h-full min-h-[400px] bg-transparent   overflow-hidden py-6 flex flex-col"
       >
         {/* SVG connectors */}
         <svg
