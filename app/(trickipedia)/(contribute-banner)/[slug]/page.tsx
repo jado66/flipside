@@ -210,7 +210,8 @@ export default async function CategoryPage({ params }: PageProps) {
           ) : (
             <div className="text-center py-12 bg-muted/30 rounded-lg">
               <p className="text-muted-foreground">
-                No tricks have been added to {category.name} yet.
+                No {category.move_name + "s"} have been added to {category.name}{" "}
+                yet.
               </p>
             </div>
           )}
