@@ -6,7 +6,6 @@ import { WaiverDashboard } from "./waivers/waiver-dashboard";
 import { useState } from "react";
 import SignWaiverSelect from "./waivers/sign-waiver-select";
 import { TemplateManager } from "./waivers/template-manager";
-import { WaiverProvider } from "@/contexts/waivers/waiver-provider";
 
 // Local interface retained only if needed for TS hints; actual types from provider
 interface WaiverBasic {

@@ -15,7 +15,11 @@ import { TemplateEditor } from "./template-editor";
 import { TemplatePreview } from "./template-preview";
 import { useWaivers } from "@/contexts/waivers/waiver-provider";
 
-export function TemplateManager() {
+export function TemplateManager({
+  setWaiverPage,
+}: {
+  setWaiverPage: (page: string) => void;
+}) {
   const { templates, duplicateTemplate, deleteTemplate, toggleTemplateActive } =
     useWaivers();
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
