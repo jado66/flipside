@@ -1,15 +1,17 @@
 import { WaiverSigningForm } from "@/components/gym-management/waivers/waiver-signing-form";
 
 interface SignWaiverPageProps {
-  params: {
+  params: Promise<{
     templateId: string;
-  };
+  }>;
 }
 
-export default function SignWaiverPage({ params }: SignWaiverPageProps) {
+export default async function SignWaiverPage({ params }: SignWaiverPageProps) {
+  const { templateId } = await params;
+
   return (
     <div className="min-h-screen bg-background">
-      <WaiverSigningForm templateId={params.templateId} />
+      <WaiverSigningForm templateId={templateId} />
     </div>
   );
 }
