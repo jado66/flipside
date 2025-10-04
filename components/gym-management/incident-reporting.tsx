@@ -419,25 +419,80 @@ export function IncidentReporting() {
                   </div>
                 </div>
                 <div className="flex flex-col space-y-2">
-                  <Button variant="outline" size="sm">
-                    <FileText className="h-4 w-4 mr-2" />
-                    View Full Report
-                  </Button>
-                  {incident.status !== "resolved" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        const next =
-                          incident.status === "reported"
-                            ? "investigating"
-                            : "resolved";
-                        updateIncident(incident.id, { status: next });
-                      }}
-                    >
-                      Update Status
-                    </Button>
-                  )}
+                  {/* Full report dialog */}
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <FileText className="h-4 w-4 mr-2" />
+                        View Full Report
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-3xl">
+                      <DialogHeader>
+                        <DialogTitle>Incident Report</DialogTitle>
+                        <DialogDescription>
+                          Full incident details for {incident.memberName}
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                        <div className="p-4 bg-muted rounded-md">
+                          <p className="font-medium">Member</p>
+                          <p className="text-sm">{incident.memberName}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 bg-muted rounded-md">
+                            <p className="font-medium">Type</p>
+                            <p className="text-sm">{incident.incidentType}</p>
+                          </div>
+                          <div className="p-4 bg-muted rounded-md">
+                            <p className="font-medium">Severity</p>
+                            <p className="text-sm">{incident.severity}</p>
+                          </div>
+                        </div>
+                        <div className="p-4 bg-muted rounded-md">
+                          <p className="font-medium">Description</p>
+                          <p className="text-sm">{incident.description}</p>
+                        </div>
+                        {incident.injuryDetails && (
+                          <div className="p-4 bg-red-50 rounded-md">
+                            <p className="font-medium">Injury Details</p>
+                            <p className="text-sm">{incident.injuryDetails}</p>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="p-4 bg-muted rounded-md">
+                            <p className="font-medium">Staff</p>
+                            <p className="text-sm">{incident.staffMember}</p>
+                          </div>
+                          <div className="p-4 bg-muted rounded-md">
+                            <p className="font-medium">Location</p>
+                            <p className="text-sm">{incident.location}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+
+                  {/* Inline status select */}
+                  <Select
+                    value={incident.status}
+                    onValueChange={(v) =>
+                      updateIncident(incident.id, {
+                        status: v as "reported" | "investigating" | "resolved",
+                      })
+                    }
+                  >
+                    <SelectTrigger className="w-40">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="reported">Reported</SelectItem>
+                      <SelectItem value="investigating">
+                        Investigating
+                      </SelectItem>
+                      <SelectItem value="resolved">Resolved</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
             </CardContent>

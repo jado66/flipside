@@ -224,3 +224,25 @@
     background-color: var(--info);
   }
 }
+
+/* Keyframes for custom scroll indicator dot */
+@keyframes scroll-dot {
+  0% {
+    transform: translateY(0);
+    opacity: 0.85;
+  }
+  40% {
+    transform: translateY(140%);
+    opacity: 0.2;
+  }
+  60% {
+    transform: translateY(140%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+}
+
+/* Tailwind arbitrary animation name used in hero-section: animate-[scroll-dot_1.8s_ease-in-out_infinite] */

@@ -7,7 +7,12 @@ export interface GymDBConfig {
 }
 
 const DEFAULT_DB_NAME = "trickipedia_gym";
-const DEFAULT_VERSION = 1;
+// Version history:
+// 1 - Initial schema (members, classes, equipment, incidents, waivers, staff, payments, meta)
+// 2 - Added products store for retail/inventory management
+// 3 - Added waiverTemplates store (separate from waivers which represents signed records)
+// 4 - Added membershipPlans store for defining available membership offerings
+const DEFAULT_VERSION = 4;
 
 // Store names
 export const STORE = {
@@ -16,8 +21,11 @@ export const STORE = {
   equipment: "equipment",
   incidents: "incidents",
   waivers: "waivers",
+  waiverTemplates: "waiverTemplates", // templates definitions
   staff: "staff",
   payments: "payments",
+  products: "products", // store inventory / merchandise products
+  membershipPlans: "membershipPlans", // catalog of membership offerings
   meta: "meta", // for flags like demoMode
 } as const;
 
@@ -120,12 +128,7 @@ export async function bulkPut<T extends { id: string }>(
   items: T[]
 ): Promise<void> {
   return withStore(storeName, "readwrite", (store) => {
-    return new Promise<void>((resolve, reject) => {
-      items.forEach((item) => store.put(item));
-      // completion depends on transaction
-      store.transaction.oncomplete = () => resolve();
-      store.transaction.onerror = () => reject(store.transaction.error);
-    });
+    items.forEach((item) => store.put(item));
   });
 }
 
@@ -148,6 +151,8 @@ export async function clearAllData(): Promise<void> {
     clearStore(STORE.waivers),
     clearStore(STORE.staff),
     clearStore(STORE.payments),
+    clearStore(STORE.products),
+    clearStore(STORE.membershipPlans),
   ]);
 }
 
@@ -156,6 +161,8 @@ export interface MetaSettings {
   id: string; // always 'settings'
   demoMode: boolean;
   allowOverEnrollment: boolean;
+  // When true, signing a waiver will automatically create a Member (if one does not already exist)
+  autoCreateMemberOnWaiver?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -168,6 +175,11 @@ export async function getOrInitMeta(): Promise<MetaSettings> {
       existing.allowOverEnrollment = false;
       await putItem(STORE.meta, existing);
     }
+    // Migrate to include autoCreateMemberOnWaiver default false
+    if (existing.autoCreateMemberOnWaiver === undefined) {
+      existing.autoCreateMemberOnWaiver = false;
+      await putItem(STORE.meta, existing);
+    }
     return existing;
   }
   const now = new Date().toISOString();
@@ -175,6 +187,7 @@ export async function getOrInitMeta(): Promise<MetaSettings> {
     id: "settings",
     demoMode: true,
     allowOverEnrollment: false,
+    autoCreateMemberOnWaiver: false,
     createdAt: now,
     updatedAt: now,
   };

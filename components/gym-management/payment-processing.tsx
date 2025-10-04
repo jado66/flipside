@@ -68,7 +68,12 @@ export function PaymentProcessing() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Payment Processing</h2>
+          <h2 className="text-2xl font-bold flex items-center">
+            <span>Payment Processing</span>
+            <Badge variant="secondary" className="ml-3 text-xs uppercase">
+              Beta
+            </Badge>
+          </h2>
           <p className="text-muted-foreground">
             Manage payments, invoices, and billing
           </p>

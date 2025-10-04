@@ -92,9 +92,12 @@ export function ProductCard({
               {product.name}
             </CardTitle>
             <div className="flex items-center gap-2 mt-2">
-              <Badge variant="secondary" className="text-xs">
-                {product.category}
-              </Badge>
+              {product.category && product.category.trim() !== "" && (
+                <Badge variant="secondary" className="text-xs">
+                  {product.category}
+                </Badge>
+              )}
+
               {isOutOfStock ? (
                 <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
                   <AlertTriangle className="w-3 h-3 mr-1" />

@@ -111,6 +111,18 @@ export interface PaymentItem {
   method: string;
 }
 
+// Membership plan definition (distinct from individual member records)
+export interface MembershipPlan {
+  id: string;
+  name: string; // Display name (e.g. "Premium Gymnastics")
+  price: number; // Price in currency units (raw number, format in UI)
+  billingInterval: "monthly" | "yearly" | "session" | "one-time";
+  description?: string;
+  status: "active" | "inactive";
+  createdAt: string; // ISO datetime
+  updatedAt: string; // ISO datetime
+}
+
 export interface DemoLimits {
   classes: number;
   members: number;
@@ -119,6 +131,7 @@ export interface DemoLimits {
   waivers: number;
   staff: number;
   payments: number;
+  membershipPlans: number; // newly added limit
 }
 
 export interface OperationResult<T> {

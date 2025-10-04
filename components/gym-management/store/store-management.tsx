@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,12 +10,44 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Package, Grid3X3, List } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Package,
+  Grid3X3,
+  List,
+  Tags,
+  Filter,
+} from "lucide-react";
 import { ProductCard } from "@/components/gym-management/store/product-card";
 import { InventoryStats } from "@/components/gym-management/store/inventory-stats";
 import { AddProductDialog } from "./add-product-dialog";
 import { ProductListItem } from "./product-list-item";
 import { useLocalStorage } from "@/hooks/use-local-storage";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
+import { ManageCategoriesDialog } from "./manage-categories-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
+  initGymDB,
+  getAll,
+  putItem,
+  deleteItem as idbDelete,
+  clearStore,
+  STORE,
+  bulkPut,
+} from "@/contexts/gym/gym-db";
 
 export interface Product {
   id: string;
@@ -93,31 +125,216 @@ const initialProducts: Product[] = [
   },
 ];
 
+// Inline DeleteCategoryDialog to avoid module resolution issues
+function DeleteCategoryDialog({
+  open,
+  category,
+  categories,
+  onOpenChange,
+  onConfirm,
+  onRemoveAll,
+}: {
+  open: boolean;
+  category: string | null;
+  categories: string[];
+  onOpenChange: (o: boolean) => void;
+  onConfirm: (replacement?: string) => void; // reassign to another tag
+  onRemoveAll: () => void; // strip tag from products entirely
+}) {
+  const [mode, setMode] = useState<"reassign" | "remove">("reassign");
+  const [replacement, setReplacement] = useState<string | undefined>(
+    categories[0]
+  );
+  // Reset replacement when categories list changes (e.g., category removed)
+  useEffect(() => {
+    if (
+      categories.length &&
+      (!replacement || !categories.includes(replacement))
+    ) {
+      setReplacement(categories[0]);
+    }
+  }, [categories, replacement]);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Delete Tag{category ? `: ${category}` : ""}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            This tag is assigned to products. Choose how to proceed.
+          </p>
+          <div className="space-y-3">
+            <div className="flex items-center gap-3">
+              <input
+                id="mode-reassign"
+                type="radio"
+                className="h-4 w-4"
+                checked={mode === "reassign"}
+                onChange={() => setMode("reassign")}
+              />
+              <label htmlFor="mode-reassign" className="flex-1 text-sm">
+                Reassign products to another tag
+              </label>
+            </div>
+            {mode === "reassign" && (
+              <div className="pl-7">
+                {categories.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">
+                    No other tags available. Use &apos;Uncategorize&apos;
+                    instead.
+                  </p>
+                ) : (
+                  <Select
+                    value={replacement}
+                    onValueChange={(v) => setReplacement(v)}
+                  >
+                    <SelectTrigger className="w-[240px]">
+                      <SelectValue placeholder="Select replacement" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => (
+                        <SelectItem key={c} value={c}>
+                          {c}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+              </div>
+            )}
+            <div className="flex items-center gap-3">
+              <input
+                id="mode-remove"
+                type="radio"
+                className="h-4 w-4"
+                checked={mode === "remove"}
+                onChange={() => setMode("remove")}
+              />
+              <label htmlFor="mode-remove" className="flex-1 text-sm">
+                Remove this tag from products (they will have no tag)
+              </label>
+            </div>
+          </div>
+        </div>
+        <DialogFooter className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          {mode === "reassign" ? (
+            <Button
+              disabled={!replacement || categories.length === 0}
+              onClick={() => onConfirm(replacement)}
+            >
+              Reassign & Delete
+            </Button>
+          ) : (
+            <Button variant="destructive" onClick={onRemoveAll}>
+              Delete Tag
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function InventoryManagement() {
+  const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>(initialProducts);
   const [searchTerm, setSearchTerm] = useState("");
+  // Categories (editable). Initialize from initial products.
+  const [categories, setCategories] = useState<string[]>(() =>
+    Array.from(
+      new Set(
+        initialProducts
+          .map((p) => p.category)
+          .filter((c) => c && c.trim() !== "")
+      )
+    )
+  );
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedStockFilter, setSelectedStockFilter] = useState<
     "all" | "low" | "out"
   >("all");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isManageCategoriesOpen, setIsManageCategoriesOpen] = useState(false);
+  const [deleteCategory, setDeleteCategory] = useState<string | null>(null);
+  const [showReassign, setShowReassign] = useState(false);
   const [viewMode, setViewMode] = useLocalStorage<"grid" | "list">(
     "inventory-view-mode",
     "grid"
   );
 
-  const categories = [
-    "all",
-    ...Array.from(new Set(products.map((item) => item.category))),
-  ];
+  // Load products from IndexedDB once
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        await initGymDB();
+        const existing = await getAll<Product>(STORE.products);
+        if (cancelled) return;
+        if (existing && existing.length) {
+          setProducts(existing);
+        } else {
+          // Seed initial products into DB
+          await Promise.all(
+            initialProducts.map((p) => putItem(STORE.products, p))
+          );
+        }
+      } catch (e) {
+        // swallow; stay with in-memory initialProducts
+        // console.warn("Inventory load failed", e);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Keep categories synced with products
+  useEffect(() => {
+    const dynamic = Array.from(
+      new Set(
+        products.map((p) => p.category).filter((c) => c && c.trim() !== "")
+      )
+    );
+    setCategories((prev) =>
+      Array.from(
+        new Set([...dynamic]) // derive solely from products to avoid drift
+      )
+    );
+  }, [products]);
+
+  // Listen for global gym setup reset to also purge inventory
+  useEffect(() => {
+    const handler = async () => {
+      try {
+        await clearStore(STORE.products);
+        // Reseed
+        await Promise.all(
+          initialProducts.map((p) => putItem(STORE.products, p))
+        );
+        setProducts(initialProducts);
+        setSelectedCategory("all");
+      } catch {
+        setProducts(initialProducts);
+      }
+    };
+    window.addEventListener("gym:setup:reset", handler as any);
+    return () => window.removeEventListener("gym:setup:reset", handler as any);
+  }, []);
 
   const filteredProducts = products.filter((item) => {
+    const q = searchTerm.toLowerCase();
     const matchesSearch =
-      item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (item.supplier &&
-        item.supplier.toLowerCase().includes(searchTerm.toLowerCase()));
+      !q ||
+      item.name.toLowerCase().includes(q) ||
+      item.category.toLowerCase().includes(q) ||
+      item.sku.toLowerCase().includes(q) ||
+      (item.supplier && item.supplier.toLowerCase().includes(q));
     const matchesCategory =
       selectedCategory === "all" || item.category === selectedCategory;
     const matchesStock =
@@ -126,44 +343,81 @@ export default function InventoryManagement() {
         item.quantity > 0 &&
         item.quantity <= item.reorderLevel) ||
       (selectedStockFilter === "out" && item.quantity === 0);
-    return matchesSearch && matchesCategory;
+    return matchesSearch && matchesCategory && matchesStock;
   });
 
-  const handleAddProduct = (newProduct: Omit<Product, "id">) => {
-    const product_with_id = {
-      ...newProduct,
-      id: Date.now().toString(),
-    };
+  const handleAddProduct = async (newProduct: Omit<Product, "id">) => {
+    const product_with_id = { ...newProduct, id: crypto.randomUUID() };
     setProducts((prev) => [...prev, product_with_id]);
+    try {
+      await putItem(STORE.products, product_with_id);
+    } catch {}
   };
 
-  const handleUpdateProduct = (id: string, updates: Partial<Product>) => {
+  const handleUpdateProduct = async (id: string, updates: Partial<Product>) => {
     setProducts((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
     );
+    try {
+      const updated = products.find((p) => p.id === id);
+      if (updated) await putItem(STORE.products, { ...updated, ...updates });
+    } catch {}
   };
 
-  const handleDeleteProduct = (id: string) => {
+  const handleDeleteProduct = async (id: string) => {
     setProducts((prev) => prev.filter((item) => item.id !== id));
+    try {
+      await idbDelete(STORE.products, id);
+    } catch {}
   };
 
-  const handleSellProduct = (id: string, quantity: number) => {
+  const handleSellProduct = async (id: string, quantity: number) => {
+    let updatedItem: Product | undefined;
     setProducts((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.max(0, item.quantity - quantity) }
-          : item
-      )
+      prev.map((item) => {
+        if (item.id === id) {
+          updatedItem = {
+            ...item,
+            quantity: Math.max(0, item.quantity - quantity),
+          };
+          return updatedItem;
+        }
+        return item;
+      })
     );
+    if (updatedItem) {
+      try {
+        await putItem(STORE.products, updatedItem);
+      } catch {}
+    }
   };
 
-  const handleRestockProduct = (id: string, quantity: number) => {
+  const handleRestockProduct = async (id: string, quantity: number) => {
+    let updatedItem: Product | undefined;
     setProducts((prev) =>
-      prev.map((item) =>
-        item.id === id ? { ...item, quantity: item.quantity + quantity } : item
-      )
+      prev.map((item) => {
+        if (item.id === id) {
+          updatedItem = { ...item, quantity: item.quantity + quantity };
+          return updatedItem;
+        }
+        return item;
+      })
     );
+    if (updatedItem) {
+      try {
+        await putItem(STORE.products, updatedItem);
+      } catch {}
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="h-8 w-40 bg-muted animate-pulse rounded" />
+        <div className="h-32 bg-muted animate-pulse rounded" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -207,6 +461,14 @@ export default function InventoryManagement() {
                 </Button>
               </div>
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsManageCategoriesOpen(true)}
+                className="h-8"
+              >
+                <Tags className="w-4 h-4 mr-2" /> Manage Tags
+              </Button>
+              <Button
                 onClick={() => setIsAddDialogOpen(true)}
                 className="bg-primary hover:bg-primary/90"
               >
@@ -217,60 +479,55 @@ export default function InventoryManagement() {
           </div>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-              <Input
-                placeholder="Search products, category, SKU, or supplier..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2 flex-wrap">
-              {categories.map((category) => (
-                <Button
-                  key={category}
-                  variant={
-                    selectedCategory === category ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedCategory(category)}
-                  className="capitalize"
-                >
-                  {category}
-                </Button>
-              ))}
-              <div className="flex items-center gap-2">
-                <Button
-                  variant={
-                    selectedStockFilter === "all" ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedStockFilter("all")}
-                >
-                  All
-                </Button>
-                <Button
-                  variant={
-                    selectedStockFilter === "low" ? "destructive" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedStockFilter("low")}
-                >
-                  Low Stock
-                </Button>
-                <Button
-                  variant={
-                    selectedStockFilter === "out" ? "destructive" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => setSelectedStockFilter("out")}
-                >
-                  Out of Stock
-                </Button>
+          <div className="flex flex-col lg:flex-row gap-4 mb-6 items-start lg:items-center justify-between">
+            <div className="flex flex-col sm:flex-row gap-3 flex-1 w-full lg:w-auto">
+              <div className="relative flex-1 min-w-[220px]">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search products..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
+              <Select
+                value={selectedCategory}
+                onValueChange={setSelectedCategory}
+              >
+                <SelectTrigger className="sm:w-[200px]">
+                  <Tags className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Categories</SelectItem>
+                  {categories
+                    .filter((c) => c && c.trim() !== "")
+                    .map((c) => (
+                      <SelectItem key={c} value={c}>
+                        {c}
+                      </SelectItem>
+                    ))}
+                </SelectContent>
+              </Select>
+              <Select
+                value={selectedStockFilter}
+                onValueChange={(v: any) => setSelectedStockFilter(v)}
+              >
+                <SelectTrigger className="sm:w-[180px]">
+                  <Filter className="mr-2 h-4 w-4" />
+                  <SelectValue placeholder="Stock" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Stock</SelectItem>
+                  <SelectItem value="low">Low Stock</SelectItem>
+                  <SelectItem value="out">Out of Stock</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+            <span className="text-sm text-muted-foreground whitespace-nowrap">
+              {filteredProducts.length}{" "}
+              {filteredProducts.length === 1 ? "product" : "products"}
+            </span>
           </div>
 
           {viewMode === "grid" ? (
@@ -319,6 +576,98 @@ export default function InventoryManagement() {
         open={isAddDialogOpen}
         onOpenChange={setIsAddDialogOpen}
         onAdd={handleAddProduct}
+      />
+      <ManageCategoriesDialog
+        open={isManageCategoriesOpen}
+        onOpenChange={setIsManageCategoriesOpen}
+        categories={categories}
+        onAddCategory={(cat) => {
+          if (!categories.includes(cat))
+            setCategories((prev) => [...prev, cat]);
+        }}
+        onRenameCategory={(oldCat, newCat) => {
+          if (!newCat || oldCat === newCat) return;
+          // Update products and persist
+          setProducts((prev) => {
+            const updated = prev.map((p) =>
+              p.category === oldCat ? { ...p, category: newCat } : p
+            );
+            // Persist only those changed
+            const changed = updated.filter(
+              (p, idx) => prev[idx].category !== p.category
+            );
+            if (changed.length) {
+              // Fire and forget bulkPut
+              bulkPut(STORE.products, changed as any).catch(() => {});
+            }
+            return updated;
+          });
+          if (selectedCategory === oldCat) setSelectedCategory(newCat);
+        }}
+        onDeleteCategory={(cat) => {
+          const inUse = products.some((p) => p.category === cat);
+          if (inUse) {
+            setDeleteCategory(cat);
+            setShowReassign(true);
+          } else {
+            setCategories((prev) => prev.filter((c) => c !== cat));
+            if (selectedCategory === cat) setSelectedCategory("all");
+          }
+        }}
+      />
+      <DeleteCategoryDialog
+        open={showReassign && !!deleteCategory}
+        category={deleteCategory}
+        categories={categories.filter((c) => c !== deleteCategory)}
+        onOpenChange={(o) => {
+          if (!o) {
+            setShowReassign(false);
+            setDeleteCategory(null);
+          }
+        }}
+        onConfirm={(replacement) => {
+          const cat = deleteCategory;
+          if (!cat) return;
+          const replacementCat = replacement!;
+          // Ensure replacement exists (should already)
+          setCategories((prev) => prev.filter((c) => c !== cat));
+          setProducts((prev) => {
+            const updated = prev.map((p) =>
+              p.category === cat ? { ...p, category: replacementCat } : p
+            );
+            const changed = updated.filter(
+              (p, idx) => prev[idx].category !== p.category
+            );
+            if (changed.length) {
+              bulkPut(STORE.products, changed as any).catch(() => {});
+            }
+            return updated;
+          });
+          if (selectedCategory === cat) setSelectedCategory(replacementCat);
+          setDeleteCategory(null);
+          setShowReassign(false);
+        }}
+        onRemoveAll={() => {
+          const cat = deleteCategory;
+          if (!cat) return;
+          // Remove category and strip from products (empty string)
+          setCategories((prev) => prev.filter((c) => c !== cat));
+          setProducts((prev) => {
+            const updated = prev.map((p) =>
+              p.category === cat ? { ...p, category: "" } : p
+            );
+            const changed = updated.filter(
+              (p, idx) => prev[idx].category !== p.category
+            );
+            if (changed.length) {
+              bulkPut(STORE.products, changed as any).catch(() => {});
+            }
+            return updated;
+          });
+          if (selectedCategory === cat) setSelectedCategory("all");
+          setDeleteCategory(null);
+          setShowReassign(false);
+        }}
       />
     </div>
   );

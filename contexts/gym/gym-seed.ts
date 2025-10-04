@@ -210,6 +210,29 @@ export const seedPayments = [
   },
 ];
 
+export const seedMembershipPlans = [
+  {
+    id: "plan-1",
+    name: "Premium Gymnastics",
+    price: 89,
+    billingInterval: "monthly",
+    description: "Unlimited gymnastics classes + open gym access",
+    status: "active",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+  {
+    id: "plan-2",
+    name: "Open Gym",
+    price: 45,
+    billingInterval: "monthly",
+    description: "Unlimited open gym sessions",
+    status: "active",
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
 export const ALL_SEEDS = {
   members: seedMembers,
   classes: seedClasses,
@@ -218,4 +241,5 @@ export const ALL_SEEDS = {
   waivers: seedWaivers,
   staff: seedStaff,
   payments: seedPayments,
+  membershipPlans: seedMembershipPlans,
 };

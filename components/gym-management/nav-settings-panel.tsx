@@ -2,20 +2,10 @@
 
 import React from "react";
 // Unified navigation comes from gym-setup-provider now; legacy provider removed
-import {
-  useGymManagementNav,
-  useGymSetup,
-} from "@/contexts/gym/gym-setup-provider";
+import { useGymManagementNav } from "@/contexts/gym/gym-setup-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  GripVertical,
-  RotateCcw,
-  X,
-  Plus,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
+import { GripVertical, X, Plus, ChevronDown, ChevronUp } from "lucide-react";
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import {
   arrayMove,
@@ -86,9 +76,7 @@ const SortableRow: React.FC<{
 };
 
 export const GymManagementNavSettingsPanel: React.FC = () => {
-  const { settings, updateOrder, toggleItem, reset, allItems } =
-    useGymManagementNav();
-  const { resetSetup } = useGymSetup();
+  const { settings, updateOrder, toggleItem, allItems } = useGymManagementNav();
 
   const [addOpen, setAddOpen] = React.useState(false);
 
@@ -110,40 +98,13 @@ export const GymManagementNavSettingsPanel: React.FC = () => {
 
   return (
     <div className="w-full p-4">
-      <div className="mb-3 flex items-start justify-between gap-3">
-        <div>
-          <h2 className="text-sm font-semibold leading-none mb-1">
-            Customize Apps
-          </h2>
-          <p className="text-xs text-muted-foreground">
-            Drag to reorder. Remove with X. Add hidden apps below.
-          </p>
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => {
-            const confirmed = window.confirm(
-              "Reset navigation AND setup? This will clear facility info, selected apps, and show the setup wizard again."
-            );
-            if (confirmed) {
-              resetSetup();
-              // After wiping setup, also reset nav ordering to base state
-              reset();
-              // Ensure legacy nav storage (if any) is cleared to prevent flicker rehydrate
-              try {
-                localStorage.removeItem("gymMgmtNavSettings:v1");
-              } catch {}
-              // Force a microtask defer so state updates flush before potential UI gating
-              setTimeout(() => {
-                // Optionally could do a router refresh; for now rely on state
-              }, 0);
-            }
-          }}
-          className="gap-1 shrink-0"
-        >
-          <RotateCcw className="h-3 w-3" /> Reset
-        </Button>
+      <div className="mb-3">
+        <h2 className="text-sm font-semibold leading-none mb-1">
+          Customize Apps
+        </h2>
+        <p className="text-xs text-muted-foreground">
+          Drag to reorder. Remove with X. Add hidden apps below.
+        </p>
       </div>
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext

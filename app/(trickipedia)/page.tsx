@@ -1,25 +1,50 @@
-// app/page.tsx (or wherever HomePageServer is)
-import { FeaturedCategories } from "@/components/featured-categories";
-import { RecentTricks } from "@/components/recent-tricks";
-import { CommunityStats } from "@/components/community-stats";
-import { TrickipediaHeroSection } from "@/components/trickipedia-hero-section";
-import ContributingSection from "@/components/contributing-section";
-import { InstallPWAApp } from "@/components/install-pwa-app";
+import { HeroSection } from "@/components/homepage/hero-section";
+import { FeaturesShowcase } from "@/components/homepage/features-showcase";
+import { DisciplineCards } from "@/components/homepage/discipline-cards";
+import { HowItWorks } from "@/components/homepage/how-it-works";
+import { CommunityProof } from "@/components/homepage/community-proof";
+import { FinalCTA } from "@/components/homepage/final-cta";
+import { getCommunityStats } from "@/lib/server/community-stats-server";
+import { getNavigationData } from "@/lib/server/tricks-data-server";
 
-export default async function HomePageServer() {
+interface HomePageStatsProps {
+  publishedTricks: number;
+  totalViews: number;
+  disciplines: number;
+}
+
+async function fetchHomePageStats(): Promise<HomePageStatsProps> {
+  try {
+    const [stats, nav] = await Promise.all([
+      getCommunityStats(),
+      getNavigationData(),
+    ]);
+    return {
+      publishedTricks: stats.publishedTricks || 0,
+      totalViews: stats.totalViews || 0,
+      disciplines: nav.length || 0,
+    };
+  } catch (e) {
+    console.error("Failed to fetch home page stats", e);
+    return { publishedTricks: 0, totalViews: 0, disciplines: 0 };
+  }
+}
+
+export default async function HomePage() {
+  const { publishedTricks, totalViews, disciplines } =
+    await fetchHomePageStats();
   return (
-    <main>
-      <TrickipediaHeroSection />
-      {/* Get the App Section */}
-
-      <FeaturedCategories />
-      <RecentTricks />
-      <div className="py-10 px-4">
-        <InstallPWAApp className="max-w-lg mx-auto" />
-      </div>
-      <hr className="mb-10 border-t border-muted" />
-      <ContributingSection />
-      <CommunityStats />
+    <main className="min-h-screen">
+      <HeroSection
+        publishedTricks={publishedTricks}
+        totalViews={totalViews}
+        disciplines={disciplines}
+      />
+      <FeaturesShowcase />
+      <DisciplineCards />
+      <HowItWorks publishedTricks={publishedTricks} disciplines={disciplines} />
+      <CommunityProof />
+      <FinalCTA />
     </main>
   );
 }

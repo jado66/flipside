@@ -78,6 +78,9 @@ export function AnalyticsDashboard() {
           <div>
             <h2 className="text-2xl font-bold flex items-center gap-2">
               Analytics Dashboard{" "}
+              <Badge variant="secondary" className="ml-2 text-xs uppercase">
+                Beta
+              </Badge>
               {demoMode && <Sparkles className="h-5 w-5 text-primary" />}
             </h2>
             <p className="text-muted-foreground">

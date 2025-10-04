@@ -88,9 +88,12 @@ export function ProductListItem({
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <h3 className="font-semibold text-sm truncate">{product.name}</h3>
-            <Badge variant="secondary" className="text-xs shrink-0">
-              {product.category}
-            </Badge>
+            {product.category && product.category.trim() !== "" && (
+              <Badge variant="secondary" className="text-xs shrink-0">
+                {product.category}
+              </Badge>
+            )}
+
             {isOutOfStock ? (
               <Badge className="text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200 shrink-0">
                 <AlertTriangle className="w-3 h-3 mr-1" />

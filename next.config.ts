@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
 
   // Enable image optimization for better performance
   images: {
+    remotePatterns: [{ protocol: "https", hostname: "*.cdninstagram.com" }],
     unoptimized: false, // Enable optimization for better Core Web Vitals
     formats: ["image/webp", "image/avif"],
   },

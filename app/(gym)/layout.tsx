@@ -1,4 +1,4 @@
-import { GymProvider } from "@/contexts/gym/gym-provider";
+import { PlatformInitializer } from "@/contexts/platform/platform-provider";
 import { ThemeProvider } from "@/components/theme-provider";
 import "../gym-themes.css";
 import "../globals.css";
@@ -17,6 +17,7 @@ export default async function Layout({
       defaultTheme="trickipedia"
       enableSystem={false}
       disableTransitionOnChange
+      storageKey="gym-theme"
       value={{
         trickipedia: "trickipedia",
         dark: "dark",
@@ -30,7 +31,7 @@ export default async function Layout({
         "sunset-power-dark": "sunset-power.dark",
       }}
     >
-      <GymProvider>{children}</GymProvider>
+      <PlatformInitializer>{children}</PlatformInitializer>
     </ThemeProvider>
   );
 }

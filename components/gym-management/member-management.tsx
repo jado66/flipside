@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Lightweight inline membership plan editor (avoids separate page)
+import { MembershipPlans } from "@/components/gym-management/membership-plans";
 import {
   Table,
   TableBody,
@@ -43,8 +45,11 @@ import {
   ArrowUpDown,
   Mail,
   Phone,
+  Users,
+  CreditCard,
 } from "lucide-react";
 import Fuse from "fuse.js";
+import { useWaivers } from "@/contexts/waivers/waiver-provider";
 
 interface MemberBasic {
   id: string;
@@ -89,8 +94,16 @@ export function MemberManagement() {
   const [pageSize, setPageSize] = useState(25);
   const [sortKey, setSortKey] = useState<keyof MemberBasic>("name");
   const [sortDir, setSortDir] = useState<"asc" | "desc">("asc");
-  const { members, addMember, updateMember, removeMember, demoMode, limits } =
-    useGym();
+  const {
+    members,
+    addMember,
+    updateMember,
+    removeMember,
+    demoMode,
+    limits,
+    membershipPlans,
+  } = useGym();
+  const { getPrimaryWaiverStatus } = useWaivers();
 
   const fuse = useMemo(
     () =>
@@ -211,551 +224,621 @@ export function MemberManagement() {
   };
 
   return (
-    <div className="space-y-4">
-      {/* Controls Row */}
-
-      <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
-        <div className="flex gap-3 flex-1">
-          <div className="relative w-full max-w-sm">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Search name, email, membership..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
+    <Tabs defaultValue="members" className="space-y-6">
+      <TabsList className="w-full grid grid-cols-2 md:w-auto md:inline-flex gap-2 p-1 bg-muted/50 rounded-lg shadow-sm">
+        <TabsTrigger
+          value="members"
+          aria-label="Members"
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs md:text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <Users className="h-4 w-4" />
+          <span className="hidden sm:inline">Members</span>
+          <span className="sm:hidden">Members</span>
+        </TabsTrigger>
+        <TabsTrigger
+          value="plans"
+          aria-label="Membership Plans"
+          className="flex items-center justify-center gap-2 px-4 py-2 rounded-md text-xs md:text-sm font-medium data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+        >
+          <CreditCard className="h-4 w-4" />
+          <span className="hidden sm:inline">Membership Plans</span>
+          <span className="sm:hidden">Plans</span>
+        </TabsTrigger>
+      </TabsList>
+      <TabsContent value="members" className="space-y-6">
+        {/* Controls Row */}
+        <div className="flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+          <div className="flex gap-3 flex-1">
+            <div className="relative w-full max-w-sm">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search name, email, membership..."
+                value={searchTerm}
+                onChange={(e) => {
+                  setSearchTerm(e.target.value);
+                  setPage(0);
+                }}
+                className="pl-10"
+              />
+            </div>
+            <Select
+              value={String(pageSize)}
+              onValueChange={(v) => {
+                setPageSize(Number(v));
                 setPage(0);
               }}
-              className="pl-10"
-            />
+            >
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 25, 50, 100].map((n) => (
+                  <SelectItem key={n} value={String(n)}>
+                    {n}/page
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-          <Select
-            value={String(pageSize)}
-            onValueChange={(v) => {
-              setPageSize(Number(v));
-              setPage(0);
-            }}
-          >
-            <SelectTrigger className="w-28">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[10, 25, 50, 100].map((n) => (
-                <SelectItem key={n} value={String(n)}>
-                  {n}/page
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex justify-end">
-          <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-            <DialogTrigger asChild>
-              <Button disabled={demoMode && members.length >= limits.members}>
-                <Plus className="h-4 w-4 mr-2" />
-                {demoMode && members.length >= limits.members
-                  ? "Demo Limit"
-                  : "Add Member"}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Add New Member</DialogTitle>
-                <DialogDescription>
-                  Create a new member profile with contact and membership info.
-                </DialogDescription>
-              </DialogHeader>
-              <form action={handleAddMember} className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Full Name</Label>
-                    <Input id="name" name="name" required />
+          <div className="flex justify-end">
+            <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+              <DialogTrigger asChild>
+                <Button disabled={demoMode && members.length >= limits.members}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  {demoMode && members.length >= limits.members
+                    ? "Demo Limit"
+                    : "Add Member"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add New Member</DialogTitle>
+                  <DialogDescription>
+                    Create a new member profile with contact and membership
+                    info.
+                  </DialogDescription>
+                </DialogHeader>
+                <form action={handleAddMember} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="name">Full Name</Label>
+                      <Input id="name" name="name" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="email">Email</Label>
+                      <Input id="email" name="email" type="email" required />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">Phone Number</Label>
+                      <Input id="phone" name="phone" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="membershipType">Membership Type</Label>
+                      <Select name="membershipType" required>
+                        <SelectTrigger>
+                          <SelectValue
+                            placeholder={
+                              membershipPlans.length
+                                ? "Select membership"
+                                : "Add plans first"
+                            }
+                          />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {membershipPlans
+                            .filter((p) => p.status === "active")
+                            .map((p) => (
+                              <SelectItem key={p.id} value={p.name}>
+                                {p.name}
+                              </SelectItem>
+                            ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="birthDate">Birth Date</Label>
+                      <Input id="birthDate" name="birthDate" type="date" />
+                    </div>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input id="email" name="email" type="email" required />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="phone">Phone Number</Label>
-                    <Input id="phone" name="phone" required />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="membershipType">Membership Type</Label>
-                    <Select name="membershipType" required>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select membership" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Premium Gymnastics">
-                          Premium Gymnastics
-                        </SelectItem>
-                        <SelectItem value="Basic Gymnastics">
-                          Basic Gymnastics
-                        </SelectItem>
-                        <SelectItem value="Parkour Basic">
-                          Parkour Basic
-                        </SelectItem>
-                        <SelectItem value="Parkour Advanced">
-                          Parkour Advanced
-                        </SelectItem>
-                        <SelectItem value="Youth Tumbling">
-                          Youth Tumbling
-                        </SelectItem>
-                        <SelectItem value="Adult Fitness">
-                          Adult Fitness
-                        </SelectItem>
-                        <SelectItem value="Open Gym">Open Gym</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="birthDate">Birth Date</Label>
-                    <Input id="birthDate" name="birthDate" type="date" />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyContact">Emergency Contact</Label>
-                  <Input
-                    id="emergencyContact"
-                    name="emergencyContact"
-                    placeholder="Name - Phone Number"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="medicalNotes">Medical Notes</Label>
-                  <Textarea
-                    id="medicalNotes"
-                    name="medicalNotes"
-                    placeholder="Any medical conditions, allergies, or notes..."
-                  />
-                </div>
-                <div className="flex justify-end gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setIsAddDialogOpen(false)}
-                  >
-                    Cancel
-                  </Button>
-                  <Button type="submit">Add Member</Button>
-                </div>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </div>
-
-      {/* Data Table */}
-      <div className="rounded-md border">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead className="w-[60px]">Avatar</TableHead>
-              {(
-                [
-                  ["name", "Name"],
-                  ["email", "Email"],
-                  ["phone", "Phone"],
-                  ["membershipType", "Membership"],
-                  ["status", "Status"],
-                  ["joinDate", "Join Date"],
-                  ["lastVisit", "Last Visit"],
-                ] as [keyof MemberBasic, string][]
-              ).map(([key, label]) => (
-                <TableHead key={key}>
-                  <button
-                    type="button"
-                    onClick={() => toggleSort(key)}
-                    className="inline-flex items-center gap-1 hover:underline font-medium"
-                    aria-label={`Sort by ${label}`}
-                  >
-                    {label}
-                    <ArrowUpDown
-                      className={`h-3 w-3 transition-opacity ${
-                        sortKey === key ? "opacity-100" : "opacity-30"
-                      }`}
+                    <Label htmlFor="emergencyContact">Emergency Contact</Label>
+                    <Input
+                      id="emergencyContact"
+                      name="emergencyContact"
+                      placeholder="Name - Phone Number"
+                      required
                     />
-                  </button>
-                </TableHead>
-              ))}
-              <TableHead className="w-[60px]">Age</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {pagedMembers.length === 0 ? (
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="medicalNotes">Medical Notes</Label>
+                    <Textarea
+                      id="medicalNotes"
+                      name="medicalNotes"
+                      placeholder="Any medical conditions, allergies, or notes..."
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsAddDialogOpen(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button type="submit">Add Member</Button>
+                  </div>
+                </form>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+        {/* Data Table */}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
               <TableRow>
-                <TableCell colSpan={9} className="h-24 text-center">
-                  <div className="text-muted-foreground">
-                    {searchTerm
-                      ? "No members found matching your search."
-                      : "No members yet. Add your first member to get started."}
-                  </div>
-                </TableCell>
+                <TableHead className="w-[60px]">Avatar</TableHead>
+                {(
+                  [
+                    ["name", "Name"],
+                    ["email", "Email"],
+                    ["phone", "Phone"],
+                    ["membershipType", "Membership"],
+                    ["status", "Status"],
+                    ["joinDate", "Join Date"],
+                    ["lastVisit", "Last Visit"],
+                  ] as [keyof MemberBasic, string][]
+                ).map(([key, label]) => (
+                  <TableHead key={key}>
+                    <button
+                      type="button"
+                      onClick={() => toggleSort(key)}
+                      className="inline-flex items-center gap-1 hover:underline font-medium"
+                      aria-label={`Sort by ${label}`}
+                    >
+                      {label}
+                      <ArrowUpDown
+                        className={`h-3 w-3 transition-opacity ${
+                          sortKey === key ? "opacity-100" : "opacity-30"
+                        }`}
+                      />
+                    </button>
+                  </TableHead>
+                ))}
+                <TableHead>Waiver</TableHead>
+                <TableHead className="w-[60px]">Age</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
               </TableRow>
-            ) : (
-              pagedMembers.map((member) => {
-                const age =
-                  (member as MemberBasic).ageYears ??
-                  (member.birthDate
-                    ? calculateAge(member.birthDate)
-                    : undefined);
-                return (
-                  <TableRow
-                    key={member.id}
-                    className="cursor-pointer"
-                    onClick={() => {
-                      setSelectedMember(member as MemberBasic);
-                      setIsEditDialogOpen(true);
-                    }}
-                  >
-                    <TableCell>
-                      <Avatar className="h-8 w-8">
-                        <AvatarImage
-                          src={
-                            member.avatar ||
-                            `/placeholder.svg?height=32&width=32&query=${member.name}`
-                          }
-                          alt={member.name}
-                        />
-                        <AvatarFallback>
-                          {member.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")}
-                        </AvatarFallback>
-                      </Avatar>
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      <div className="max-w-[180px] truncate">
-                        {member.name}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-muted-foreground max-w-[200px]">
-                        <Mail className="h-3 w-3 flex-shrink-0" />
-                        <span className="truncate">{member.email}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1.5 text-muted-foreground">
-                        <Phone className="h-3 w-3 flex-shrink-0" />
-                        <span>{member.phone}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className="max-w-[140px] truncate"
-                      >
-                        {member.membershipType}
-                      </Badge>
-                    </TableCell>
+            </TableHeader>
+            <TableBody>
+              {pagedMembers.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={9} className="h-24 text-center">
+                    <div className="text-muted-foreground">
+                      {searchTerm
+                        ? "No members found matching your search."
+                        : "No members yet. Add your first member to get started."}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : (
+                pagedMembers.map((member) => {
+                  const age =
+                    (member as MemberBasic).ageYears ??
+                    (member.birthDate
+                      ? calculateAge(member.birthDate)
+                      : undefined);
+                  const waiverStatus = getPrimaryWaiverStatus(member.id);
+                  const waiverBadgeStyle =
+                    {
+                      none: "bg-red-100 text-red-700",
+                      expired: "bg-red-100 text-red-700",
+                      expiringSoon: "bg-amber-100 text-amber-800",
+                      active: "bg-green-100 text-green-700",
+                    }[waiverStatus.state as any] || "bg-gray-100 text-gray-700";
+                  return (
+                    <TableRow
+                      key={member.id}
+                      className="cursor-pointer"
+                      onClick={() => {
+                        setSelectedMember(member as MemberBasic);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <TableCell>
+                        <Avatar className="h-8 w-8">
+                          <AvatarImage
+                            src={
+                              member.avatar ||
+                              `/placeholder.svg?height=32&width=32&query=${member.name}`
+                            }
+                            alt={member.name}
+                          />
+                          <AvatarFallback>
+                            {member.name
+                              .split(" ")
+                              .map((n) => n[0])
+                              .join("")}
+                          </AvatarFallback>
+                        </Avatar>
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="max-w-[180px] truncate">
+                          {member.name}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-muted-foreground max-w-[200px]">
+                          <Mail className="h-3 w-3 flex-shrink-0" />
+                          <span className="truncate">{member.email}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1.5 text-muted-foreground">
+                          <Phone className="h-3 w-3 flex-shrink-0" />
+                          <span>{member.phone}</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="secondary"
+                          className="max-w-[140px] truncate"
+                        >
+                          {member.membershipType}
+                        </Badge>
+                      </TableCell>
 
-                    <TableCell>
-                      <Badge
-                        className={`inline-flex items-center gap-1.5 ${getStatusColor(
-                          member.status
-                        )}`}
-                      >
-                        {getStatusIcon(member.status)}
-                        <span className="capitalize">{member.status}</span>
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      {member.joinDate
-                        ? new Date(member.joinDate).toLocaleDateString()
-                        : "—"}
-                    </TableCell>
-                    <TableCell>{member.lastVisit || "—"}</TableCell>
-                    <TableCell className="text-sm">
-                      {age != null ? `${age} yrs` : "—"}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedMember(member as MemberBasic);
-                            setIsEditDialogOpen(true);
-                          }}
+                      <TableCell>
+                        <Badge
+                          className={`inline-flex items-center gap-1.5 ${getStatusColor(
+                            member.status
+                          )}`}
                         >
-                          View
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            removeMember(member.id);
-                          }}
+                          {getStatusIcon(member.status)}
+                          <span className="capitalize">{member.status}</span>
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {member.joinDate
+                          ? new Date(member.joinDate).toLocaleDateString()
+                          : "—"}
+                      </TableCell>
+                      <TableCell>{member.lastVisit || "—"}</TableCell>
+                      <TableCell>
+                        <span
+                          className={`inline-flex px-2 py-0.5 rounded text-xs font-medium ${waiverBadgeStyle}`}
                         >
-                          Remove
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })
+                          {waiverStatus.label}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-sm">
+                        {age != null ? `${age} yrs` : "—"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedMember(member as MemberBasic);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            View
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              removeMember(member.id);
+                            }}
+                          >
+                            Remove
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+        {/* Footer / Pagination */}
+        <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between text-xs text-muted-foreground">
+          <div>
+            Showing {pagedMembers.length === 0 ? 0 : page * pageSize + 1}–
+            {page * pageSize + pagedMembers.length} of {sortedMembers.length}
+            {searchTerm && (
+              <span className="ml-1">(filtered from {members.length})</span>
             )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* Footer / Pagination */}
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between text-xs text-muted-foreground">
-        <div>
-          Showing {pagedMembers.length === 0 ? 0 : page * pageSize + 1}–
-          {page * pageSize + pagedMembers.length} of {sortedMembers.length}
-          {searchTerm && (
-            <span className="ml-1">(filtered from {members.length})</span>
-          )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page === 0}
+              onClick={() => setPage((p) => Math.max(0, p - 1))}
+            >
+              Prev
+            </Button>
+            <span>
+              Page {page + 1} / {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={page + 1 >= totalPages}
+              onClick={() => setPage((p) => (p + 1 < totalPages ? p + 1 : p))}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-          >
-            Prev
-          </Button>
-          <span>
-            Page {page + 1} / {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            size="sm"
-            disabled={page + 1 >= totalPages}
-            onClick={() => setPage((p) => (p + 1 < totalPages ? p + 1 : p))}
-          >
-            Next
-          </Button>
-        </div>
-      </div>
-
-      {/* Member Details Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="max-w-3xl">
-          <DialogHeader>
-            <DialogTitle>Member Details</DialogTitle>
-            <DialogDescription>
-              View and edit member information
-            </DialogDescription>
-          </DialogHeader>
-          {selectedMember && (
-            <form action={handleEditMember}>
-              <Tabs defaultValue="profile" className="w-full">
-                <TabsList className="grid w-full grid-cols-3">
-                  <TabsTrigger value="profile" type="button">
-                    Profile
-                  </TabsTrigger>
-                  <TabsTrigger value="membership" type="button">
-                    Membership
-                  </TabsTrigger>
-                  <TabsTrigger value="activity" type="button">
-                    Activity
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="profile" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-name">Full Name</Label>
-                      <Input
-                        id="edit-name"
-                        name="name"
-                        defaultValue={selectedMember.name}
-                        required
-                      />
+        {/* Member Details Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>Member Details</DialogTitle>
+              <DialogDescription>
+                View and edit member information
+              </DialogDescription>
+            </DialogHeader>
+            {selectedMember && (
+              <form action={handleEditMember}>
+                <Tabs defaultValue="profile" className="w-full">
+                  <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="profile" type="button">
+                      Profile
+                    </TabsTrigger>
+                    <TabsTrigger value="membership" type="button">
+                      Membership
+                    </TabsTrigger>
+                    <TabsTrigger value="activity" type="button">
+                      Activity
+                    </TabsTrigger>
+                    <TabsTrigger value="waivers" type="button">
+                      Waivers
+                    </TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="profile" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-name">Full Name</Label>
+                        <Input
+                          id="edit-name"
+                          name="name"
+                          defaultValue={selectedMember.name}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-email">Email</Label>
+                        <Input
+                          id="edit-email"
+                          name="email"
+                          type="email"
+                          defaultValue={selectedMember.email}
+                          required
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-phone">Phone</Label>
+                        <Input
+                          id="edit-phone"
+                          name="phone"
+                          defaultValue={selectedMember.phone}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-membershipType">
+                          Membership Type
+                        </Label>
+                        <Select
+                          name="membershipType"
+                          defaultValue={selectedMember.membershipType}
+                          required
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {membershipPlans
+                              .filter((p) => p.status === "active")
+                              .map((p) => (
+                                <SelectItem key={p.id} value={p.name}>
+                                  {p.name}
+                                </SelectItem>
+                              ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="edit-email">Email</Label>
-                      <Input
-                        id="edit-email"
-                        name="email"
-                        type="email"
-                        defaultValue={selectedMember.email}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-phone">Phone</Label>
-                      <Input
-                        id="edit-phone"
-                        name="phone"
-                        defaultValue={selectedMember.phone}
-                        required
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="edit-membershipType">
-                        Membership Type
-                      </Label>
+                      <Label htmlFor="edit-status">Status</Label>
                       <Select
-                        name="membershipType"
-                        defaultValue={selectedMember.membershipType}
+                        name="status"
+                        defaultValue={selectedMember.status}
                         required
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Premium Gymnastics">
-                            Premium Gymnastics
-                          </SelectItem>
-                          <SelectItem value="Basic Gymnastics">
-                            Basic Gymnastics
-                          </SelectItem>
-                          <SelectItem value="Parkour Basic">
-                            Parkour Basic
-                          </SelectItem>
-                          <SelectItem value="Parkour Advanced">
-                            Parkour Advanced
-                          </SelectItem>
-                          <SelectItem value="Youth Tumbling">
-                            Youth Tumbling
-                          </SelectItem>
-                          <SelectItem value="Adult Fitness">
-                            Adult Fitness
-                          </SelectItem>
-                          <SelectItem value="Open Gym">Open Gym</SelectItem>
+                          <SelectItem value="active">Active</SelectItem>
+                          <SelectItem value="inactive">Inactive</SelectItem>
+                          <SelectItem value="suspended">Suspended</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-status">Status</Label>
-                    <Select
-                      name="status"
-                      defaultValue={selectedMember.status}
-                      required
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="inactive">Inactive</SelectItem>
-                        <SelectItem value="suspended">Suspended</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-birthDate">Birth Date</Label>
-                    <Input
-                      id="edit-birthDate"
-                      name="birthDate"
-                      type="date"
-                      defaultValue={(selectedMember as any).birthDate}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-emergency">Emergency Contact</Label>
-                    <Input
-                      id="edit-emergency"
-                      name="emergencyContact"
-                      defaultValue={selectedMember.emergencyContact}
-                      required
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-medical">Medical Notes</Label>
-                    <Textarea
-                      id="edit-medical"
-                      name="medicalNotes"
-                      defaultValue={selectedMember.medicalNotes}
-                    />
-                  </div>
-                </TabsContent>
-                <TabsContent value="membership" className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-birthDate">Birth Date</Label>
+                      <Input
+                        id="edit-birthDate"
+                        name="birthDate"
+                        type="date"
+                        defaultValue={(selectedMember as any).birthDate}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-emergency">Emergency Contact</Label>
+                      <Input
+                        id="edit-emergency"
+                        name="emergencyContact"
+                        defaultValue={selectedMember.emergencyContact}
+                        required
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-medical">Medical Notes</Label>
+                      <Textarea
+                        id="edit-medical"
+                        name="medicalNotes"
+                        defaultValue={selectedMember.medicalNotes}
+                      />
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="membership" className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">
+                            Current Membership
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="font-semibold">
+                            {selectedMember.membershipType}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Active since{" "}
+                            {new Date(
+                              selectedMember.joinDate
+                            ).toLocaleDateString()}
+                          </p>
+                        </CardContent>
+                      </Card>
+                      <Card>
+                        <CardHeader>
+                          <CardTitle className="text-sm">
+                            Payment Status
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <p className="font-semibold text-green-600">
+                            Current
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            Next payment: Feb 15, 2024
+                          </p>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  </TabsContent>
+                  <TabsContent value="activity" className="space-y-4">
                     <Card>
                       <CardHeader>
                         <CardTitle className="text-sm">
-                          Current Membership
+                          Recent Check-ins
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
-                        <p className="font-semibold">
-                          {selectedMember.membershipType}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Active since{" "}
-                          {new Date(
-                            selectedMember.joinDate
-                          ).toLocaleDateString()}
-                        </p>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Advanced Tumbling</span>
+                            <span className="text-muted-foreground">
+                              Jan 25, 2024
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Open Gym</span>
+                            <span className="text-muted-foreground">
+                              Jan 23, 2024
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span>Strength Training</span>
+                            <span className="text-muted-foreground">
+                              Jan 20, 2024
+                            </span>
+                          </div>
+                        </div>
                       </CardContent>
                     </Card>
+                  </TabsContent>
+                  <TabsContent value="waivers" className="space-y-4">
                     <Card>
                       <CardHeader>
-                        <CardTitle className="text-sm">
-                          Payment Status
-                        </CardTitle>
+                        <CardTitle className="text-sm">Waiver Status</CardTitle>
                       </CardHeader>
-                      <CardContent>
-                        <p className="font-semibold text-green-600">Current</p>
-                        <p className="text-sm text-muted-foreground">
-                          Next payment: Feb 15, 2024
-                        </p>
+                      <CardContent className="space-y-3 text-sm">
+                        {(() => {
+                          const ws = getPrimaryWaiverStatus(selectedMember.id);
+                          return (
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                  {
+                                    none: "bg-red-100 text-red-700",
+                                    expired: "bg-red-100 text-red-700",
+                                    expiringSoon: "bg-amber-100 text-amber-800",
+                                    active: "bg-green-100 text-green-700",
+                                  }[ws.state as any] ||
+                                  "bg-gray-100 text-gray-700"
+                                }`}
+                              >
+                                {ws.label}
+                              </span>
+                              {ws.waiver?.expiresAt && (
+                                <span className="text-muted-foreground">
+                                  Expires{" "}
+                                  {new Date(
+                                    ws.waiver.expiresAt
+                                  ).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => alert("Launch waiver signing flow")}
+                        >
+                          Sign / Upload New Waiver
+                        </Button>
                       </CardContent>
                     </Card>
-                  </div>
-                </TabsContent>
-                <TabsContent value="activity" className="space-y-4">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-sm">
-                        Recent Check-ins
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Advanced Tumbling</span>
-                          <span className="text-muted-foreground">
-                            Jan 25, 2024
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Open Gym</span>
-                          <span className="text-muted-foreground">
-                            Jan 23, 2024
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span>Strength Training</span>
-                          <span className="text-muted-foreground">
-                            Jan 20, 2024
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-              <div className="flex justify-end space-x-2 mt-4">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsEditDialogOpen(false)}
-                >
-                  Close
-                </Button>
-                <Button type="submit">Save Changes</Button>
-              </div>
-            </form>
-          )}
-        </DialogContent>
-      </Dialog>
-    </div>
+                  </TabsContent>
+                </Tabs>
+                <div className="flex justify-end space-x-2 mt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setIsEditDialogOpen(false)}
+                  >
+                    Close
+                  </Button>
+                  <Button type="submit">Save Changes</Button>
+                </div>
+              </form>
+            )}
+          </DialogContent>
+        </Dialog>
+      </TabsContent>
+      <TabsContent value="plans" className="space-y-4">
+        <MembershipPlans />
+      </TabsContent>
+    </Tabs>
   );
 }

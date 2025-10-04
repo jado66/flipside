@@ -17,6 +17,7 @@ export default async function Layout({
       attribute="class"
       defaultTheme="trickipedia"
       themes={["trickipedia", "dark"]}
+      storageKey="trickipedia-theme"
       enableSystem={false}
     >
       <TrickipediaLayoutServer>
